@@ -6,6 +6,7 @@ import {
   computePayrun,
   validatePayrun,
   markPayrunPaid,
+  sendPayslips,
 } from '../controllers/payrunController.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { requireRole } from '../middleware/authorize.js';
@@ -22,5 +23,7 @@ router.post('/', createPayrun);
 router.post('/:id/compute', computePayrun);
 router.post('/:id/validate', validatePayrun);
 router.post('/:id/pay', markPayrunPaid);
+router.post('/:id/send-payslips', requireRole(ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN), sendPayslips);
+
 
 export default router;

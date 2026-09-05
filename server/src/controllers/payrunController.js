@@ -1,5 +1,7 @@
 import { createPayrunSchema } from '../validators/payrunValidator.js';
 import * as payrollService from '../services/payrollService.js';
+import { sendPayrunPayslips } from '../services/payslipDocumentService.js';
+
 
 export async function listPayruns(req, res, next) {
   try {
@@ -58,3 +60,13 @@ export async function markPayrunPaid(req, res, next) {
     next(error);
   }
 }
+
+export async function sendPayslips(req, res, next) {
+  try {
+    const result = await sendPayrunPayslips(req.params.id, req.actor.userId);
+    return res.success(result);
+  } catch (error) {
+    next(error);
+  }
+}
+

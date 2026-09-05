@@ -16,6 +16,7 @@ import salaryStructuresRouter from './routes/salaryStructures.js';
 import salaryRulesRouter from './routes/salaryRules.js';
 import payrunsRouter from './routes/payruns.js';
 import payslipsRouter from './routes/payslips.js';
+import dashboardRouter from './routes/dashboard.js';
 
 const app = express();
 
@@ -39,9 +40,11 @@ app.use('/api/salary-structures', salaryStructuresRouter);
 app.use('/api/salary-rules', salaryRulesRouter);
 app.use('/api/payruns', payrunsRouter);
 app.use('/api/payslips', payslipsRouter);
+app.use('/api/dashboard', dashboardRouter);
 
 // Fallbacks and error handling
 app.use(notFoundHandler);
 app.use(errorHandler);
 
 export default app;
+

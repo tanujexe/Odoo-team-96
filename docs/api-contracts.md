@@ -335,6 +335,85 @@ All API endpoints MUST respond using a uniform JSON envelope structure.
 
 ---
 
-## 6. Dashboard & Reports (`/api/dashboard`)
+## 6. Executive Dashboard & Document Delivery
 
-*(Documented in PP-11)*
+### 6.1 Get Executive Dashboard Metrics (`GET /api/dashboard`)
+- **Roles Allowed:** `HR_MANAGER`, `HR_PAYROLL_USER`, `HR_PAYROLL_MANAGER`, `ADMIN`
+- **Query Params:** `startDate` (ISO Date), `endDate` (ISO Date)
+- **Response envelope:**
+```json
+{
+  "data": {
+    "kpis": {
+      "totalNetSalaryPaid": 4500,
+      "totalGrossSalaryPaid": 5000,
+      "payslipsGenerated": 1,
+      "paidPayslipsCount": 1,
+      "averageSalary": 4500,
+      "approvedTimeOffDays": 5,
+      "attendanceCoveragePct": 100,
+      "activeEmployeeCount": 4
+    },
+    "attendanceSummary": {
+      "total": 1,
+      "present": 1,
+      "late": 0,
+      "exception": 0,
+      "missingCheckout": 0
+    },
+    "charts": {
+      "salaryCostByDepartment": [
+        {
+          "departmentName": "Engineering",
+          "totalNet": 4500,
+          "totalGross": 5000,
+          "employeeCount": 1
+        }
+      ],
+      "monthlySalaryTrends": [
+        {
+          "month": "2026-09",
+          "totalNet": 4500,
+          "count": 1
+        }
+      ]
+    },
+    "alerts": [
+      {
+        "type": "BLOCKING_PAYROLL",
+        "title": "Payrun Alert: September 2026 Intern Payrun",
+        "message": "No active contract found applicable for period."
+      }
+    ]
+  }
+}
+```
+
+### 6.2 Download Payslip PDF (`GET /api/payslips/:id/pdf`)
+- **Roles Allowed:** `EMPLOYEE` (self-service only for own payslip), `HR_MANAGER`, `HR_PAYROLL_USER`, `HR_PAYROLL_MANAGER`, `ADMIN`
+- **Response:** Raw PDF binary buffer with headers:
+  - `Content-Type: application/pdf`
+  - `Content-Disposition: inline; filename="Payslip_EMP001_60f...pdf"`
+
+### 6.3 Bulk Delivery of Payslips (`POST /api/payruns/:id/send-payslips`)
+- **Roles Allowed:** `HR_PAYROLL_MANAGER`, `ADMIN`
+- **Response envelope:**
+```json
+{
+  "data": {
+    "payrunId": "60f...",
+    "results": [
+      {
+        "payslipId": "60f...",
+        "status": "SENT"
+      },
+      {
+        "payslipId": "60f...",
+        "status": "FAILED",
+        "reason": "Missing employee email"
+      }
+    ]
+  }
+}
+```
+

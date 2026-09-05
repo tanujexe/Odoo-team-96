@@ -1,4 +1,6 @@
 import { Payslip } from '../models/Payslip.js';
+import { ROLES } from '../models/User.js';
+import { generatePayslipPDFBuffer } from '../services/payslipDocumentService.js';
 
 export async function listPayslips(req, res, next) {
   try {
@@ -39,3 +41,30 @@ export async function getPayslip(req, res, next) {
     next(error);
   }
 }
+
+export async function downloadPayslipPDF(req, res, next) {
+  try {
+    const payslip = await Payslip.findById(req.params.id).populate('employeeId');
+    if (!payslip) {
+      return res.fail('PAYSLIP_NOT_FOUND', 'Payslip not found', 404);
+    }
+    if (
+      req.actor?.role === ROLES.EMPLOYEE &&
+      req.actor?.employeeId &&
+      payslip.employeeId &&
+      payslip.employeeId._id.toString() !== req.actor.employeeId.toString()
+    ) {
+      return res.fail('FORBIDDEN', 'Access denied', 403);
+    }
+    const pdfBuffer = await generatePayslipPDFBuffer(payslip);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="Payslip_${payslip.employeeId?.employeeCode || 'EMP'}_${payslip._id}.pdf"`
+    );
+    return res.send(pdfBuffer);
+  } catch (error) {
+    next(error);
+  }
+}
+

@@ -118,7 +118,8 @@
   - **Tests required:** Wizard no-submit/explicit-selection tests; role-based salary-rule action test; warning-panel state test; payslip breakdown rendering test.
   - **Verify:** Manual HR Payroll Manager flow through create → compute → resolve warning → validate → paid.
 
-- [ ] **PP-11 — Backend reporting, PDF/email delivery, audit, and demo seed**
+- [x] **PP-11 — Backend reporting, PDF/email delivery, audit, and demo seed**
+
   - **Developer:** Developer 1
   - **Files/modules to modify:** `server/src/dashboard/`, `server/src/documents/`, `server/src/routes/{dashboard,reports}.js`, `server/src/services/{payslipDocumentService,dashboardService,auditService}.js`, `server/src/seed/`, `server/src/tests/{dashboard,documents,seed}/`, `docs/api-contracts.md`.
   - **Spec ref:** `spec.md > Components And Responsibilities > Dashboard and reports; External APIs And Dependencies; Demo And Submission Flow`; `PRD.md > 4.11-4.12; 15`.
