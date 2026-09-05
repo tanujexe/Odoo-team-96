@@ -48,19 +48,33 @@ export async function fetchContracts(params = {}) {
 }
 
 export async function createContract(data) {
+  const payload = {
+    contractCode: data.contractCode,
+    employeeId: data.employeeId,
+    wage: Number(data.wage),
+    startDate: data.startDate,
+    endDate: data.endDate || null,
+    status: data.status || 'ACTIVE',
+    departmentId: data.departmentId || null,
+    position: data.position || '',
+    workingSchedule: data.workingSchedule || '40 Hours / Week',
+    notes: data.notes || '',
+  };
+
   try {
     const response = await apiClient('/contracts', {
       method: 'POST',
-      body: data,
+      body: payload,
     });
     return normalizeContract(response.data);
   } catch (err) {
+    console.warn('[Contracts API] Backend error during create contract, using fallback:', err);
     const newCnt = {
       id: `cnt-${Date.now()}`,
       contractCode: data.contractCode || `CNT-${new Date().getFullYear()}-00${mockContracts.length + 1}`,
       employeeId: data.employeeId,
       employeeName: data.employeeName || 'Selected Employee',
-      wage: Number(data.wage) || 6000,
+      wage: Number(data.wage) || 8000,
       wageType: data.wageType || 'MONTHLY',
       startDate: data.startDate || '2026-01-01',
       endDate: data.endDate || null,

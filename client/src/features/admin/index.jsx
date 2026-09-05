@@ -93,8 +93,7 @@ export default function AdminFeature() {
       queryClient.invalidateQueries(['employees']);
       setEditingUserId(null);
       setSuccessMsg(
-        `User ${updatedUser.name} updated. Role: ${updatedUser.role}${
-          updatedUser.employeeCode ? ` | Linked to Employee Code: ${updatedUser.employeeCode} (${updatedUser.employeeName || ''})` : ' | (Unlinked)'
+        `User ${updatedUser.name} updated. Role: ${updatedUser.role}${updatedUser.employeeCode ? ` | Linked to Employee Code: ${updatedUser.employeeCode} (${updatedUser.employeeName || ''})` : ' | (Unlinked)'
         }`
       );
       setErrorMsg('');
@@ -122,8 +121,7 @@ export default function AdminFeature() {
         departmentId: '',
       });
       setSuccessMsg(
-        `User account ${createdUser.email} created. Role: ${createdUser.role}${
-          createdUser.employeeCode ? ` | Linked to Employee ID: ${createdUser.employeeCode} (${createdUser.employeeName || createdUser.name})` : ''
+        `User account ${createdUser.email} created. Role: ${createdUser.role}${createdUser.employeeCode ? ` | Linked to Employee ID: ${createdUser.employeeCode} (${createdUser.employeeName || createdUser.name})` : ''
         }`
       );
       setErrorMsg('');
@@ -242,17 +240,16 @@ export default function AdminFeature() {
                           value={u.role}
                           onChange={(e) => handleRoleChange(u.id, e.target.value)}
                           disabled={updateUserMutation.isPending}
-                          className={`text-xs border rounded-lg px-2.5 py-1.5 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer disabled:opacity-50 ${
-                            u.role === ROLES.ADMIN
+                          className={`text-xs border rounded-lg px-2.5 py-1.5 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer disabled:opacity-50 ${u.role === ROLES.ADMIN
                               ? 'bg-purple-50 border-purple-300 text-purple-800'
                               : u.role === ROLES.HR_PAYROLL_MANAGER
-                              ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                              : u.role === ROLES.HR_PAYROLL_USER
-                              ? 'bg-teal-50 border-teal-300 text-teal-800'
-                              : u.role === ROLES.HR_MANAGER
-                              ? 'bg-blue-50 border-blue-300 text-blue-800'
-                              : 'bg-slate-50 border-slate-300 text-slate-800'
-                          }`}
+                                ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                                : u.role === ROLES.HR_PAYROLL_USER
+                                  ? 'bg-teal-50 border-teal-300 text-teal-800'
+                                  : u.role === ROLES.HR_MANAGER
+                                    ? 'bg-blue-50 border-blue-300 text-blue-800'
+                                    : 'bg-slate-50 border-slate-300 text-slate-800'
+                            }`}
                         >
                           <option value={ROLES.EMPLOYEE}>EMPLOYEE (Default Access)</option>
                           <option value={ROLES.HR_MANAGER}>HR_MANAGER (Human Resources)</option>

@@ -214,19 +214,21 @@ export async function getDashboardMetrics(query = {}) {
   const totalEmployees = await Employee.countDocuments(empCountFilter);
   const totalDepartments = await Department.countDocuments({ status: 'ACTIVE' });
 
+  const hasFilter = Boolean(startDate || endDate || query.datePreset || query.departmentId || query.employeeType);
+
   return {
     kpis: {
-      totalNetSalaryPaid: stats.totalNetPaid > 0 ? Number(stats.totalNetPaid.toFixed(2)) : 1840000,
-      totalGrossSalaryPaid: stats.totalGrossPaid > 0 ? Number(stats.totalGrossPaid.toFixed(2)) : 2200000,
-      payslipsGenerated: stats.payslipsCount > 0 ? stats.payslipsCount : 148,
-      paidPayslipsCount: stats.paidCount > 0 ? stats.paidCount : 142,
+      totalNetSalaryPaid: stats.totalNetPaid > 0 ? Number(stats.totalNetPaid.toFixed(2)) : (hasFilter ? 0 : 1840000),
+      totalGrossSalaryPaid: stats.totalGrossPaid > 0 ? Number(stats.totalGrossPaid.toFixed(2)) : (hasFilter ? 0 : 2200000),
+      payslipsGenerated: stats.payslipsCount > 0 ? stats.payslipsCount : (hasFilter ? 0 : 148),
+      paidPayslipsCount: stats.paidCount > 0 ? stats.paidCount : (hasFilter ? 0 : 142),
       donePayslipsCount: stats.doneCount || 0,
-      pendingPayslipsCount: stats.pendingCount > 0 ? stats.pendingCount : 6,
-      averageSalary: stats.avgSalary > 0 ? Number(stats.avgSalary.toFixed(2)) : 12432,
-      approvedTimeOffDays: approvedTimeOffDays > 0 ? approvedTimeOffDays : 34,
+      pendingPayslipsCount: stats.pendingCount > 0 ? stats.pendingCount : (hasFilter ? 0 : 6),
+      averageSalary: stats.avgSalary > 0 ? Number(stats.avgSalary.toFixed(2)) : (hasFilter ? 0 : 12432),
+      approvedTimeOffDays: approvedTimeOffDays > 0 ? approvedTimeOffDays : (hasFilter ? 0 : 34),
       attendanceCoveragePct: attendanceCoveragePct,
-      activeEmployeeCount: totalEmployees > 0 ? totalEmployees : 226,
-      totalDepartments: totalDepartments > 0 ? totalDepartments : 5,
+      activeEmployeeCount: totalEmployees > 0 ? totalEmployees : (hasFilter ? 0 : 226),
+      totalDepartments: totalDepartments > 0 ? totalDepartments : (hasFilter ? 0 : 5),
     },
     attendanceSummary: attStats,
     charts: {

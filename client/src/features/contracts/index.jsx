@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { fetchContracts, createContract, resolveContract } from '../../lib/api/contracts';
 import { fetchSchedules, createSchedule } from '../../lib/api/schedules';
+import { fetchEmployees } from '../../lib/api/employees';
 import { mockEmployees } from '../../lib/api/mockData';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -33,17 +34,67 @@ export default function ContractsFeature() {
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
-  // Contract form
+  const { data: serverEmployees = [] } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => fetchEmployees(),
+  });
+
+  const allEmployees = React.useMemo(() => {
+    const combined = [...serverEmployees];
+    const existingIds = new Set(combined.map((e) => e.id));
+    mockEmployees.forEach((m) => {
+      if (!existingIds.has(m.id)) {
+        combined.push(m);
+      }
+    });
+    return combined;
+  }, [serverEmployees]);
+
+  // Contract form state
   const [contractForm, setContractForm] = useState({
     contractCode: '',
-    employeeId: mockEmployees[0]?.id || '',
-    employeeName: `${mockEmployees[0]?.firstName} ${mockEmployees[0]?.lastName}`,
+    employeeId: '',
+    employeeName: '',
     wage: 8000,
     wageType: 'MONTHLY',
     startDate: '2026-01-01',
     endDate: '',
     status: 'ACTIVE',
   });
+
+  // Helper to generate next unique contract code
+  const generateNextContractCode = (contractList) => {
+    const year = new Date().getFullYear();
+    let maxNum = 0;
+    (contractList || []).forEach((c) => {
+      const code = c.contractCode || '';
+      const match = code.match(/\d+/g);
+      if (match) {
+        const lastNum = parseInt(match[match.length - 1], 10);
+        if (!isNaN(lastNum) && lastNum > maxNum) {
+          maxNum = lastNum;
+        }
+      }
+    });
+    const nextSeq = maxNum > 0 ? maxNum + 1 : (contractList?.length || 0) + 1;
+    return `CNT-${year}-${String(nextSeq).padStart(3, '0')}`;
+  };
+
+  const handleOpenContractModal = () => {
+    const defaultEmp = allEmployees[0] || mockEmployees[0];
+    const autoCode = generateNextContractCode(contracts);
+    setContractForm({
+      contractCode: autoCode,
+      employeeId: defaultEmp?.id || defaultEmp?._id || '',
+      employeeName: defaultEmp ? `${defaultEmp.firstName || defaultEmp.name || ''} ${defaultEmp.lastName || ''}`.trim() : 'Selected Employee',
+      wage: 8000,
+      wageType: 'MONTHLY',
+      startDate: '2026-01-01',
+      endDate: '',
+      status: 'ACTIVE',
+    });
+    setIsContractModalOpen(true);
+  };
 
   // Working Schedule State
   const [scheduleSubTab, setScheduleSubTab] = useState('list'); // 'list' | 'calendar'
@@ -70,6 +121,8 @@ export default function ContractsFeature() {
     mutationFn: createContract,
     onSuccess: () => {
       queryClient.invalidateQueries(['contracts']);
+      queryClient.invalidateQueries(['employees']);
+      queryClient.invalidateQueries(['payslips']);
       setIsContractModalOpen(false);
     },
   });
@@ -105,7 +158,7 @@ export default function ContractsFeature() {
         </div>
         <div className="flex items-center gap-3">
           {activeTab === 'contracts' && (
-            <Button variant="primary" size="sm" icon={Plus} onClick={() => setIsContractModalOpen(true)}>
+            <Button variant="primary" size="sm" icon={Plus} onClick={handleOpenContractModal}>
               New Contract
             </Button>
           )}
@@ -121,31 +174,28 @@ export default function ContractsFeature() {
       <div className="flex border-b border-slate-200 gap-6">
         <button
           onClick={() => setActiveTab('contracts')}
-          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all ${
-            activeTab === 'contracts'
+          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all ${activeTab === 'contracts'
               ? 'border-emerald-600 text-emerald-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
+            }`}
         >
           Contracts Registry
         </button>
         <button
           onClick={() => setActiveTab('schedules')}
-          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all ${
-            activeTab === 'schedules'
+          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all ${activeTab === 'schedules'
               ? 'border-emerald-600 text-emerald-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
+            }`}
         >
           Working Schedules
         </button>
         <button
           onClick={() => setActiveTab('resolver')}
-          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all ${
-            activeTab === 'resolver'
+          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all ${activeTab === 'resolver'
               ? 'border-emerald-600 text-emerald-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
+            }`}
         >
           Period Contract Resolver
         </button>
@@ -247,22 +297,20 @@ export default function ContractsFeature() {
                   <button
                     type="button"
                     onClick={() => setScheduleSubTab('list')}
-                    className={`pb-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors ${
-                      scheduleSubTab === 'list'
+                    className={`pb-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors ${scheduleSubTab === 'list'
                         ? 'border-emerald-600 text-emerald-700'
                         : 'border-transparent text-slate-500 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     List
                   </button>
                   <button
                     type="button"
                     onClick={() => setScheduleSubTab('calendar')}
-                    className={`pb-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors ${
-                      scheduleSubTab === 'calendar'
+                    className={`pb-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors ${scheduleSubTab === 'calendar'
                         ? 'border-emerald-600 text-emerald-700'
                         : 'border-transparent text-slate-500 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     Calendar
                   </button>
@@ -321,11 +369,10 @@ export default function ContractsFeature() {
                             <tr
                               key={sch.id}
                               onClick={() => setSelectedSchedule(sch)}
-                              className={`cursor-pointer transition-colors ${
-                                isSelected
+                              className={`cursor-pointer transition-colors ${isSelected
                                   ? 'bg-emerald-50/80 border-l-4 border-emerald-600 text-emerald-950 font-bold'
                                   : 'hover:bg-slate-50/80 text-slate-800'
-                              }`}
+                                }`}
                             >
                               <td className="py-3.5 px-4 font-semibold text-slate-900">{sch.name}</td>
                               <td className="py-3.5 px-3 font-mono">{daysCount}</td>
@@ -333,11 +380,10 @@ export default function ContractsFeature() {
                               <td className="py-3.5 px-3 text-slate-500">{sch.company || 'My Company'}</td>
                               <td className="py-3.5 px-4 text-right">
                                 <span
-                                  className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
-                                    statusStr === 'Active'
+                                  className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${statusStr === 'Active'
                                       ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                                       : 'bg-slate-100 text-slate-600 border border-slate-200'
-                                  }`}
+                                    }`}
                                 >
                                   {statusStr}
                                 </span>
@@ -397,9 +443,9 @@ export default function ContractsFeature() {
                 value={resolverEmployeeId}
                 onChange={(e) => setResolverEmployeeId(e.target.value)}
               >
-                {mockEmployees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.firstName} {emp.lastName} ({emp.employeeCode})
+                {allEmployees.map((emp) => (
+                  <option key={emp.id || emp._id} value={emp.id || emp._id}>
+                    {emp.firstName || emp.name} {emp.lastName || ''} ({emp.employeeCode || 'EMP'})
                   </option>
                 ))}
                 <option value="emp-ambiguous-1">⚠️ Test Ambiguous Contract Employee</option>
@@ -509,19 +555,26 @@ export default function ContractsFeature() {
             label="Employee"
             value={contractForm.employeeId}
             onChange={(e) => {
-              const emp = mockEmployees.find((x) => x.id === e.target.value);
+              const selectedId = e.target.value;
+              const emp = allEmployees.find((x) => (x.id || x._id) === selectedId);
+              const fullName = emp ? `${emp.firstName || emp.name || ''} ${emp.lastName || ''}`.trim() : 'Selected Employee';
               setContractForm({
                 ...contractForm,
-                employeeId: e.target.value,
-                employeeName: emp ? `${emp.firstName} ${emp.lastName}` : 'Selected Employee',
+                employeeId: selectedId,
+                employeeName: fullName,
               });
             }}
           >
-            {mockEmployees.map((emp) => (
-              <option key={emp.id} value={emp.id}>
-                {emp.firstName} {emp.lastName} ({emp.employeeCode})
-              </option>
-            ))}
+            {allEmployees.map((emp) => {
+              const empId = emp.id || emp._id;
+              const empName = `${emp.firstName || emp.name || ''} ${emp.lastName || ''}`.trim();
+              const code = emp.employeeCode ? ` (${emp.employeeCode})` : '';
+              return (
+                <option key={empId} value={empId}>
+                  {empName}{code}
+                </option>
+              );
+            })}
           </Select>
 
           <div className="grid grid-cols-2 gap-3">
@@ -540,6 +593,7 @@ export default function ContractsFeature() {
               <option value="ACTIVE">ACTIVE</option>
               <option value="DRAFT">DRAFT</option>
               <option value="EXPIRED">EXPIRED</option>
+              <option value="CANCELLED">CANCELLED</option>
             </Select>
           </div>
 

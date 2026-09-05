@@ -85,29 +85,29 @@ export default function EmployeesFeature() {
 
   const visibleEmployees = isEmployeeRole
     ? employees.filter(
-        (e) =>
-          (currentEmpId && (e.id === currentEmpId || e._id === currentEmpId)) ||
-          (user?.email && e.email?.toLowerCase() === user.email.toLowerCase()) ||
-          (user?.employeeCode && e.employeeCode === user.employeeCode) ||
-          (user?.name && e.name?.toLowerCase() === user.name.toLowerCase())
-      )
+      (e) =>
+        (currentEmpId && (e.id === currentEmpId || e._id === currentEmpId)) ||
+        (user?.email && e.email?.toLowerCase() === user.email.toLowerCase()) ||
+        (user?.employeeCode && e.employeeCode === user.employeeCode) ||
+        (user?.name && e.name?.toLowerCase() === user.name.toLowerCase())
+    )
     : employees;
 
   const finalEmployeesList =
     isEmployeeRole && visibleEmployees.length === 0
       ? [
-          {
-            id: currentEmpId || 'emp-self',
-            firstName: user?.name ? user.name.split(' ')[0] : 'My',
-            lastName: user?.name ? user.name.split(' ').slice(1).join(' ') || 'Profile' : 'Profile',
-            name: user?.name || 'My Employee Profile',
-            email: user?.email || 'employee@company.com',
-            employeeCode: user?.employeeCode || 'EMP-SELF',
-            jobTitle: 'Team Member',
-            department: 'General',
-            status: 'ACTIVE',
-          },
-        ]
+        {
+          id: currentEmpId || 'emp-self',
+          firstName: user?.name ? user.name.split(' ')[0] : 'My',
+          lastName: user?.name ? user.name.split(' ').slice(1).join(' ') || 'Profile' : 'Profile',
+          name: user?.name || 'My Employee Profile',
+          email: user?.email || 'employee@company.com',
+          employeeCode: user?.employeeCode || 'EMP-SELF',
+          jobTitle: 'Team Member',
+          department: 'General',
+          status: 'ACTIVE',
+        },
+      ]
       : visibleEmployees;
 
   const { data: detailData, isLoading: isDetailLoading } = useQuery({
@@ -189,18 +189,16 @@ export default function EmployeesFeature() {
             <button
               aria-label="List view"
               onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded-md text-xs font-medium transition-all ${
-                viewMode === 'list' ? 'bg-white shadow text-slate-900' : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`p-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'list' ? 'bg-white shadow text-slate-900' : 'text-slate-600 hover:text-slate-900'
+                }`}
             >
               <List className="w-4 h-4" />
             </button>
             <button
               aria-label="Kanban view"
               onClick={() => setViewMode('kanban')}
-              className={`p-1.5 rounded-md text-xs font-medium transition-all ${
-                viewMode === 'kanban' ? 'bg-white shadow text-slate-900' : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`p-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'kanban' ? 'bg-white shadow text-slate-900' : 'text-slate-600 hover:text-slate-900'
+                }`}
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
@@ -471,33 +469,30 @@ export default function EmployeesFeature() {
                 <button
                   type="button"
                   onClick={() => setActiveDetailTab('work')}
-                  className={`pb-2.5 transition-all relative ${
-                    activeDetailTab === 'work'
-                      ? 'text-emerald-700 font-bold border-b-2 border-emerald-600'
-                      : 'hover:text-slate-900'
-                  }`}
+                  className={`pb-2.5 transition-all relative ${activeDetailTab === 'work'
+                    ? 'text-emerald-700 font-bold border-b-2 border-emerald-600'
+                    : 'hover:text-slate-900'
+                    }`}
                 >
                   Work Information
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveDetailTab('private')}
-                  className={`pb-2.5 transition-all relative ${
-                    activeDetailTab === 'private'
-                      ? 'text-emerald-700 font-bold border-b-2 border-emerald-600'
-                      : 'hover:text-slate-900'
-                  }`}
+                  className={`pb-2.5 transition-all relative ${activeDetailTab === 'private'
+                    ? 'text-emerald-700 font-bold border-b-2 border-emerald-600'
+                    : 'hover:text-slate-900'
+                    }`}
                 >
                   Private Information
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveDetailTab('hr')}
-                  className={`pb-2.5 transition-all relative ${
-                    activeDetailTab === 'hr'
-                      ? 'text-emerald-700 font-bold border-b-2 border-emerald-600'
-                      : 'hover:text-slate-900'
-                  }`}
+                  className={`pb-2.5 transition-all relative ${activeDetailTab === 'hr'
+                    ? 'text-emerald-700 font-bold border-b-2 border-emerald-600'
+                    : 'hover:text-slate-900'
+                    }`}
                 >
                   HR Settings
                 </button>
@@ -663,14 +658,6 @@ export default function EmployeesFeature() {
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
-          </div>
-
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-slate-700">Assign Role</label>
-            <div className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-slate-100 font-semibold text-slate-700 flex items-center justify-between">
-              <span>EMPLOYEE</span>
-              <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Locked</span>
-            </div>
           </div>
 
           {/* Employee ID Assignment */}
