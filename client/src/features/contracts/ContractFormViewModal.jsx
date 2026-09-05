@@ -56,8 +56,6 @@ export function ContractFormViewModal({
         workingSchedule: contract.workingSchedule || (schedules[0]?.name || '40 Hours / Week'),
         salaryStructureId: matchedStructure?.id || matchedStructure?._id || initialSalaryStructureId,
         salaryStructureName: matchedStructure?.name || contract.salaryStructureName || contract.salaryStructure?.name || 'Employee Salary',
-        workingSchedule: contract.workingSchedule || '40 Hours / Week',
-        salaryStructureName: contract.salaryStructureName || contract.salaryStructure || 'Employee Salary',
         notes:
           contract.notes ||
           'This running contract is the source for payroll calculation in the active period.',
@@ -316,47 +314,22 @@ export function ContractFormViewModal({
                 )}
               </div>
 
-            {/* Working Schedule Field */}
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                Working Schedule (Database)
-              </label>
-              {isEditing ? (
-                <select
-                  value={formData.workingSchedule}
-                  onChange={(e) => setFormData({ ...formData, workingSchedule: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold"
-                >
-                  {(schedules.length > 0 ? schedules : mockWorkingSchedules).map((s) => (
-                    <option key={s.id || s._id} value={s.name}>
-                      {s.name} ({s.hoursPerWeek || '40h'})
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/70 text-slate-800 text-sm font-medium shadow-sm flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-slate-400" />
-                  <span>{formData.workingSchedule || '40 Hours / Week'}</span>
-                </div>
-              )}
+              {/* Working Schedule Field */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                  Working Schedule
+                  Working Schedule (Database)
                 </label>
                 {isEditing ? (
                   <select
                     value={formData.workingSchedule}
                     onChange={(e) => setFormData({ ...formData, workingSchedule: e.target.value })}
-                    className="w-full p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold"
                   >
-                    {mockWorkingSchedules.map((s) => (
-                      <option key={s.id} value={s.name}>
-                        {s.name}
+                    {(schedules.length > 0 ? schedules : mockWorkingSchedules).map((s) => (
+                      <option key={s.id || s._id} value={s.name}>
+                        {s.name} ({s.hoursPerWeek || '40h'})
                       </option>
                     ))}
-                    <option value="40 Hours / Week">40 Hours / Week</option>
-                    <option value="Standard Full-Time (40h)">Standard Full-Time (40h)</option>
-                    <option value="Flexible Hybrid">Flexible Hybrid</option>
                   </select>
                 ) : (
                   <div className="w-full p-3 rounded-xl border border-slate-200/60 bg-slate-50/80 text-slate-800 text-xs font-semibold flex items-center justify-between">
@@ -431,25 +404,6 @@ export function ContractFormViewModal({
               </p>
             </div>
           )}
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 space-y-2.5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-              Salary Structure / Notes
-            </h4>
-            <span className="bg-slate-100 text-slate-500 text-[10px] font-mono px-2 py-0.5 rounded border border-slate-200">
-              Rule Reference v2.6
-            </span>
-          </div>
-
-          <div className="space-y-2 text-xs text-slate-700 leading-relaxed">
-            <p className="font-semibold text-slate-900">
-              Structure Type: <span className="text-amber-900 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">{formData.salaryStructureName || formData.salaryStructure || 'Employee Salary'}</span>
-            </p>
-            <p className="text-slate-600 p-3 bg-slate-50/80 rounded-xl border border-slate-200/60">
-              {formData.notes || 'This running contract is the source for payroll calculation in the active period.'}
-            </p>
-          </div>
         </div>
 
         {/* Helpful Note matching test assertion */}

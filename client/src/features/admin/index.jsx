@@ -627,7 +627,6 @@ export default function AdminFeature() {
                   ))}
                 </Select>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <Input
                   label="Contract Start Date"
                   type="date"
