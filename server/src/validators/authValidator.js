@@ -22,11 +22,19 @@ export const createUserAdminSchema = z.object({
   role: z.enum(['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'HR_MANAGER', 'EMPLOYEE']),
   employeeId: z.string().nullable().optional(),
   employeeCode: z.string().nullable().optional(),
+  jobPosition: z.string().optional(),
+  jobTitle: z.string().optional(),
+  department: z.string().optional(),
+  departmentId: z.string().nullable().optional(),
 });
 
 export const updateUserAdminSchema = z.object({
   role: z.enum(['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'HR_MANAGER', 'EMPLOYEE']).optional(),
   employeeId: z.string().nullable().optional(),
   employeeCode: z.string().nullable().optional(),
+  jobPosition: z.string().optional(),
+  jobTitle: z.string().optional(),
+  department: z.string().optional(),
+  departmentId: z.string().nullable().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });

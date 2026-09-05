@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import { User } from '../models/User.js';
 import { Employee } from '../models/Employee.js';
 import { config } from '../config/env.js';
@@ -36,6 +37,44 @@ function extractEmployeeId(user) {
     return rawId ? rawId.toString() : null;
   }
   return user.employeeId._id ? user.employeeId._id.toString() : user.employeeId.toString();
+}
+
+export async function resolveOrCreateEmployee({ codeOrId, name, email, jobPosition, departmentId }) {
+  if (!codeOrId || !String(codeOrId).trim()) return null;
+  const val = String(codeOrId).trim();
+  const isMongoId = /^[0-9a-fA-F]{24}$/.test(val);
+
+  let employee = await Employee.findOne({
+    $or: [
+      { employeeCode: new RegExp(`^${val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+      ...(isMongoId ? [{ _id: val }] : []),
+    ],
+  });
+
+  if (!employee) {
+    // If an employee with this email already exists, link & sync their employeeCode
+    if (email) {
+      const byEmail = await Employee.findOne({ email: email.toLowerCase().trim() });
+      if (byEmail) {
+        byEmail.employeeCode = val;
+        await byEmail.save();
+        return byEmail;
+      }
+    }
+
+    // Auto-create new Employee master profile with this new Employee ID
+    employee = new Employee({
+      employeeCode: val,
+      name: name ? name.trim() : 'New Employee',
+      email: email ? email.toLowerCase().trim() : `${val.toLowerCase().replace(/[^a-z0-9]/g, '')}@company.com`,
+      jobPosition: jobPosition || 'Employee',
+      departmentId: (departmentId && mongoose.isValidObjectId(departmentId)) ? departmentId : null,
+      status: 'ACTIVE',
+    });
+    await employee.save();
+  }
+
+  return employee;
 }
 
 async function resolveEmployeeByCodeOrId(codeOrId) {
@@ -197,8 +236,14 @@ export async function updateUserAccount(userId, data) {
     if (!targetCodeOrId || !String(targetCodeOrId).trim()) {
       user.employeeId = null;
     } else {
-      const emp = await resolveEmployeeByCodeOrId(targetCodeOrId);
-      user.employeeId = emp._id;
+      const emp = await resolveOrCreateEmployee({
+        codeOrId: targetCodeOrId,
+        name: user.name,
+        email: user.email,
+        jobPosition: data.jobPosition || data.jobTitle || 'Employee',
+        departmentId: data.departmentId,
+      });
+      user.employeeId = emp ? emp._id : null;
     }
   }
 
@@ -219,7 +264,7 @@ export async function updateUserAccount(userId, data) {
   };
 }
 
-export async function adminCreateUser({ name, email, password, role, employeeCode, employeeId }) {
+export async function adminCreateUser({ name, email, password, role, employeeCode, employeeId, jobPosition, jobTitle, departmentId }) {
   const cleanEmail = email.toLowerCase().trim();
   const existing = await User.findOne({ email: cleanEmail });
   if (existing) {
@@ -232,8 +277,16 @@ export async function adminCreateUser({ name, email, password, role, employeeCod
   const targetCodeOrId = employeeCode !== undefined ? employeeCode : employeeId;
   let linkedEmpId = null;
   if (targetCodeOrId && String(targetCodeOrId).trim()) {
-    const emp = await resolveEmployeeByCodeOrId(targetCodeOrId);
-    linkedEmpId = emp._id;
+    const emp = await resolveOrCreateEmployee({
+      codeOrId: targetCodeOrId,
+      name: name.trim(),
+      email: cleanEmail,
+      jobPosition: jobPosition || jobTitle || (role === 'ADMIN' ? 'System Administrator' : 'Employee'),
+      departmentId,
+    });
+    if (emp) {
+      linkedEmpId = emp._id;
+    }
   }
 
   const passwordHash = await hashPassword(password);

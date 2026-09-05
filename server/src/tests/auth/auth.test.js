@@ -263,4 +263,32 @@ describe('PP-03 Authentication, RBAC, & Audit Foundation', () => {
       expect(log.after).toEqual({ wage: 6000 });
     });
   });
+
+  describe('Admin User Provisioning & Employee ID Assignment', () => {
+    it('Admin can create a user and assign a brand new Employee ID (auto-provisions employee master record)', async () => {
+      const adminToken = generateToken(adminUser);
+      const res = await request(app)
+        .post('/api/users')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'New Hire Dev',
+          email: 'newhire@company.com',
+          password: 'Password123!',
+          role: 'EMPLOYEE',
+          employeeCode: 'EMP-999',
+          jobPosition: 'Junior Engineer',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data).toHaveProperty('email', 'newhire@company.com');
+      expect(res.body.data).toHaveProperty('employeeCode', 'EMP-999');
+      expect(res.body.data.employeeId).toBeDefined();
+
+      // Verify Employee master record was created in database
+      const createdEmp = await Employee.findOne({ employeeCode: 'EMP-999' });
+      expect(createdEmp).not.toBeNull();
+      expect(createdEmp.name).toBe('New Hire Dev');
+      expect(createdEmp.email).toBe('newhire@company.com');
+    });
+  });
 });
