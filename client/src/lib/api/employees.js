@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { mockEmployees } from './mockData';
+import { mockEmployees, mockContracts } from './mockData';
 
 function normalizeEmployee(emp) {
   if (!emp) return emp;
@@ -56,10 +56,13 @@ export async function fetchEmployeeById(id) {
     };
   } catch (err) {
     const emp = mockEmployees.find((e) => e.id === id) || mockEmployees[0];
+    const empContracts = mockContracts.filter(
+      (c) => c.employeeId === id || c.employeeCode === emp.employeeCode
+    );
     return {
       employee: emp,
       smartCounts: {
-        contracts: 2,
+        contracts: empContracts.length || 1,
         attendance: 22,
         allocations: 2,
         requests: 1,
@@ -113,6 +116,27 @@ export async function createEmployee(data) {
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
     };
     mockEmployees.unshift(newEmp);
+
+    if (data.contractCode || data.wage || data.startDate || data.notes) {
+      mockContracts.unshift({
+        id: `cnt-${Date.now()}`,
+        contractCode: data.contractCode || `CON/2026/00${mockContracts.length + 42}`,
+        employeeId: newEmp.id,
+        employeeName: `${newEmp.firstName} ${newEmp.lastName}`.trim(),
+        employeeCode: newEmp.employeeCode,
+        department: newEmp.department,
+        jobPosition: newEmp.jobTitle,
+        wage: Number(data.wage || 85000),
+        wageType: 'MONTHLY',
+        workingSchedule: data.workingSchedule || '40 Hours / Week',
+        startDate: data.startDate || '2026-01-01',
+        endDate: data.endDate || null,
+        status: data.contractStatus || 'ACTIVE',
+        salaryStructureName: data.salaryStructure || 'Employee Salary',
+        notes: data.notes || 'This running contract is the source for payroll calculation in the active period.',
+      });
+    }
+
     return newEmp;
   }
 }

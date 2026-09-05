@@ -136,6 +136,22 @@ export default function ContractsFeature() {
     queryFn: () => fetchContracts({ employeeId: filteredEmployeeId }),
   });
 
+  React.useEffect(() => {
+    if (filteredEmployeeId && contracts.length > 0 && !selectedContract) {
+      const match =
+        contracts.find(
+          (c) =>
+            c.employeeId === filteredEmployeeId ||
+            c.employeeId?._id === filteredEmployeeId ||
+            c.employeeCode === filteredEmployeeId
+        ) || contracts[0];
+      if (match) {
+        setSelectedContract(match);
+        setContractSubView('form');
+      }
+    }
+  }, [filteredEmployeeId, contracts]);
+
   const { data: schedules = [], isLoading: isSchedulesLoading } = useQuery({
     queryKey: ['schedules'],
     queryFn: fetchSchedules,
