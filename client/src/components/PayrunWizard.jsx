@@ -14,9 +14,17 @@ import {
   ChevronLeft,
   Search,
   AlertCircle,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 
-export function PayrunWizard({ salaryStructures = [], onComplete, onCancel }) {
+export function PayrunWizard({
+  salaryStructures = [],
+  employees: propEmployees,
+  initialSelectedEmployeeIds,
+  onComplete,
+  onCancel,
+}) {
   const [step, setStep] = useState(1);
 
   // Step 1 State
@@ -25,19 +33,31 @@ export function PayrunWizard({ salaryStructures = [], onComplete, onCancel }) {
   const [periodStart, setPeriodStart] = useState('2026-09-01');
   const [periodEnd, setPeriodEnd] = useState('2026-09-30');
 
+  const rawEmployees =
+    propEmployees && propEmployees.length > 0
+      ? propEmployees
+      : mockEmployees;
+
+  const activeEmployees = (rawEmployees || []).filter((e) => (e.status ? e.status === 'ACTIVE' : true));
+
   // Step 2 State
-  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState(['emp-alex-1', 'emp-sarah-1']);
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState(
+    initialSelectedEmployeeIds || ['emp-alex-1', 'emp-sarah-1']
+  );
   const [searchEmployee, setSearchEmployee] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const activeEmployees = mockEmployees.filter((e) => e.status === 'ACTIVE');
+  const filteredEmployees = activeEmployees.filter((e) => {
+    const q = (searchEmployee || '').toLowerCase().trim();
+    if (!q) return true;
+    const fullName = `${e.firstName || ''} ${e.lastName || ''}`.toLowerCase();
+    const code = (e.employeeCode || '').toLowerCase();
+    const dept = (e.department || '').toLowerCase();
+    const title = (e.jobTitle || '').toLowerCase();
+    return fullName.includes(q) || code.includes(q) || dept.includes(q) || title.includes(q);
+  });
 
-  const filteredEmployees = activeEmployees.filter(
-    (e) =>
-      e.firstName.toLowerCase().includes(searchEmployee.toLowerCase()) ||
-      e.lastName.toLowerCase().includes(searchEmployee.toLowerCase()) ||
-      e.employeeCode.toLowerCase().includes(searchEmployee.toLowerCase())
-  );
+  const isAllSelected = activeEmployees.length > 0 && selectedEmployeeIds.length === activeEmployees.length;
 
   const handleToggleEmployee = (id) => {
     setErrorMsg('');
@@ -201,33 +221,48 @@ export function PayrunWizard({ salaryStructures = [], onComplete, onCancel }) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredEmployees.map((emp) => {
-                    const isSelected = selectedEmployeeIds.includes(emp.id);
-                    return (
-                      <TableRow
-                        key={emp.id}
-                        isSelected={isSelected}
-                        className="cursor-pointer"
-                        onClick={() => handleToggleEmployee(emp.id)}
-                      >
-                        <TableCell>
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => {}}
-                            aria-label={`Select ${emp.firstName} ${emp.lastName}`}
-                            className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
-                          />
-                        </TableCell>
-                        <TableCell className="font-semibold text-slate-900">
-                          {emp.firstName} {emp.lastName}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">{emp.employeeCode}</TableCell>
-                        <TableCell>{emp.department}</TableCell>
-                        <TableCell>{emp.jobTitle}</TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {filteredEmployees.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-8 text-center text-slate-500 text-xs">
+                        No eligible employees found matching "{searchEmployee}"
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredEmployees.map((emp) => {
+                      const isSelected = selectedEmployeeIds.includes(emp.id);
+                      const displayName =
+                        emp.firstName || emp.lastName
+                          ? `${emp.firstName || ''} ${emp.lastName || ''}`.trim()
+                          : emp.name || 'Unknown Employee';
+
+                      return (
+                        <TableRow
+                          key={emp.id}
+                          isSelected={isSelected}
+                          className="cursor-pointer hover:bg-slate-50 transition-colors"
+                          onClick={() => handleToggleEmployee(emp.id)}
+                        >
+                          <TableCell>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              aria-label={`Select ${displayName}`}
+                              className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                            />
+                          </TableCell>
+                          <TableCell className="font-semibold text-slate-900">
+                            {displayName}
+                          </TableCell>
+                          <TableCell className="font-mono text-xs text-slate-600">
+                            {emp.employeeCode}
+                          </TableCell>
+                          <TableCell className="text-slate-700">{emp.department}</TableCell>
+                          <TableCell className="text-slate-700">{emp.jobTitle}</TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
                 </TableBody>
               </Table>
             </div>

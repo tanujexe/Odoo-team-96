@@ -13,6 +13,7 @@ import {
   markPayrunPaidApi,
   fetchPayslipsByPayrun,
 } from '../../lib/api/payroll';
+import { fetchEmployees } from '../../lib/api/employees';
 import { downloadPayslipPdf, bulkSendPayslipsApi } from '../../lib/api/dashboard';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -92,6 +93,11 @@ export default function PayrollFeature() {
     queryKey: ['payslips', selectedPayrunId],
     queryFn: () => fetchPayslipsByPayrun(selectedPayrunId),
     enabled: !!selectedPayrunId,
+  });
+
+  const { data: employees = [] } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => fetchEmployees(),
   });
 
   // Payrun Operations Mutations
@@ -578,6 +584,7 @@ export default function PayrollFeature() {
         >
           <PayrunWizard
             salaryStructures={structures}
+            employees={employees}
             onCancel={() => setIsWizardOpen(false)}
             onComplete={(payload) => createPayrunMutation.mutate(payload)}
           />
