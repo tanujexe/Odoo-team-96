@@ -1,10 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Clock, Plus, Check, ArrowLeft, Trash2, X, AlertCircle } from 'lucide-react';
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+const DAY_ABBR_TO_FULL = {
+  MON: 'Monday',
+  TUE: 'Tuesday',
+  WED: 'Wednesday',
+  THU: 'Thursday',
+  FRI: 'Friday',
+  SAT: 'Saturday',
+  SUN: 'Sunday',
+};
+
+const DAY_FULL_TO_ABBR = {
+  Monday: 'MON',
+  Tuesday: 'TUE',
+  Wednesday: 'WED',
+  Thursday: 'THU',
+  Friday: 'FRI',
+  Saturday: 'SAT',
+  Sunday: 'SUN',
+};
 
 export function parseBreakMinutes(breakVal) {
   if (typeof breakVal === 'number') return breakVal;
@@ -27,8 +47,8 @@ export function calculateDailyHours(start, end, breakMins) {
   const [startH, startM] = start.split(':').map(Number);
   const [endH, endM] = end.split(':').map(Number);
 
-  const startTotalMins = startH * 60 + (startM || 0);
-  const endTotalMins = endH * 60 + (endM || 0);
+  const startTotalMins = (startH || 0) * 60 + (startM || 0);
+  const endTotalMins = (endH || 0) * 60 + (endM || 0);
 
   if (endTotalMins <= startTotalMins) return 0;
 
@@ -38,6 +58,7 @@ export function calculateDailyHours(start, end, breakMins) {
 }
 
 export function calculateWeeklyTotalHours(days) {
+  if (!Array.isArray(days)) return 0;
   return days.reduce((acc, d) => {
     if (d.isWorkDay === false) return acc;
     return acc + calculateDailyHours(d.startTime, d.endTime, d.breakMinutes);
@@ -52,21 +73,48 @@ const DEFAULT_WORK_DAYS = [
   { day: 'Friday', isWorkDay: true, startTime: '09:00', endTime: '18:00', breakMinutes: 60 },
 ];
 
+function normalizeInitialDays(schedule) {
+  if (!schedule) return DEFAULT_WORK_DAYS;
+  const rawList = schedule.workDays || schedule.days;
+  if (!Array.isArray(rawList) || rawList.length === 0) return DEFAULT_WORK_DAYS;
+
+  return rawList.map((d) => {
+    const rawDay = d.day || 'Monday';
+    const fullDay = DAY_ABBR_TO_FULL[String(rawDay).toUpperCase()] || rawDay;
+    return {
+      day: fullDay,
+      isWorkDay: d.isWorkDay !== false,
+      startTime: d.startTime || d.start || '09:00',
+      endTime: d.endTime || d.end || '18:00',
+      breakMinutes: d.breakMinutes ?? 60,
+    };
+  });
+}
+
 export function ScheduleEditor({ initialSchedule, onSave, onCancel }) {
   const [name, setName] = useState(initialSchedule?.name || '40 Hours / Week');
   const [company, setCompany] = useState(initialSchedule?.company || 'My Company');
   const [timezone, setTimezone] = useState(initialSchedule?.timezone || 'Company timezone');
-  const [status, setStatus] = useState(initialSchedule?.status || 'Active');
-
-  const [workDays, setWorkDays] = useState(
-    initialSchedule?.workDays?.map((d) => ({
-      day: d.day,
-      isWorkDay: d.isWorkDay ?? true,
-      startTime: d.startTime || d.start || '09:00',
-      endTime: d.endTime || d.end || '18:00',
-      breakMinutes: d.breakMinutes ?? 60,
-    })) || DEFAULT_WORK_DAYS
+  const [status, setStatus] = useState(
+    initialSchedule?.status ? (initialSchedule.status.toUpperCase() === 'INACTIVE' ? 'Inactive' : 'Active') : 'Active'
   );
+  const [workDays, setWorkDays] = useState(normalizeInitialDays(initialSchedule));
+
+  useEffect(() => {
+    if (initialSchedule) {
+      setName(initialSchedule.name || '');
+      setCompany(initialSchedule.company || 'My Company');
+      setTimezone(initialSchedule.timezone || 'Company timezone');
+      setStatus(initialSchedule.status ? (initialSchedule.status.toUpperCase() === 'INACTIVE' ? 'Inactive' : 'Active') : 'Active');
+      setWorkDays(normalizeInitialDays(initialSchedule));
+    } else {
+      setName('New Working Schedule');
+      setCompany('My Company');
+      setTimezone('Company timezone');
+      setStatus('Active');
+      setWorkDays(DEFAULT_WORK_DAYS);
+    }
+  }, [initialSchedule]);
 
   const activeWorkDaysCount = workDays.filter((d) => d.isWorkDay !== false).length;
   const weeklyHours = calculateWeeklyTotalHours(workDays);
@@ -100,15 +148,26 @@ export function ScheduleEditor({ initialSchedule, onSave, onCancel }) {
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (onSave) {
+      const activeDays = workDays.filter((d) => d.isWorkDay !== false);
+      const backendDays = activeDays.map((d) => ({
+        day: DAY_FULL_TO_ABBR[d.day] || (['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].includes(String(d.day).toUpperCase()) ? String(d.day).toUpperCase() : 'MON'),
+        startTime: d.startTime || '09:00',
+        endTime: d.endTime || '18:00',
+        breakMinutes: parseBreakMinutes(d.breakMinutes),
+      }));
+
       onSave({
-        id: initialSchedule?.id || `sch-${Date.now()}`,
-        name,
+        id: initialSchedule?.id || initialSchedule?._id || `sch-${Date.now()}`,
+        _id: initialSchedule?._id || initialSchedule?.id || `sch-${Date.now()}`,
+        name: name.trim() || 'Custom Schedule',
         company,
         timezone,
-        status,
-        daysPerWeek: activeWorkDaysCount,
+        status: status.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE',
+        daysPerWeek: activeDays.length,
         hoursPerWeek: `${Number(weeklyHours.toFixed(1))}h`,
+        weeklyHours: Number(weeklyHours.toFixed(2)),
         calculatedWeeklyHours: Number(weeklyHours.toFixed(2)),
+        days: backendDays,
         workDays,
       });
     }

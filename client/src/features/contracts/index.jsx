@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { fetchContracts, createContract, updateContract, resolveContract } from '../../lib/api/contracts';
-import { fetchSchedules, createSchedule } from '../../lib/api/schedules';
+import { fetchSchedules, createSchedule, updateSchedule } from '../../lib/api/schedules';
 import { fetchEmployees } from '../../lib/api/employees';
 import { mockEmployees } from '../../lib/api/mockData';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
@@ -179,9 +179,18 @@ export default function ContractsFeature() {
 
   const scheduleMutation = useMutation({
     mutationFn: createSchedule,
-    onSuccess: () => {
+    onSuccess: (newSch) => {
       queryClient.invalidateQueries(['schedules']);
       setIsScheduleModalOpen(false);
+      setSelectedSchedule(newSch);
+    },
+  });
+
+  const updateScheduleMutation = useMutation({
+    mutationFn: (data) => updateSchedule(data.id || data._id, data),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries(['schedules']);
+      setSelectedSchedule(updated);
     },
   });
 
@@ -481,14 +490,17 @@ export default function ContractsFeature() {
                       {schedules
                         .filter((s) => (s.name || '').toLowerCase().includes(scheduleSearch.toLowerCase()))
                         .map((sch) => {
-                          const isSelected = selectedSchedule?.id === sch.id;
-                          const daysCount = sch.daysPerWeek || sch.workDays?.filter((d) => d.isWorkDay !== false).length || 5;
-                          const hoursText = sch.hoursPerWeek || `${sch.calculatedWeeklyHours || 40}h`;
-                          const statusStr = sch.status || 'Active';
+                          const schId = sch.id || sch._id;
+                          const isSelected = (selectedSchedule?.id || selectedSchedule?._id) === schId;
+                          const activeDays = (sch.days || sch.workDays || []).filter((d) => d && d.isWorkDay !== false);
+                          const daysCount = sch.daysPerWeek || (activeDays.length > 0 ? activeDays.length : 5);
+                          const hoursVal = sch.weeklyHours ?? sch.calculatedWeeklyHours ?? (activeDays.length * 8);
+                          const hoursText = sch.hoursPerWeek || `${hoursVal}h`;
+                          const statusStr = sch.status ? (sch.status.toUpperCase() === 'ACTIVE' ? 'Active' : 'Inactive') : 'Active';
 
                           return (
                             <tr
-                              key={sch.id}
+                              key={schId}
                               onClick={() => setSelectedSchedule(sch)}
                               className={`cursor-pointer transition-colors ${isSelected
                                   ? 'bg-emerald-50/80 border-l-4 border-emerald-600 text-emerald-950 font-bold'
@@ -539,10 +551,18 @@ export default function ContractsFeature() {
           {/* Right Panel: Form View / Schedule Editor */}
           <div className="lg:col-span-6">
             <ScheduleEditor
+              key={selectedSchedule?.id || selectedSchedule?._id || 'default-schedule'}
               initialSchedule={selectedSchedule || schedules[0]}
               onSave={(updated) => {
-                scheduleMutation.mutate(updated);
-                setSelectedSchedule(updated);
+                const targetId = selectedSchedule?._id || selectedSchedule?.id;
+                if (targetId && !String(targetId).startsWith('sch-')) {
+                  updateScheduleMutation.mutate({ ...updated, id: targetId });
+                } else if (targetId && String(targetId).startsWith('sch-')) {
+                  // For mock / newly added
+                  updateScheduleMutation.mutate({ ...updated, id: targetId });
+                } else {
+                  scheduleMutation.mutate(updated);
+                }
               }}
               onCancel={() => setSelectedSchedule(null)}
             />
@@ -644,6 +664,8 @@ export default function ContractsFeature() {
         maxWidth="max-w-3xl"
       >
         <ScheduleEditor
+          key={isScheduleModalOpen ? 'modal-open' : 'modal-closed'}
+          initialSchedule={null}
           onSave={(data) => scheduleMutation.mutate(data)}
           onCancel={() => setIsScheduleModalOpen(false)}
         />

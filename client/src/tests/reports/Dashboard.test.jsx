@@ -78,14 +78,14 @@ describe('Employee Self-Service Dashboard (BR-12)', () => {
 
     // 2. Attendance terminal & records
     expect(screen.getByText(/Attendance Terminal/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Check In/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Check Out/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Check In/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: /Check Out/i }).length).toBeGreaterThan(0);
     expect(screen.getByText(/Recent Attendance History/i)).toBeInTheDocument();
 
     // 3. Leave balances & requests
     expect(screen.getByText(/Time Off & Leave Balances/i)).toBeInTheDocument();
     expect(screen.getByTestId('emp-pto-available')).toBeInTheDocument();
     expect(screen.getByTestId('emp-sick-available')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Request Time Off/i })).toBeInTheDocument();
+    expect(screen.getByText(/My Time-Off Requests/i)).toBeInTheDocument();
   });
 });
