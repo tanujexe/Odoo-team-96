@@ -88,7 +88,7 @@
   - **Tests required:** Check-in/out and correction authorization tests; allocation validity/insufficient-balance tests; approve/retry/refuse/cancel idempotency tests.
   - **Verify:** Server attendance/time-off suite using a MongoDB replica-set test environment for transaction paths.
 
-- [ ] **PP-08 — Attendance and time-off client workflow**
+- [x] **PP-08 — Attendance and time-off client workflow**
   - **Developer:** Developer 2
   - **Files/modules to modify:** `client/src/features/{attendance,time-off}/`, `client/src/lib/api/{attendance,timeOff}.js`, `client/src/tests/{attendance,timeOff}/`.
   - **Spec ref:** `spec.md > Components And Responsibilities > Attendance; Time off`; `PRD.md > 4.4-4.5; 10.2-10.3`.
