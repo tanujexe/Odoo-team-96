@@ -142,6 +142,11 @@ export default function AdminFeature() {
   });
 
   const handleRoleChange = (userId, newRole) => {
+    const userToUpdate = users.find((u) => u.id === userId);
+    if (userToUpdate?.email?.toLowerCase() === 'admin@peoplepay.com' || userToUpdate?.role === ROLES.SUPER_ADMIN) {
+      setErrorMsg('System Super Admin role is protected and cannot be modified.');
+      return;
+    }
     updateUserMutation.mutate({ userId, data: { role: newRole } });
   };
 
@@ -233,29 +238,41 @@ export default function AdminFeature() {
 
                     {/* Role Selector */}
                     <TableCell>
-                      <select
-                        aria-label={`Role selector for ${u.name}`}
-                        value={u.role}
-                        onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                        disabled={updateUserMutation.isPending}
-                        className={`text-xs border rounded-lg px-2.5 py-1.5 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer disabled:opacity-50 ${
-                          u.role === ROLES.ADMIN
-                            ? 'bg-purple-50 border-purple-300 text-purple-800'
-                            : u.role === ROLES.HR_PAYROLL_MANAGER
-                            ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                            : u.role === ROLES.HR_PAYROLL_USER
-                            ? 'bg-teal-50 border-teal-300 text-teal-800'
-                            : u.role === ROLES.HR_MANAGER
-                            ? 'bg-blue-50 border-blue-300 text-blue-800'
-                            : 'bg-slate-50 border-slate-300 text-slate-800'
-                        }`}
-                      >
-                        <option value={ROLES.EMPLOYEE}>EMPLOYEE (Default Access)</option>
-                        <option value={ROLES.HR_MANAGER}>HR_MANAGER (Human Resources)</option>
-                        <option value={ROLES.HR_PAYROLL_USER}>HR_PAYROLL_USER (Payroll Staff)</option>
-                        <option value={ROLES.HR_PAYROLL_MANAGER}>HR_PAYROLL_MANAGER (Payroll Lead)</option>
-                        <option value={ROLES.ADMIN}>ADMIN (Full Governance)</option>
-                      </select>
+                      {u.email?.toLowerCase() === 'admin@peoplepay.com' || u.role === ROLES.SUPER_ADMIN ? (
+                        <div
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-100 border border-purple-300 text-purple-900 text-xs font-bold w-fit cursor-not-allowed shadow-sm"
+                          title="System Super Admin role is protected and cannot be modified"
+                        >
+                          <ShieldCheck className="w-4 h-4 text-purple-700 shrink-0" />
+                          <span>
+                            {u.role === ROLES.SUPER_ADMIN ? 'SUPER_ADMIN (Protected Root)' : 'ADMIN (Full Governance - Protected)'}
+                          </span>
+                        </div>
+                      ) : (
+                        <select
+                          aria-label={`Role selector for ${u.name}`}
+                          value={u.role}
+                          onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                          disabled={updateUserMutation.isPending}
+                          className={`text-xs border rounded-lg px-2.5 py-1.5 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer disabled:opacity-50 ${
+                            u.role === ROLES.ADMIN
+                              ? 'bg-purple-50 border-purple-300 text-purple-800'
+                              : u.role === ROLES.HR_PAYROLL_MANAGER
+                              ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                              : u.role === ROLES.HR_PAYROLL_USER
+                              ? 'bg-teal-50 border-teal-300 text-teal-800'
+                              : u.role === ROLES.HR_MANAGER
+                              ? 'bg-blue-50 border-blue-300 text-blue-800'
+                              : 'bg-slate-50 border-slate-300 text-slate-800'
+                          }`}
+                        >
+                          <option value={ROLES.EMPLOYEE}>EMPLOYEE (Default Access)</option>
+                          <option value={ROLES.HR_MANAGER}>HR_MANAGER (Human Resources)</option>
+                          <option value={ROLES.HR_PAYROLL_USER}>HR_PAYROLL_USER (Payroll Staff)</option>
+                          <option value={ROLES.HR_PAYROLL_MANAGER}>HR_PAYROLL_MANAGER (Payroll Lead)</option>
+                          <option value={ROLES.ADMIN}>ADMIN (Full Governance)</option>
+                        </select>
+                      )}
                     </TableCell>
 
                     {/* Employee Code Selector & Verification */}

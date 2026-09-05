@@ -6,6 +6,7 @@ export const ROLES = {
   HR_PAYROLL_USER: 'HR_PAYROLL_USER',
   HR_PAYROLL_MANAGER: 'HR_PAYROLL_MANAGER',
   ADMIN: 'ADMIN',
+  SUPER_ADMIN: 'SUPER_ADMIN',
 };
 
 const userSchema = new mongoose.Schema(
