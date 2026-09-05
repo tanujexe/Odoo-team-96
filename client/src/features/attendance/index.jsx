@@ -170,6 +170,14 @@ export default function AttendanceFeature() {
 
   // Filtered Logs list for table
   const filteredLogs = logs.filter((log) => {
+    if (!isHrOrAdmin) {
+      const isSelf =
+        (currentEmpId && (log.employeeId === currentEmpId || log._id === currentEmpId)) ||
+        (user?.name && log.employeeName === user.name) ||
+        (user?.employeeCode && log.employeeCode === user.employeeCode);
+      if (!isSelf) return false;
+    }
+
     const matchesSearch =
       !search ||
       log.employeeName?.toLowerCase().includes(search.toLowerCase()) ||
@@ -288,19 +296,21 @@ export default function AttendanceFeature() {
                 Today
               </button>
 
-              <select
-                aria-label="Filter attendance by employee"
-                value={selectedFilterEmp}
-                onChange={(e) => setSelectedFilterEmp(e.target.value)}
-                className="text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              >
-                <option value="">Employees: All</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim()}
-                  </option>
-                ))}
-              </select>
+              {isHrOrAdmin && (
+                <select
+                  aria-label="Filter attendance by employee"
+                  value={selectedFilterEmp}
+                  onChange={(e) => setSelectedFilterEmp(e.target.value)}
+                  className="text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                >
+                  <option value="">Employees: All</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim()}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* Attendance Table */}

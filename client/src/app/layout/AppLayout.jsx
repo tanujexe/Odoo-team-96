@@ -33,7 +33,7 @@ export function AppLayout() {
       label: 'Employees',
       path: '/employees',
       icon: Users,
-      roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_MANAGER, ROLES.EMPLOYEE],
+      roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_MANAGER],
     },
     {
       label: 'Contracts & Schedules',

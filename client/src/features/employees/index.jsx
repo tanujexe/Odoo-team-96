@@ -58,6 +58,36 @@ export default function EmployeesFeature() {
     queryFn: () => fetchEmployees({ search, departmentId: selectedDept, status: selectedStatus }),
   });
 
+  const isEmployeeRole = role === ROLES.EMPLOYEE;
+  const currentEmpId = user?.employeeId;
+
+  const visibleEmployees = isEmployeeRole
+    ? employees.filter(
+        (e) =>
+          (currentEmpId && (e.id === currentEmpId || e._id === currentEmpId)) ||
+          (user?.email && e.email?.toLowerCase() === user.email.toLowerCase()) ||
+          (user?.employeeCode && e.employeeCode === user.employeeCode) ||
+          (user?.name && e.name?.toLowerCase() === user.name.toLowerCase())
+      )
+    : employees;
+
+  const finalEmployeesList =
+    isEmployeeRole && visibleEmployees.length === 0
+      ? [
+          {
+            id: currentEmpId || 'emp-self',
+            firstName: user?.name ? user.name.split(' ')[0] : 'My',
+            lastName: user?.name ? user.name.split(' ').slice(1).join(' ') || 'Profile' : 'Profile',
+            name: user?.name || 'My Employee Profile',
+            email: user?.email || 'employee@company.com',
+            employeeCode: user?.employeeCode || 'EMP-SELF',
+            jobTitle: 'Team Member',
+            department: 'General',
+            status: 'ACTIVE',
+          },
+        ]
+      : visibleEmployees;
+
   const { data: detailData, isLoading: isDetailLoading } = useQuery({
     queryKey: ['employeeDetail', selectedEmployeeId],
     queryFn: () => fetchEmployeeById(selectedEmployeeId),
