@@ -27,6 +27,15 @@ export async function apiClient(endpoint, { body, method = 'GET', headers = {}, 
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
+      if (response.status === 401) {
+        // Clear token on unauthorized if not on login endpoint
+        if (!endpoint.includes('/login')) {
+          localStorage.removeItem('peoplepay_token');
+          localStorage.removeItem('peoplepay_session');
+          window.dispatchEvent(new CustomEvent('peoplepay:unauthorized'));
+        }
+      }
+
       const error = data?.error || {
         message: response.statusText || 'An error occurred during network request',
         code: `HTTP_${response.status}`,
@@ -36,8 +45,8 @@ export async function apiClient(endpoint, { body, method = 'GET', headers = {}, 
 
     return data;
   } catch (err) {
-    // If backend isn't up yet during initial frontend scaffolding, return informative error
-    console.warn(`[API Client] Network failure or server offline for ${endpoint}:`, err);
+    // If backend isn't up yet during offline development, pass error forward
+    console.warn(`[API Client] Error for ${endpoint}:`, err);
     throw err;
   }
 }
