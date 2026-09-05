@@ -1,8 +1,33 @@
 import mongoose from 'mongoose';
 import { Contract } from '../models/Contract.js';
+import { Employee } from '../models/Employee.js';
 
 export async function createContract(data) {
-  const contract = new Contract(data);
+  const payload = { ...data };
+
+  if (payload.endDate === '') {
+    payload.endDate = null;
+  }
+
+  if (payload.employeeId && mongoose.isValidObjectId(payload.employeeId)) {
+    const emp = await Employee.findById(payload.employeeId);
+    if (emp) {
+      if (!payload.departmentId && emp.departmentId) {
+        payload.departmentId = emp.departmentId;
+      }
+      if (!payload.position && emp.jobPosition) {
+        payload.position = emp.jobPosition;
+      }
+    }
+  }
+
+  if (!payload.contractCode) {
+    const year = new Date().getFullYear();
+    const count = await Contract.countDocuments();
+    payload.contractCode = `CNT-${year}-${String(count + 1).padStart(3, '0')}`;
+  }
+
+  const contract = new Contract(payload);
   await contract.save();
   return contract.populate('employeeId departmentId salaryStructureId');
 }

@@ -31,17 +31,25 @@ const contractSchema = new mongoose.Schema(
     departmentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Department',
-      required: true,
+      default: null,
     },
     position: {
       type: String,
-      required: true,
+      default: 'Employee',
       trim: true,
     },
     salaryStructureId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'SalaryStructure',
       default: null,
+    },
+    workingSchedule: {
+      type: String,
+      default: '40 Hours / Week',
+    },
+    notes: {
+      type: String,
+      default: '',
     },
     status: {
       type: String,
