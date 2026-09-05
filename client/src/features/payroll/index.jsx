@@ -402,7 +402,7 @@ export default function PayrollFeature() {
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          Salary Rules
+          Salary Rules & Configuration
         </button>
       </div>
 

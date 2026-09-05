@@ -77,6 +77,7 @@ export function SalaryRulesList({
               size="md"
               icon={Plus}
               onClick={onNewRule}
+              aria-label="Add Salary Rule"
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-sm"
             >
               NEW
