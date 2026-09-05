@@ -1,4 +1,4 @@
-# PeoplePay360
+# PeoplePay360.
 
 HR and payroll management application with a React frontend, Node.js/Express backend, and MongoDB database.
 
