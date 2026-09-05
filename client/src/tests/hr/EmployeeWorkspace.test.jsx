@@ -5,6 +5,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import EmployeesFeature from '../../features/employees';
 
+import { AuthProvider, ROLES } from '../../app/auth/AuthContext';
+
 describe('Employee Directory & Workspace', () => {
   it('renders employee list and allows searching', async () => {
     const queryClient = new QueryClient({
@@ -13,9 +15,11 @@ describe('Employee Directory & Workspace', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
-          <EmployeesFeature />
-        </MemoryRouter>
+        <AuthProvider initialUser={{ name: 'Sarah Admin', role: ROLES.ADMIN }}>
+          <MemoryRouter>
+            <EmployeesFeature />
+          </MemoryRouter>
+        </AuthProvider>
       </QueryClientProvider>
     );
 
@@ -31,9 +35,11 @@ describe('Employee Directory & Workspace', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
-          <EmployeesFeature />
-        </MemoryRouter>
+        <AuthProvider initialUser={{ name: 'Sarah Admin', role: ROLES.ADMIN }}>
+          <MemoryRouter>
+            <EmployeesFeature />
+          </MemoryRouter>
+        </AuthProvider>
       </QueryClientProvider>
     );
 

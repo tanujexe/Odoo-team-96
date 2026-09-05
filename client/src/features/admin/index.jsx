@@ -20,9 +20,6 @@ import {
   Save,
   X,
   Sparkles,
-  Link2,
-  User,
-  PlusCircle,
 } from 'lucide-react';
 import { ROLES } from '../../app/auth/AuthContext';
 
@@ -53,14 +50,11 @@ export default function AdminFeature() {
   const [editingUserId, setEditingUserId] = useState(null);
   const [editingEmpCode, setEditingEmpCode] = useState('');
 
-  // Mode for Employee ID link in Create User Modal: 'new' | 'existing' | 'none'
-  const [empLinkMode, setEmpLinkMode] = useState('new');
-
   // New User Form State
   const [newUserForm, setNewUserForm] = useState({
     name: '',
     email: '',
-    password: 'Password123!',
+    password: '',
     role: ROLES.EMPLOYEE,
     employeeCode: '',
     jobPosition: '',
@@ -77,14 +71,13 @@ export default function AdminFeature() {
     queryFn: fetchEmployees,
   });
 
-  // When opening modal or when employees load, auto-suggest next Employee ID if in 'new' mode
+  // When opening modal or when employees load, auto-suggest next Employee ID
   const handleOpenCreateModal = () => {
     const nextCode = getNextEmployeeCode(employees);
-    setEmpLinkMode('new');
     setNewUserForm({
       name: '',
       email: '',
-      password: 'Password123!',
+      password: '',
       role: ROLES.EMPLOYEE,
       employeeCode: nextCode,
       jobPosition: 'Employee',
@@ -122,7 +115,7 @@ export default function AdminFeature() {
       setNewUserForm({
         name: '',
         email: '',
-        password: 'Password123!',
+        password: '',
         role: ROLES.EMPLOYEE,
         employeeCode: '',
         jobPosition: '',
@@ -156,14 +149,9 @@ export default function AdminFeature() {
 
   const handleCreateUserSubmit = (e) => {
     e.preventDefault();
-    let empCodeToSubmit = null;
-    if (empLinkMode === 'new' || empLinkMode === 'existing') {
-      empCodeToSubmit = newUserForm.employeeCode.trim() || null;
-    }
-
     createUserMutation.mutate({
       ...newUserForm,
-      employeeCode: empCodeToSubmit,
+      employeeCode: newUserForm.employeeCode.trim() || null,
     });
   };
 
@@ -389,6 +377,7 @@ export default function AdminFeature() {
             <Input
               label="Password"
               type="password"
+              placeholder="Enter password"
               value={newUserForm.password}
               onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
               required
@@ -399,7 +388,7 @@ export default function AdminFeature() {
               value={newUserForm.role}
               onChange={(e) => setNewUserForm({ ...newUserForm, role: e.target.value })}
             >
-              <option value={ROLES.EMPLOYEE}>EMPLOYEE (Self-Service)</option>
+              <option value={ROLES.EMPLOYEE}>EMPLOYEE</option>
               <option value={ROLES.HR_MANAGER}>HR_MANAGER (Human Resources)</option>
               <option value={ROLES.HR_PAYROLL_USER}>HR_PAYROLL_USER (Payroll Staff)</option>
               <option value={ROLES.HR_PAYROLL_MANAGER}>HR_PAYROLL_MANAGER (Payroll Lead)</option>
@@ -407,64 +396,16 @@ export default function AdminFeature() {
             </Select>
           </div>
 
-          {/* Employee ID Assignment Mode Selection */}
+          {/* Employee ID Assignment */}
           <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
             <div>
               <label className="block text-xs font-bold text-slate-800 mb-1.5">
                 Employee Profile & ID Assignment
               </label>
-              <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-200/70 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmpLinkMode('new');
-                    if (!newUserForm.employeeCode) {
-                      setNewUserForm((prev) => ({ ...prev, employeeCode: getNextEmployeeCode(employees) }));
-                    }
-                  }}
-                  className={`py-1.5 px-2 rounded-md text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                    empLinkMode === 'new'
-                      ? 'bg-white shadow text-emerald-800'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <PlusCircle className="w-3.5 h-3.5" />
-                  Assign New ID
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setEmpLinkMode('existing')}
-                  className={`py-1.5 px-2 rounded-md text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                    empLinkMode === 'existing'
-                      ? 'bg-white shadow text-emerald-800'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Link2 className="w-3.5 h-3.5" />
-                  Link Existing
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setEmpLinkMode('none')}
-                  className={`py-1.5 px-2 rounded-md text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                    empLinkMode === 'none'
-                      ? 'bg-white shadow text-slate-900'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <User className="w-3.5 h-3.5" />
-                  No Employee ID
-                </button>
-              </div>
-            </div>
-
-            {empLinkMode === 'new' && (
               <div className="space-y-3 pt-1">
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                    New Employee ID / Code
+                    Employee ID / Code
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -527,42 +468,7 @@ export default function AdminFeature() {
                   </div>
                 </div>
               </div>
-            )}
-
-            {empLinkMode === 'existing' && (
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                  Select Existing Employee from Database
-                </label>
-                <select
-                  value={newUserForm.employeeCode}
-                  onChange={(e) => setNewUserForm({ ...newUserForm, employeeCode: e.target.value })}
-                  className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-                  required
-                >
-                  <option value="">-- Choose Employee Record --</option>
-                  {employees.map((emp) => {
-                    const empCode = emp.employeeCode || emp.id;
-                    const empName = emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim();
-                    const empJob = emp.jobTitle || emp.jobPosition || '';
-                    return (
-                      <option key={emp.id} value={empCode}>
-                        {empCode} - {empName} {empJob ? `(${empJob})` : ''}
-                      </option>
-                    );
-                  })}
-                </select>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Links this new user login account to an already existing employee record in the database.
-                </p>
-              </div>
-            )}
-
-            {empLinkMode === 'none' && (
-              <p className="text-[11px] text-slate-600 bg-slate-100 p-2.5 rounded-lg">
-                Creates a standalone system account with no linked employee profile (suitable for external administrators).
-              </p>
-            )}
+            </div>
           </div>
 
           <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">

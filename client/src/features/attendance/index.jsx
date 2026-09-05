@@ -211,7 +211,9 @@ export default function AttendanceFeature() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Employee Check-In Terminal</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                  Self-Service Terminal • Check-In
+                </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
                   {isCheckedIn ? 'Checked In' : 'Checked Out'}
                 </span>
@@ -418,7 +420,7 @@ export default function AttendanceFeature() {
                       onClick={handleEditClick}
                       className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
                     >
-                      EDIT
+                      EDIT / Correct
                     </Button>
                   ) : (
                     <div className="flex items-center gap-2">

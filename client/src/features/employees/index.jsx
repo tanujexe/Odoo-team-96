@@ -298,7 +298,7 @@ export default function EmployeesFeature() {
                   className="w-full mt-2"
                   onClick={() => setSelectedEmployeeId(emp.id || emp._id)}
                 >
-                  Open Employee Hub
+                  Workspace
                 </Button>
               </CardContent>
             </Card>
