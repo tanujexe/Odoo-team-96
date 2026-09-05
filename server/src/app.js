@@ -18,6 +18,7 @@ import salaryRulesRouter from './routes/salaryRules.js';
 import payrunsRouter from './routes/payruns.js';
 import payslipsRouter from './routes/payslips.js';
 import dashboardRouter from './routes/dashboard.js';
+import usersRouter from './routes/users.js';
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use(express.urlencoded({ extended: true }));
 // Mount health and API routes
 app.use('/api', healthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/users', usersRouter);
 app.use('/api/employees', employeesRouter);
 app.use('/api/schedules', schedulesRouter);
 app.use('/api/contracts', contractsRouter);

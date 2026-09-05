@@ -4,14 +4,14 @@ import { useAuth, ROLES, DEFAULT_USERS } from '../../app/auth/AuthContext';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, AlertCircle, Lock } from 'lucide-react';
 
 export default function LoginFeature() {
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [email, setEmail] = useState('hrmanager@peoplepay.com');
+  const [email, setEmail] = useState('payrollmanager@peoplepay.com');
   const [password, setPassword] = useState('Password123!');
   const [selectedRole, setSelectedRole] = useState(ROLES.HR_PAYROLL_MANAGER);
   const [errorMessage, setErrorMessage] = useState('');
@@ -34,7 +34,7 @@ export default function LoginFeature() {
       await login({ email, password, role: selectedRole });
       navigate(from, { replace: true });
     } catch (err) {
-      setErrorMessage(err.message || 'Invalid email or password');
+      setErrorMessage(err.message || 'Invalid corporate email or password');
     }
   };
 
@@ -51,6 +51,11 @@ export default function LoginFeature() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <Card className="border-slate-800 bg-slate-950/90 shadow-2xl">
           <CardContent className="p-8 space-y-6">
+            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs flex items-center gap-2.5">
+              <Lock className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>User accounts are managed by System Administrators. Self-registration is disabled.</span>
+            </div>
+
             {errorMessage && (
               <div data-testid="login-error-alert" className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2.5">
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
@@ -62,6 +67,7 @@ export default function LoginFeature() {
               <Input
                 label="Corporate Email"
                 type="email"
+                placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

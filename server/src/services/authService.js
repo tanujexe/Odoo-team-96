@@ -93,3 +93,117 @@ export async function getUserById(userId) {
     status: user.status,
   };
 }
+
+export async function registerUser({ name, email, password }) {
+  const cleanEmail = email.toLowerCase().trim();
+  const existing = await User.findOne({ email: cleanEmail });
+  if (existing) {
+    const err = new Error('An account with this email already exists');
+    err.code = 'DUPLICATE_EMAIL';
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const passwordHash = await hashPassword(password);
+  // STRICT RULE: All new self-registered accounts DEFAULT strictly to EMPLOYEE role
+  const newUser = new User({
+    name: name.trim(),
+    email: cleanEmail,
+    passwordHash,
+    role: 'EMPLOYEE',
+    status: 'ACTIVE',
+  });
+
+  await newUser.save();
+  const token = generateToken(newUser);
+
+  return {
+    user: {
+      id: newUser._id.toString(),
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      employeeId: null,
+      status: newUser.status,
+    },
+    token,
+  };
+}
+
+export async function getAllUsers() {
+  const users = await User.find().select('-passwordHash').populate('employeeId').sort({ createdAt: -1 });
+  return users.map((u) => ({
+    id: u._id.toString(),
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    status: u.status,
+    employeeId: extractEmployeeId(u),
+    createdAt: u.createdAt,
+  }));
+}
+
+export async function updateUserRole(userId, newRole) {
+  return updateUserAccount(userId, { role: newRole });
+}
+
+export async function updateUserAccount(userId, data) {
+  const user = await User.findById(userId);
+  if (!user) {
+    const err = new Error('User account not found');
+    err.code = 'USER_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (data.role) user.role = data.role;
+  if (data.status) user.status = data.status;
+  if (data.employeeId !== undefined) {
+    user.employeeId = (data.employeeId && data.employeeId.length === 24) ? data.employeeId : null;
+  }
+
+  await user.save();
+  await user.populate('employeeId');
+
+  return {
+    id: user._id.toString(),
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    status: user.status,
+    employeeId: extractEmployeeId(user),
+  };
+}
+
+export async function adminCreateUser({ name, email, password, role, employeeId }) {
+  const cleanEmail = email.toLowerCase().trim();
+  const existing = await User.findOne({ email: cleanEmail });
+  if (existing) {
+    const err = new Error('An account with this email already exists');
+    err.code = 'DUPLICATE_EMAIL';
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const passwordHash = await hashPassword(password);
+  const newUser = new User({
+    name: name.trim(),
+    email: cleanEmail,
+    passwordHash,
+    role: role || 'EMPLOYEE',
+    employeeId: (employeeId && employeeId.length === 24) ? employeeId : null,
+    status: 'ACTIVE',
+  });
+
+  await newUser.save();
+  await newUser.populate('employeeId');
+
+  return {
+    id: newUser._id.toString(),
+    name: newUser.name,
+    email: newUser.email,
+    role: newUser.role,
+    status: newUser.status,
+    employeeId: extractEmployeeId(newUser),
+  };
+}
