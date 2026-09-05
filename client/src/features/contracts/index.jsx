@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { fetchContracts, createContract, updateContract, resolveContract } from '../../lib/api/contracts';
-import { fetchSchedules, createSchedule } from '../../lib/api/schedules';
+import { isEmployeeCheckedIn } from '../../lib/api/attendance';
+import { fetchSchedules, createSchedule, updateSchedule } from '../../lib/api/schedules';
+import { fetchSalaryStructures } from '../../lib/api/payroll';
 import { fetchEmployees } from '../../lib/api/employees';
 import { mockEmployees } from '../../lib/api/mockData';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
@@ -204,6 +206,11 @@ export default function ContractsFeature() {
     queryFn: fetchSchedules,
   });
 
+  const { data: salaryStructures = [] } = useQuery({
+    queryKey: ['salaryStructures'],
+    queryFn: fetchSalaryStructures,
+  });
+
   const contractMutation = useMutation({
     mutationFn: createContract,
     onSuccess: () => {
@@ -226,9 +233,18 @@ export default function ContractsFeature() {
 
   const scheduleMutation = useMutation({
     mutationFn: createSchedule,
-    onSuccess: () => {
+    onSuccess: (newSch) => {
       queryClient.invalidateQueries(['schedules']);
       setIsScheduleModalOpen(false);
+      setSelectedSchedule(newSch);
+    },
+  });
+
+  const updateScheduleMutation = useMutation({
+    mutationFn: (data) => updateSchedule(data.id || data._id, data),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries(['schedules']);
+      setSelectedSchedule(updated);
     },
   });
 
@@ -411,142 +427,81 @@ export default function ContractsFeature() {
               {isContractsLoading ? (
                 <LoadingState message="Loading contracts..." />
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-100 bg-[#FAF8F5]/60 text-slate-400 text-[10px] font-extrabold tracking-wider uppercase">
-                        <th className="py-3.5 px-4 w-10">
-                          <input type="checkbox" className="rounded border-slate-300 text-slate-900 focus:ring-0" />
-                        </th>
-                        <th className="py-3.5 px-4">CONTRACT CODE</th>
-                        <th className="py-3.5 px-4">EMPLOYEE</th>
-                        <th className="py-3.5 px-4">DEPARTMENT &amp; ROLE</th>
-                        <th className="py-3.5 px-4">START DATE</th>
-                        <th className="py-3.5 px-4">END DATE</th>
-                        <th className="py-3.5 px-4">WAGE / MONTH</th>
-                        <th className="py-3.5 px-4">SALARY STRUCTURE</th>
-                        <th className="py-3.5 px-4 text-right">ACTIONS</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white text-xs">
-                      {paginatedContracts.map((cnt, idx) => {
-                        const code = cnt.contractCode || (cnt.id ? `CON/2026/00${String(cnt.id).slice(-2)}` : 'CON/2026/0042');
-                        const isPrior = cnt.status === 'EXPIRED' || cnt.status === 'SUPERSEDED' || cnt.isPrior;
-                        const ac = AVATAR_COLORS[idx % AVATAR_COLORS.length];
-                        const empName = cnt.employeeName || 'Unassigned Employee';
-                        const initials = empName.split(' ').map((n) => n[0]).join('').slice(0, 3);
-                        
-                        return (
-                          <tr
-                            key={cnt.id || cnt._id || idx}
-                            onClick={() => {
-                              setSelectedContract(cnt);
-                              setContractSubView('form');
-                            }}
-                            className={`cursor-pointer transition-colors ${
-                              isPrior ? 'bg-slate-50/40 text-slate-400 hover:bg-slate-50' : 'hover:bg-slate-50/80 text-slate-800'
-                            }`}
-                          >
-                            <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
-                              <input type="checkbox" className="rounded border-slate-300 text-slate-900 focus:ring-0" />
-                            </td>
-
-                            {/* Contract Code */}
-                            <td className="py-4 px-4 font-mono font-bold text-[#2563EB]">
-                              <span className="flex items-center gap-1.5">
-                                <span>{code}</span>
-                                {isPrior && (
-                                  <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-500 text-[10px] font-normal">
-                                    Prior
-                                  </span>
-                                )}
-                              </span>
-                            </td>
-
-                            {/* Employee */}
-                            <td className="py-4 px-4">
-                              <div className="flex items-center gap-3">
-                                <div
-                                  className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
-                                  style={isPrior ? { background: '#E2E8F0', color: '#64748B' } : { background: ac.bg, color: ac.text }}
-                                >
-                                  {initials}
-                                </div>
-                                <div>
-                                  <p className={`font-bold ${isPrior ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
-                                    {empName}
-                                  </p>
-                                  <p className="text-[11px] text-slate-400 font-mono">
-                                    {cnt.employeeCode || 'EMP-0418'}
-                                    {isPrior && <span className="ml-1 italic text-slate-400 font-sans">(Superseded on promotion)</span>}
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
-
-                            {/* Department & Role */}
-                            <td className="py-4 px-4">
-                              <p className="font-bold text-slate-800">{cnt.department || 'Finance'}</p>
-                              <p className="text-slate-500 text-[11px]">{cnt.jobPosition || cnt.position || 'Payroll Specialist'}</p>
-                            </td>
-
-                            {/* Start Date */}
-                            <td className="py-4 px-4 font-medium text-slate-700">
-                              {fmtContractDate(cnt.startDate)}
-                            </td>
-
-                            {/* End Date */}
-                            <td className="py-4 px-4 text-slate-500">
-                              {fmtContractDate(cnt.endDate)}
-                            </td>
-
-                            {/* Wage / Month */}
-                            <td className="py-4 px-4 font-mono font-extrabold text-slate-900">
-                              ₹{Number(cnt.wage || 85000).toLocaleString('en-IN')}
-                            </td>
-
-                            {/* Salary Structure */}
-                            <td className="py-4 px-4 font-medium text-slate-700">
-                              {cnt.salaryStructure || cnt.salaryStructureName || 'Standard Executive Structure'}
-                            </td>
-
-                            {/* Actions */}
-                            <td className="py-4 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedContract(cnt);
-                                  setContractSubView('form');
-                                }}
-                                className="px-3.5 py-1 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
-                              >
-                                Open Form
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Contract Code</TableHead>
+                      <TableHead>Employee</TableHead>
+                      <TableHead>Wage / Salary</TableHead>
+                      <TableHead>Start Date</TableHead>
+                      <TableHead>End Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {contracts.map((cnt) => {
+                      const code = cnt.contractCode || (cnt.id ? `CON/2026/00${String(cnt.id).slice(-2)}` : 'CON/2026/0042');
+                      return (
+                        <TableRow
+                          key={cnt.id || cnt._id}
+                          onClick={() => {
+                            setSelectedContract(cnt);
+                            setContractSubView('form');
+                          }}
+                          className="cursor-pointer hover:bg-emerald-50/50 transition-colors group"
+                        >
+                          <TableCell className="font-mono text-xs font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">
+                            <span className="flex items-center gap-1.5">
+                              {code}
+                              <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </span>
+                          </TableCell>
+                          <TableCell className="font-semibold text-slate-900">
+                            <div>
+                              <span>{cnt.employeeName || 'Unassigned Employee'}</span>
+                              {cnt.employeeCode && (
+                                <span className="text-[11px] text-slate-500 font-mono block mt-0.5">
+                                  {cnt.employeeCode}
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-mono font-bold text-emerald-700">
+                            ₹{Number(cnt.wage || 85000).toLocaleString('en-IN')} / mo
+                          </TableCell>
+                          <TableCell className="text-xs text-slate-600">{formatDate(cnt.startDate)}</TableCell>
+                          <TableCell className="text-xs text-slate-400">{cnt.endDate ? formatDate(cnt.endDate) : '--'}</TableCell>
+                          <TableCell>
+                            <Badge status={cnt.status} />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedContract(cnt);
+                                setContractSubView('form');
+                              }}
+                            >
+                              Open Form
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               )}
-
-              <Pagination
-                currentPage={currentPage}
-                totalRecords={filteredContractsList.length}
-                pageSize={pageSize}
-                onPageChange={(page) => setCurrentPage(page)}
-                onPageSizeChange={(size) => {
-                  setPageSize(size);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
+            </Card>
           ) : (
+            /* Form View of One Contract matching exact wireframe design */
             <ContractFormView
               contract={selectedContract || contractForm}
               allEmployees={allEmployees}
               schedules={schedules}
+              salaryStructures={salaryStructures}
               onSave={(formData) => {
                 if (selectedContract?._id || selectedContract?.id) {
                   updateContractMutation.mutate({ ...formData, id: selectedContract.id || selectedContract._id });
@@ -677,14 +632,17 @@ export default function ContractsFeature() {
                       {schedules
                         .filter((s) => (s.name || '').toLowerCase().includes(scheduleSearch.toLowerCase()))
                         .map((sch) => {
-                          const isSelected = selectedSchedule?.id === sch.id;
-                          const daysCount = sch.daysPerWeek || sch.workDays?.filter((d) => d.isWorkDay !== false).length || 5;
-                          const hoursText = sch.hoursPerWeek || `${sch.calculatedWeeklyHours || 40}h`;
-                          const statusStr = sch.status || 'Active';
+                          const schId = sch.id || sch._id;
+                          const isSelected = (selectedSchedule?.id || selectedSchedule?._id) === schId;
+                          const activeDays = (sch.days || sch.workDays || []).filter((d) => d && d.isWorkDay !== false);
+                          const daysCount = sch.daysPerWeek || (activeDays.length > 0 ? activeDays.length : 5);
+                          const hoursVal = sch.weeklyHours ?? sch.calculatedWeeklyHours ?? (activeDays.length * 8);
+                          const hoursText = sch.hoursPerWeek || `${hoursVal}h`;
+                          const statusStr = sch.status ? (sch.status.toUpperCase() === 'ACTIVE' ? 'Active' : 'Inactive') : 'Active';
 
                           return (
                             <tr
-                              key={sch.id}
+                              key={schId}
                               onClick={() => setSelectedSchedule(sch)}
                               className={`cursor-pointer transition-colors ${isSelected
                                   ? 'bg-emerald-50/80 border-l-4 border-emerald-600 text-emerald-950 font-bold'
@@ -733,10 +691,18 @@ export default function ContractsFeature() {
 
           <div className="lg:col-span-6">
             <ScheduleEditor
+              key={selectedSchedule?.id || selectedSchedule?._id || 'default-schedule'}
               initialSchedule={selectedSchedule || schedules[0]}
               onSave={(updated) => {
-                scheduleMutation.mutate(updated);
-                setSelectedSchedule(updated);
+                const targetId = selectedSchedule?._id || selectedSchedule?.id;
+                if (targetId && !String(targetId).startsWith('sch-')) {
+                  updateScheduleMutation.mutate({ ...updated, id: targetId });
+                } else if (targetId && String(targetId).startsWith('sch-')) {
+                  // For mock / newly added
+                  updateScheduleMutation.mutate({ ...updated, id: targetId });
+                } else {
+                  scheduleMutation.mutate(updated);
+                }
               }}
               onCancel={() => setSelectedSchedule(null)}
             />
@@ -824,6 +790,124 @@ export default function ContractsFeature() {
           </Card>
         </div>
       )}
+
+      {/* New Schedule Modal */}
+      <Modal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        title="Create Working Schedule"
+        maxWidth="max-w-3xl"
+      >
+        <ScheduleEditor
+          onSave={(data) => scheduleMutation.mutate(data)}
+          onCancel={() => setIsScheduleModalOpen(false)}
+        />
+      </Modal>
+
+      {/* New Contract Modal */}
+      <Modal
+        isOpen={isContractModalOpen}
+        onClose={() => setIsContractModalOpen(false)}
+        title="Add Employment Contract"
+        description="Attach wage and salary terms to an active employee record"
+        maxWidth="max-w-lg"
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            contractMutation.mutate(contractForm);
+          }}
+          className="space-y-4"
+        >
+          <Input
+            label="Contract Code"
+            placeholder="e.g. CNT-2026-004"
+            value={contractForm.contractCode}
+            onChange={(e) => setContractForm({ ...contractForm, contractCode: e.target.value })}
+            required
+          />
+
+          <Select
+            label="Employee"
+            value={contractForm.employeeId}
+            onChange={(e) => {
+              const selectedId = e.target.value;
+              const emp = allEmployees.find((x) => (x.id || x._id) === selectedId);
+              const fullName = emp ? `${emp.firstName || emp.name || ''} ${emp.lastName || ''}`.trim() : 'Selected Employee';
+              setContractForm({
+                ...contractForm,
+                employeeId: selectedId,
+                employeeName: fullName,
+              });
+            }}
+          >
+            {allEmployees.map((emp) => {
+              const empId = emp.id || emp._id;
+              const empName = `${emp.firstName || emp.name || ''} ${emp.lastName || ''}`.trim();
+              const code = emp.employeeCode ? ` (${emp.employeeCode})` : '';
+              return (
+                <option key={empId} value={empId}>
+                  {empName}{code}
+                </option>
+              );
+            })}
+          </Select>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Base Wage (Monthly $)"
+              type="number"
+              value={contractForm.wage}
+              onChange={(e) => setContractForm({ ...contractForm, wage: e.target.value })}
+              required
+            />
+            <Select
+              label="Status"
+              value={contractForm.status}
+              onChange={(e) => setContractForm({ ...contractForm, status: e.target.value })}
+            >
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="DRAFT">DRAFT</option>
+              <option value="EXPIRED">EXPIRED</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Start Date"
+              type="date"
+              value={contractForm.startDate}
+              onChange={(e) => setContractForm({ ...contractForm, startDate: e.target.value })}
+              required
+            />
+            <Input
+              label="End Date (Optional)"
+              type="date"
+              value={contractForm.endDate}
+              onChange={(e) => setContractForm({ ...contractForm, endDate: e.target.value })}
+            />
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+            <Button variant="outline" size="sm" onClick={() => setIsContractModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" size="sm" isLoading={contractMutation.isPending}>
+              Create Contract
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Form View of One Contract Modal (Popup) */}
+      <ContractFormViewModal
+        isOpen={!!selectedContract}
+        onClose={() => setSelectedContract(null)}
+        contract={selectedContract}
+        onSave={(data) => updateContractMutation.mutate(data)}
+        isSaving={updateContractMutation.isPending}
+      />
     </div>
   );
 }

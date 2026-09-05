@@ -1,8 +1,21 @@
 import { ROLES } from '../models/User.js';
+import { Employee } from '../models/Employee.js';
 
-export function enforceEmployeeSelfService(req, res, next) {
+export async function enforceEmployeeSelfService(req, res, next) {
   if (!req.actor) {
     return res.fail('UNAUTHORIZED', 'Authentication context missing', 401);
+  }
+
+  // Auto-link employeeId by email if unlinked in database
+  if (!req.actor.employeeId && req.actor.email) {
+    try {
+      const emp = await Employee.findOne({ email: req.actor.email.toLowerCase().trim() });
+      if (emp) {
+        req.actor.employeeId = emp._id.toString();
+      }
+    } catch (err) {
+      console.warn('[SelfService] Auto-link employee lookup error:', err);
+    }
   }
 
   // HR Managers, HR Payroll Users/Managers, and Admins can query any employee

@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { fetchEmployees, createEmployee, fetchEmployeeById } from '../../lib/api/employees';
 import { isEmployeeCheckedIn } from '../../lib/api/attendance';
 import { fetchContracts } from '../../lib/api/contracts';
+import { fetchSchedules } from '../../lib/api/schedules';
+import { fetchSalaryStructures } from '../../lib/api/payroll';
 import { createUserApi } from '../../lib/api/users';
 import { mockDepartments } from '../../lib/api/mockData';
 import { useAuth, ROLES } from '../../app/auth/AuthContext';
@@ -144,6 +146,16 @@ export default function EmployeesFeature() {
   const { data: contracts = [] } = useQuery({
     queryKey: ['contracts'],
     queryFn: () => fetchContracts(),
+  });
+
+  const { data: schedules = [] } = useQuery({
+    queryKey: ['schedules'],
+    queryFn: fetchSchedules,
+  });
+
+  const { data: salaryStructures = [] } = useQuery({
+    queryKey: ['salaryStructures'],
+    queryFn: fetchSalaryStructures,
   });
 
   const isEmployeeRole = role === ROLES.EMPLOYEE;

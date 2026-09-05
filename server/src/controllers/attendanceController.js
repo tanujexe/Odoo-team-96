@@ -13,6 +13,7 @@ export async function checkIn(req, res, next) {
     const attendance = await attendanceService.checkIn({
       employeeId,
       checkInTime: validated.checkInTime ? new Date(validated.checkInTime) : new Date(),
+      actorId: req.actor?.userId,
     });
 
     return res.success(attendance, undefined, 201);
@@ -31,6 +32,7 @@ export async function checkOut(req, res, next) {
       attendanceId,
       employeeId,
       checkOutTime: validated.checkOutTime ? new Date(validated.checkOutTime) : new Date(),
+      actorId: req.actor?.userId,
     });
 
     return res.success(attendance);

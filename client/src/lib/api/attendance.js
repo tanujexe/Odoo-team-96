@@ -3,6 +3,7 @@ import { apiClient } from './client';
 export function normalizeAttendanceLog(log) {
   if (!log) return log;
   const empObj = typeof log.employeeId === 'object' && log.employeeId !== null ? log.employeeId : null;
+  const empIdStr = empObj ? empObj._id || empObj.id : (typeof log.employeeId === 'string' ? log.employeeId : log.employeeId);
   const empName =
     log.employeeName ||
     empObj?.name ||
@@ -11,6 +12,17 @@ export function normalizeAttendanceLog(log) {
   const empCode = log.employeeCode || empObj?.employeeCode || (typeof log.employeeId === 'string' ? log.employeeId : 'EMP-001');
   const dept = log.department || empObj?.department || 'Finance';
   const manager = log.manager || empObj?.manager || 'Sara Khan';
+
+  let dateStr = log.date;
+  if (dateStr) {
+    if (typeof dateStr === 'string' && dateStr.includes('T')) {
+      dateStr = dateStr.split('T')[0];
+    } else if (dateStr instanceof Date) {
+      dateStr = dateStr.toISOString().split('T')[0];
+    }
+  } else {
+    dateStr = new Date().toISOString().split('T')[0];
+  }
 
   let workedHours = log.workedHours;
   let overtime = log.overtime ?? 0;
@@ -31,11 +43,12 @@ export function normalizeAttendanceLog(log) {
   return {
     ...log,
     id: log._id || log.id,
-    employeeId: empObj ? empObj._id || empObj.id : log.employeeId,
+    employeeId: empIdStr,
     employeeName: empName,
     employeeCode: empCode,
     department: dept,
     manager: manager,
+    date: dateStr,
     workedHours,
     overtime,
     status: log.status || (log.checkIn ? 'PRESENT' : 'ABSENT'),
@@ -155,6 +168,16 @@ export async function fetchAttendance(params = {}) {
     const response = await apiClient(`/attendance${query ? `?${query}` : ''}`);
     const list = Array.isArray(response.data) ? response.data : [];
     const normalized = list.map(normalizeAttendanceLog);
+
+    // Sync live check-in statuses from DB records
+    normalized.forEach((log) => {
+      if (log.checkIn && !log.checkOut) {
+        setEmployeeCheckInStatus(log.employeeId, log.employeeCode, true);
+      } else if (log.checkOut) {
+        setEmployeeCheckInStatus(log.employeeId, log.employeeCode, false);
+      }
+    });
+
     const serverIds = new Set(normalized.map((a) => a.id));
     const extraMocks = mockAttendanceLogs.filter((m) => !serverIds.has(m.id)).map(normalizeAttendanceLog);
     return [...normalized, ...extraMocks];
@@ -205,7 +228,7 @@ export async function checkOutApi(id, employeeId = 'emp-aarav-1') {
   try {
     const response = await apiClient('/attendance/check-out', {
       method: 'POST',
-      body: { id },
+      body: { attendanceId: id, employeeId },
     });
     return normalizeAttendanceLog(response.data);
   } catch (err) {

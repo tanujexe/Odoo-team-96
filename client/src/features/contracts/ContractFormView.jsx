@@ -26,6 +26,7 @@ export function ContractFormView({
   contract,
   allEmployees = [],
   schedules = [],
+  salaryStructures = [],
   onSave,
   onCancel,
   isPending = false,
@@ -344,6 +345,64 @@ export function ContractFormView({
               )}
             </div>
 
+              <Select
+                label="Working Schedule (Database)"
+                value={formData.workingSchedule || (schedules[0]?.name || '40 Hours / Week')}
+                onChange={(e) => setFormData({ ...formData, workingSchedule: e.target.value })}
+              >
+                {schedules.map((s) => (
+                  <option key={s.id || s._id} value={s.name}>
+                    {s.name} ({s.hoursPerWeek || '40h'})
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+
+          {/* Salary Structure / Notes Container Box */}
+          <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-5 space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-emerald-600" />
+              Salary Structure / Notes
+            </h4>
+
+            <div className="space-y-3 pt-1">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                  Structure Type (Database):
+                </label>
+                <select
+                  value={formData.salaryStructureId || (salaryStructures[0]?.id || '')}
+                  onChange={(e) => {
+                    const matchedStr = salaryStructures.find((s) => (s.id || s._id) === e.target.value);
+                    setFormData({
+                      ...formData,
+                      salaryStructureId: e.target.value,
+                      salaryStructure: matchedStr?.name || 'Employee Salary',
+                      salaryStructureName: matchedStr?.name || 'Employee Salary',
+                    });
+                  }}
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold"
+                >
+                  {salaryStructures.map((str) => (
+                    <option key={str.id || str._id} value={str.id || str._id}>
+                      {str.name} ({str.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                  Contract Notes:
+                </label>
+                <textarea
+                  rows={2}
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-700 leading-relaxed focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
             {/* Working Schedule */}
             <div className="space-y-1">
               <label className="text-slate-600 font-semibold text-xs">Working Schedule *</label>

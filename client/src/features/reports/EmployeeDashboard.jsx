@@ -51,9 +51,6 @@ export default function EmployeeDashboard() {
     reason: '',
   });
 
-  // Effective employee identifier for API queries
-  const employeeId = user?.employeeId || 'emp-john-1';
-
   // 1. Fetch Employee Profile Details
   const { data: employeesList = [], isLoading: isEmployeesLoading } = useQuery({
     queryKey: ['employees'],
@@ -61,9 +58,18 @@ export default function EmployeeDashboard() {
   });
 
   const matchedEmployee =
-    employeesList.find((e) => e.id === employeeId || e.email === user?.email) ||
-    mockEmployees.find((e) => e.id === employeeId || e.email === user?.email) ||
+    employeesList.find(
+      (e) =>
+        e.id === user?.employeeId ||
+        e._id === user?.employeeId ||
+        (user?.email && e.email?.toLowerCase() === user.email.toLowerCase()) ||
+        (user?.employeeCode && e.employeeCode === user.employeeCode)
+    ) ||
+    mockEmployees.find((e) => e.id === user?.employeeId || e.email === user?.email) ||
     mockEmployees[0];
+
+  // Effective employee MongoDB ObjectId or string identifier for API queries
+  const employeeId = matchedEmployee?._id || matchedEmployee?.id || user?.employeeId || 'emp-john-1';
 
   const contractInfo =
     mockContracts.find((c) => c.employeeId === matchedEmployee?.id) || mockContracts[0];
@@ -76,8 +82,7 @@ export default function EmployeeDashboard() {
 
   const todayDateStr = new Date().toISOString().split('T')[0];
   const todayRecord =
-    attendanceLogs.find((l) => (l.employeeId === employeeId || l.employeeId === matchedEmployee?.id) && l.date === todayDateStr) ||
-    attendanceLogs[0];
+    attendanceLogs.find((l) => (l.employeeId === employeeId || l.employeeId === matchedEmployee?.id || l.employeeId === matchedEmployee?._id) && l.date === todayDateStr);
   const isCheckedIn = !!todayRecord && !todayRecord.checkOut;
 
   // 3. Fetch Time Off Balances & Requests
@@ -100,7 +105,7 @@ export default function EmployeeDashboard() {
   });
 
   const checkOutMutation = useMutation({
-    mutationFn: () => checkOutApi(todayRecord?.id),
+    mutationFn: () => checkOutApi(todayRecord?.id, employeeId),
     onSuccess: () => {
       queryClient.invalidateQueries(['attendance']);
     },

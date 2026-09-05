@@ -46,6 +46,11 @@ const salaryRuleSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    quantity: {
+      type: Number,
+      default: 1,
+      min: 0,
+    },
     active: {
       type: Boolean,
       default: true,

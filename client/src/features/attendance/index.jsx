@@ -90,10 +90,20 @@ export default function AttendanceFeature() {
     queryFn: fetchEmployees,
   });
 
+  // Identify current user's today log for check-in terminal
+  const matchedEmp = employees.find(
+    (e) =>
+      e.id === user?.employeeId ||
+      e._id === user?.employeeId ||
+      (user?.email && e.email?.toLowerCase() === user.email.toLowerCase()) ||
+      (user?.employeeCode && e.employeeCode === user.employeeCode)
+  );
+  const currentEmpId = matchedEmp?._id || matchedEmp?.id || user?.employeeId || (employees[0]?.id || 'emp-aarav-1');
   const currentEmpId = user?.employeeId || (employees[0]?.id || 'emp-aarav-1');
   const todayDateStr = new Date().toISOString().split('T')[0];
 
   const todayUserLog =
+    logs.find((l) => (l.employeeId === currentEmpId || l.employeeName === user?.name || l.employeeCode === user?.employeeCode) && l.date === todayDateStr);
     logs.find(
       (l) =>
         (l.employeeId === currentEmpId || l.employeeName === user?.name) &&
@@ -123,7 +133,7 @@ export default function AttendanceFeature() {
   });
 
   const checkOutMutation = useMutation({
-    mutationFn: () => checkOutApi(todayUserLog?.id),
+    mutationFn: () => checkOutApi(todayUserLog?.id, currentEmpId),
     onSuccess: (updatedLog) => {
       queryClient.invalidateQueries(['attendance']);
       setSelectedLog(updatedLog);

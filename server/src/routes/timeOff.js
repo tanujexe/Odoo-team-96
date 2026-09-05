@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   listTypes,
   createType,
+  getBalances,
   listAllocations,
   createAllocation,
   listRequests,
@@ -18,6 +19,9 @@ import { ROLES } from '../models/User.js';
 const router = Router();
 
 router.use(authenticate);
+
+// Balances
+router.get('/balances', enforceEmployeeSelfService, getBalances);
 
 // Types
 router.get('/types', listTypes);

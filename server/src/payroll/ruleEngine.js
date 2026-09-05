@@ -176,20 +176,22 @@ export function evaluateFormula(formula, context = {}) {
  * @returns {number} computed amount
  */
 export function evaluateRule(rule, context = {}) {
+  const qty = Number(rule.quantity) || 1;
+  let computed = 0;
+
   if (rule.computationType === 'FIXED') {
-    return Number((rule.fixedAmount || 0).toFixed(2));
-  }
-
-  if (rule.computationType === 'PERCENTAGE') {
-    // Default percentage base is WAGE unless specified
-    const base = context.BASIC !== undefined ? context.BASIC : context.WAGE || 0;
+    computed = Number((rule.fixedAmount || 0).toFixed(2));
+  } else if (rule.computationType === 'PERCENTAGE') {
+    // Basic rules compute % of base contract wage; allowances/deductions compute on Basic or Wage
+    const base = rule.category === 'BASIC'
+      ? (context.WAGE || 0)
+      : (context.BASIC !== undefined ? context.BASIC : context.WAGE || 0);
     const amount = (base * (rule.percentage || 0)) / 100;
-    return Number(amount.toFixed(2));
+    computed = Number(amount.toFixed(2));
+  } else if (rule.computationType === 'FORMULA') {
+    computed = evaluateFormula(rule.formula, context);
   }
 
-  if (rule.computationType === 'FORMULA') {
-    return evaluateFormula(rule.formula, context);
-  }
-
-  return 0;
+  return Number((computed * qty).toFixed(2));
 }
+
