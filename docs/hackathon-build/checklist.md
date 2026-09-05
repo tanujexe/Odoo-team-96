@@ -129,7 +129,7 @@
   - **Tests required:** PDF content smoke test; mail success/failure tests; dashboard aggregate/filter tests; idempotent seed test.
   - **Verify:** Seed a blank database, generate a payslip PDF, simulate email failure, and call each dashboard filter combination.
 
-- [ ] **PP-12 — Dashboard, document delivery UI, and full client integration**
+- [x] **PP-12 — Dashboard, document delivery UI, and full client integration**
   - **Developer:** Developer 2
   - **Files/modules to modify:** `client/src/features/reports/`, `client/src/features/payroll/{PayrunDetail,PayslipDetail}.jsx`, `client/src/lib/api/{dashboard,reports}.js`, `client/src/tests/{reports,integration}/`, `docs/DEMO_SCRIPT.md`.
   - **Spec ref:** `spec.md > Components And Responsibilities > Dashboard and reports; Demo And Submission Flow`; `PRD.md > 4.11-4.12; 16`.

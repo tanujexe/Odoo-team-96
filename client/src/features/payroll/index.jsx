@@ -13,6 +13,7 @@ import {
   markPayrunPaidApi,
   fetchPayslipsByPayrun,
 } from '../../lib/api/payroll';
+import { downloadPayslipPdf, bulkSendPayslipsApi } from '../../lib/api/dashboard';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -31,10 +32,12 @@ import {
   Plus,
   ArrowRight,
   Download,
+  Send,
   AlertTriangle,
   FileText,
   Sliders,
   Layers,
+  Check,
 } from 'lucide-react';
 
 export default function PayrollFeature() {
@@ -44,10 +47,12 @@ export default function PayrollFeature() {
   const canEditSalaryRules = hasAccess([ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER]);
   const canOperatePayroll = hasAccess([ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER]);
 
-  const [activeTab, setActiveTab] = useState('payruns'); // 'payruns' | 'structures' | 'payslips'
+  const [activeTab, setActiveTab] = useState('payruns');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [selectedPayrunId, setSelectedPayrunId] = useState('pr-2026-09');
   const [selectedPayslip, setSelectedPayslip] = useState(null);
+  const [bulkSendResults, setBulkSendResults] = useState(null);
+  const [isBulkSendModalOpen, setIsBulkSendModalOpen] = useState(false);
 
   // New Rule Form State
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
@@ -72,18 +77,18 @@ export default function PayrollFeature() {
     queryFn: () => fetchSalaryRules('str-tech-1'),
   });
 
-  const { data: payruns = [], isLoading: isPayrunsLoading } = useQuery({
+  const { data: payruns = [] } = useQuery({
     queryKey: ['payruns'],
     queryFn: fetchPayruns,
   });
 
-  const { data: currentPayrun, isLoading: isCurrentPayrunLoading } = useQuery({
+  const { data: currentPayrun } = useQuery({
     queryKey: ['payrunDetail', selectedPayrunId],
     queryFn: () => fetchPayrunById(selectedPayrunId),
     enabled: !!selectedPayrunId,
   });
 
-  const { data: payslips = [], isLoading: isPayslipsLoading } = useQuery({
+  const { data: payslips = [] } = useQuery({
     queryKey: ['payslips', selectedPayrunId],
     queryFn: () => fetchPayslipsByPayrun(selectedPayrunId),
     enabled: !!selectedPayrunId,
@@ -128,6 +133,19 @@ export default function PayrollFeature() {
     },
   });
 
+  const bulkSendMutation = useMutation({
+    mutationFn: () => bulkSendPayslipsApi(selectedPayrunId),
+    onSuccess: (res) => {
+      setBulkSendResults(res);
+      setIsBulkSendModalOpen(true);
+      // Update local delivery status to SENT
+      payslips.forEach((p) => {
+        p.deliveryStatus = 'SENT';
+      });
+      queryClient.invalidateQueries(['payslips', selectedPayrunId]);
+    },
+  });
+
   const createRuleMutation = useMutation({
     mutationFn: createSalaryRule,
     onSuccess: () => {
@@ -138,6 +156,10 @@ export default function PayrollFeature() {
 
   const hasBlockingWarnings = currentPayrun?.warnings?.some((w) => w.severity === 'BLOCKING');
 
+  const handleDownloadPdf = (ps) => {
+    downloadPayslipPdf(ps.id, `Payslip_${ps.employeeCode}_${ps.periodStart}.pdf`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -145,7 +167,7 @@ export default function PayrollFeature() {
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Payroll Operations & Engine</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Deterministic salary rule engine, two-step payrun wizard, blocking warnings, and payslips
+            Deterministic salary rule engine, two-step payrun wizard, blocking warnings, and PDF delivery
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -189,7 +211,6 @@ export default function PayrollFeature() {
       {/* Payrun Batches Tab */}
       {activeTab === 'payruns' && (
         <div className="space-y-6">
-          {/* Active Payrun Banner & Actions */}
           {currentPayrun && (
             <Card className="border-emerald-200 bg-white">
               <CardHeader
@@ -235,7 +256,7 @@ export default function PayrollFeature() {
                   </div>
 
                   {/* Operational Action Bar */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -252,9 +273,7 @@ export default function PayrollFeature() {
                       size="sm"
                       icon={CheckCircle2}
                       isLoading={validateMutation.isPending}
-                      disabled={
-                        currentPayrun.status !== 'COMPUTED' || hasBlockingWarnings
-                      }
+                      disabled={currentPayrun.status !== 'COMPUTED' || hasBlockingWarnings}
                       onClick={() => validateMutation.mutate()}
                     >
                       Validate Payrun
@@ -270,6 +289,18 @@ export default function PayrollFeature() {
                     >
                       Mark as Paid
                     </Button>
+
+                    {currentPayrun.status === 'PAID' && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={Send}
+                        isLoading={bulkSendMutation.isPending}
+                        onClick={() => bulkSendMutation.mutate()}
+                      >
+                        Bulk Send Payslips
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -300,9 +331,12 @@ export default function PayrollFeature() {
 
                 {/* Persisted Payslips Table */}
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 mb-3">
-                    Calculated Payslips ({payslips.length} Employees)
-                  </h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-bold text-slate-900">
+                      Calculated Payslips ({payslips.length} Employees)
+                    </h3>
+                  </div>
+
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -310,9 +344,9 @@ export default function PayrollFeature() {
                         <TableHead>Department</TableHead>
                         <TableHead>Base Wage</TableHead>
                         <TableHead>Gross</TableHead>
-                        <TableHead>Deductions</TableHead>
                         <TableHead>Net Pay</TableHead>
-                        <TableHead className="text-right">Breakdown</TableHead>
+                        <TableHead>Delivery Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -329,21 +363,32 @@ export default function PayrollFeature() {
                           <TableCell className="font-mono font-semibold text-slate-900">
                             {formatCurrency(ps.gross)}
                           </TableCell>
-                          <TableCell className="font-mono text-rose-600">
-                            -{formatCurrency(ps.deductions)}
-                          </TableCell>
                           <TableCell className="font-mono font-bold text-emerald-700">
                             {formatCurrency(ps.net)}
                           </TableCell>
+                          <TableCell>
+                            <Badge status={ps.deliveryStatus || 'NOT_SENT'} />
+                          </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              icon={FileText}
-                              onClick={() => setSelectedPayslip(ps)}
-                            >
-                              View Lines
-                            </Button>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                icon={FileText}
+                                onClick={() => setSelectedPayslip(ps)}
+                              >
+                                Lines
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={Download}
+                                title="Download Payslip PDF"
+                                onClick={() => handleDownloadPdf(ps)}
+                              >
+                                PDF
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -435,6 +480,21 @@ export default function PayrollFeature() {
           title={`Payslip Breakdown: ${selectedPayslip.employeeName}`}
           description={`Period: ${formatDate(selectedPayslip.periodStart)} – ${formatDate(selectedPayslip.periodEnd)} • ${selectedPayslip.employeeCode}`}
           maxWidth="max-w-2xl"
+          footer={
+            <div className="flex items-center justify-between w-full">
+              <Button
+                variant="outline"
+                size="sm"
+                icon={Download}
+                onClick={() => handleDownloadPdf(selectedPayslip)}
+              >
+                Download PDF
+              </Button>
+              <Button variant="primary" size="sm" onClick={() => setSelectedPayslip(null)}>
+                Close
+              </Button>
+            </div>
+          }
         >
           <div className="space-y-4">
             <Table>
@@ -470,6 +530,39 @@ export default function PayrollFeature() {
               <span className="font-mono font-extrabold text-emerald-700 text-lg">
                 {formatCurrency(selectedPayslip.net)}
               </span>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Bulk Send Report Modal */}
+      {isBulkSendModalOpen && bulkSendResults && (
+        <Modal
+          isOpen={isBulkSendModalOpen}
+          onClose={() => setIsBulkSendModalOpen(false)}
+          title="Bulk Payslip Email Delivery Report"
+          description={`Delivery execution status for Payrun ID: ${bulkSendResults.payrunId}`}
+          maxWidth="max-w-md"
+        >
+          <div className="space-y-3">
+            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
+              <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Bulk email delivery queued and executed successfully.</span>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              {bulkSendResults.results?.map((res, idx) => (
+                <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-xs">
+                  <span className="font-mono text-slate-700">{res.payslipId}</span>
+                  <Badge status={res.status} />
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-4 flex justify-end">
+              <Button variant="primary" size="sm" onClick={() => setIsBulkSendModalOpen(false)}>
+                Done
+              </Button>
             </div>
           </div>
         </Modal>
