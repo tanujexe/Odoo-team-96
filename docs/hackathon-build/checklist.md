@@ -78,7 +78,7 @@
   - **Tests required:** Form validation tests, smart-action filtered-navigation test, schedule-total display test, employee-role route guard test.
   - **Verify:** Manual onboarding flow: employee → schedule → contract; run client HR tests.
 
-- [ ] **PP-07 — Attendance and time-off backend workflow**
+- [x] **PP-07 — Attendance and time-off backend workflow**
   - **Developer:** Developer 1
   - **Files/modules to modify:** `server/src/models/{Attendance,TimeOffType,TimeOffAllocation,TimeOffRequest,AllocationConsumption}.js`, `server/src/routes/{attendance,timeOff}.js`, matching controllers/services/validators, `server/src/tests/{attendance,timeOff}/`, `docs/api-contracts.md`.
   - **Spec ref:** `spec.md > Components And Responsibilities > Attendance; Time off`; `PRD.md > 4.4-4.5; BR-04; BR-15`.

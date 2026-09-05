@@ -10,6 +10,8 @@ import authRouter from './routes/auth.js';
 import employeesRouter from './routes/employees.js';
 import schedulesRouter from './routes/schedules.js';
 import contractsRouter from './routes/contracts.js';
+import attendanceRouter from './routes/attendance.js';
+import timeOffRouter from './routes/timeOff.js';
 
 const app = express();
 
@@ -27,6 +29,8 @@ app.use('/api/auth', authRouter);
 app.use('/api/employees', employeesRouter);
 app.use('/api/schedules', schedulesRouter);
 app.use('/api/contracts', contractsRouter);
+app.use('/api/attendance', attendanceRouter);
+app.use('/api/time-off', timeOffRouter);
 
 // Fallbacks and error handling
 app.use(notFoundHandler);

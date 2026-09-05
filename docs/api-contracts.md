@@ -205,7 +205,60 @@ All API endpoints MUST respond using a uniform JSON envelope structure.
 
 ## 4. Attendance & Time Off (`/api/attendance`, `/api/time-off`)
 
-*(Documented in PP-07)*
+### `POST /api/attendance/check-in`
+- **Access**: Employee self-service or HR Roles
+- **Success Response (`201 Created`)**:
+  ```json
+  {
+    "data": {
+      "id": "66d9b01a1c9d8b0012a4f030",
+      "employeeId": "66d9b01a1c9d8b0012a4f002",
+      "checkIn": "2026-09-05T08:30:00.000Z",
+      "status": "PRESENT"
+    }
+  }
+  ```
+
+### `POST /api/attendance/check-out`
+- **Access**: Employee self-service or HR Roles
+- **Success Response (`200 OK`)**:
+  ```json
+  {
+    "data": {
+      "id": "66d9b01a1c9d8b0012a4f030",
+      "checkOut": "2026-09-05T17:00:00.000Z",
+      "workedHours": 8.5
+    }
+  }
+  ```
+
+### `PATCH /api/attendance/:id/correction`
+- **Access**: HR Manager, HR Payroll Manager, Admin ONLY
+- **Request Body**:
+  ```json
+  {
+    "checkIn": "2026-09-05T09:00:00.000Z",
+    "checkOut": "2026-09-05T18:00:00.000Z",
+    "reason": "Forgot badge at check-in"
+  }
+  ```
+
+### `POST /api/time-off/requests/:id/approve`
+- **Access**: HR Manager, HR Payroll Manager, Admin ONLY
+- **Success Response (`200 OK`)**:
+  ```json
+  {
+    "data": {
+      "id": "66d9b01a1c9d8b0012a4f040",
+      "status": "APPROVED",
+      "duration": 2.0
+    }
+  }
+  ```
+
+### `POST /api/time-off/requests/:id/cancel`
+- **Access**: Owner or HR Roles
+- **Description**: Cancels approved request and reverses consumed leave allocation idempotently.
 
 ---
 

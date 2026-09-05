@@ -23,8 +23,8 @@ export function enforceEmployeeSelfService(req, res, next) {
     req.body.employeeId = req.actor.employeeId;
   }
 
-  // If endpoint accesses a specific employee resource via :id or :employeeId param
-  const paramId = req.params.employeeId || req.params.id;
+  // If endpoint accesses a specific employee resource via :employeeId param or employee route with :id
+  const paramId = req.params.employeeId || (req.baseUrl?.includes('employee') || req.originalUrl?.includes('employee') ? req.params.id : null);
   if (paramId && String(paramId) !== String(req.actor.employeeId)) {
     return res.fail('FORBIDDEN', 'Access denied. You can only access your own employee records.', 403);
   }
