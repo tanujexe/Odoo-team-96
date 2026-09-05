@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { SalaryRule } from '../models/SalaryRule.js';
 import { SalaryStructure } from '../models/SalaryStructure.js';
 
@@ -5,10 +6,12 @@ export async function createSalaryRule(data) {
   const rule = new SalaryRule(data);
   await rule.save();
 
-  // Add to parent salary structure
-  await SalaryStructure.findByIdAndUpdate(data.salaryStructureId, {
-    $addToSet: { ruleIds: rule._id },
-  });
+  // Add to parent salary structure if valid ObjectId
+  if (mongoose.Types.ObjectId.isValid(data.salaryStructureId)) {
+    await SalaryStructure.findByIdAndUpdate(data.salaryStructureId, {
+      $addToSet: { ruleIds: rule._id },
+    });
+  }
 
   return rule;
 }
@@ -24,10 +27,37 @@ export async function updateSalaryRule(id, data) {
   return rule;
 }
 
+export async function deleteSalaryRule(id) {
+  const rule = await SalaryRule.findByIdAndDelete(id);
+  if (!rule) {
+    const err = new Error('Salary Rule not found');
+    err.code = 'RULE_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
+  if (rule.salaryStructureId && mongoose.Types.ObjectId.isValid(rule.salaryStructureId)) {
+    await SalaryStructure.findByIdAndUpdate(rule.salaryStructureId, {
+      $pull: { ruleIds: rule._id },
+    });
+  }
+  return rule;
+}
+
 export async function getSalaryRules(query = {}) {
   const filter = {};
-  if (query.salaryStructureId) filter.salaryStructureId = query.salaryStructureId;
+  const structureId = query.salaryStructureId || query.structureId;
+
+  if (structureId) {
+    if (mongoose.Types.ObjectId.isValid(structureId)) {
+      filter.salaryStructureId = structureId;
+    } else {
+      // Return empty if not a valid ObjectId to prevent CastError
+      return [];
+    }
+  }
+
   if (query.category) filter.category = query.category;
 
   return SalaryRule.find(filter).sort({ sequence: 1 });
 }
+

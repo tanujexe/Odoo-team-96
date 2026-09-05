@@ -156,7 +156,8 @@ export async function fetchSalaryStructures() {
 
 export async function fetchSalaryRules(structureId) {
   try {
-    const response = await apiClient(`/salary-rules?structureId=${structureId}`);
+    const url = structureId ? `/salary-rules?salaryStructureId=${structureId}` : '/salary-rules';
+    const response = await apiClient(url);
     return response.data;
   } catch (err) {
     return mockSalaryRules.filter((r) => !structureId || r.salaryStructureId === structureId);
@@ -164,29 +165,48 @@ export async function fetchSalaryRules(structureId) {
 }
 
 export async function createSalaryRule(data) {
+  const category =
+    data.category === 'ALLOWANCE' ? 'ALW' : data.category === 'DEDUCTION' ? 'DED' : data.category || 'ALW';
+  const computationType = data.computationType || data.calculationType || 'FIXED';
+  const payload = {
+    salaryStructureId: data.salaryStructureId,
+    code: data.code ? data.code.trim().toUpperCase() : '',
+    name: data.name ? data.name.trim() : '',
+    category,
+    sequence: Number(data.sequence) || 1,
+    computationType,
+    fixedAmount: Number(data.fixedAmount ?? data.amount ?? 0),
+    percentage: Number(data.percentage || 0),
+    formula: data.formula || '',
+  };
+
   try {
     const response = await apiClient('/salary-rules', {
       method: 'POST',
-      body: data,
+      body: payload,
     });
     return response.data;
   } catch (err) {
     const newRule = {
       id: `rul-${Date.now()}`,
-      salaryStructureId: data.salaryStructureId || 'str-tech-1',
-      code: data.code,
-      name: data.name,
-      category: data.category || 'ALLOWANCE',
-      calculationType: data.calculationType || 'FIXED',
-      sequence: Number(data.sequence) || mockSalaryRules.length + 1,
-      amount: Number(data.amount) || 0,
-      percentage: Number(data.percentage) || 0,
-      formula: data.formula || '',
+      _id: `rul-${Date.now()}`,
+      salaryStructureId: payload.salaryStructureId || 'str-tech-1',
+      code: payload.code,
+      name: payload.name,
+      category: payload.category,
+      computationType: payload.computationType,
+      calculationType: payload.computationType,
+      sequence: payload.sequence || mockSalaryRules.length + 1,
+      fixedAmount: payload.fixedAmount,
+      amount: payload.fixedAmount,
+      percentage: payload.percentage,
+      formula: payload.formula,
     };
     mockSalaryRules.push(newRule);
     return newRule;
   }
 }
+
 
 export async function fetchPayruns() {
   try {

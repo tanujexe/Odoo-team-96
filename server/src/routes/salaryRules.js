@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { listRules, createRule, updateRule } from '../controllers/salaryRuleController.js';
+import { listRules, createRule, updateRule, deleteRule } from '../controllers/salaryRuleController.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { requireRole } from '../middleware/authorize.js';
 import { ROLES } from '../models/User.js';
@@ -22,4 +22,11 @@ router.patch(
   updateRule
 );
 
+router.delete(
+  '/:id',
+  requireRole(ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN),
+  deleteRule
+);
+
 export default router;
+

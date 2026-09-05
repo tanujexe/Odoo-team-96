@@ -28,3 +28,13 @@ export async function updateRule(req, res, next) {
     next(error);
   }
 }
+
+export async function deleteRule(req, res, next) {
+  try {
+    const deleted = await salaryRuleService.deleteSalaryRule(req.params.id);
+    return res.success(deleted, 'Salary rule deleted successfully');
+  } catch (error) {
+    next(error);
+  }
+}
+

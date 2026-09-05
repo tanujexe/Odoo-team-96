@@ -57,13 +57,16 @@ export default function PayrollFeature() {
 
   // New Rule Form State
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
+  const [selectedStructureId, setSelectedStructureId] = useState('');
   const [ruleForm, setRuleForm] = useState({
-    code: 'BONUS',
-    name: 'Quarterly Performance Bonus',
-    category: 'ALLOWANCE',
-    calculationType: 'FIXED',
-    sequence: 6,
-    amount: 500,
+    salaryStructureId: '',
+    code: '',
+    name: '',
+    category: 'ALW',
+    computationType: 'FIXED',
+    sequence: 1,
+    fixedAmount: 0,
+    amount: 0,
     percentage: 0,
     formula: '',
   });
@@ -73,10 +76,17 @@ export default function PayrollFeature() {
     queryFn: fetchSalaryStructures,
   });
 
+  const activeStructureId =
+    selectedStructureId ||
+    structures[0]?._id ||
+    structures[0]?.id ||
+    'str-tech-1';
+
   const { data: rules = [] } = useQuery({
-    queryKey: ['salaryRules'],
-    queryFn: () => fetchSalaryRules('str-tech-1'),
+    queryKey: ['salaryRules', activeStructureId],
+    queryFn: () => fetchSalaryRules(activeStructureId),
   });
+
 
   const { data: payruns = [] } = useQuery({
     queryKey: ['payruns'],
@@ -156,9 +166,31 @@ export default function PayrollFeature() {
     mutationFn: createSalaryRule,
     onSuccess: () => {
       queryClient.invalidateQueries(['salaryRules']);
+      queryClient.invalidateQueries(['salaryRules', activeStructureId]);
+      queryClient.invalidateQueries(['salaryStructures']);
       setIsRuleModalOpen(false);
     },
+    onError: (err) => {
+      alert(`Failed to save salary rule: ${err.message || 'Validation error'}`);
+    },
   });
+
+  const handleOpenAddRule = () => {
+    setRuleForm({
+      salaryStructureId: activeStructureId,
+      code: '',
+      name: '',
+      category: 'ALW',
+      computationType: 'FIXED',
+      sequence: (rules?.length || 0) + 1,
+      fixedAmount: 0,
+      amount: 0,
+      percentage: 0,
+      formula: '',
+    });
+    setIsRuleModalOpen(true);
+  };
+
 
   const hasBlockingWarnings = currentPayrun?.warnings?.some((w) => w.severity === 'BLOCKING');
 
@@ -412,23 +444,42 @@ export default function PayrollFeature() {
         <div className="space-y-6">
           <Card>
             <CardHeader
-              title="Sequenced Salary Rules (Standard Tech Structure)"
+              title="Sequenced Salary Rules & Structures"
               subtitle="Ordered execution sequence: FIXED → PERCENTAGE → CONSTRAINED FORMULA"
               action={
-                canEditSalaryRules ? (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    icon={Plus}
-                    onClick={() => setIsRuleModalOpen(true)}
-                  >
-                    Add Salary Rule
-                  </Button>
-                ) : (
-                  <Badge status="LOCKED" variant="WARNING">
-                    Read-Only (Payroll User)
-                  </Badge>
-                )
+                <div className="flex items-center gap-3">
+                  {structures.length > 0 && (
+                    <select
+                      aria-label="Select Salary Structure"
+                      value={activeStructureId}
+                      onChange={(e) => setSelectedStructureId(e.target.value)}
+                      className="text-xs bg-white border border-slate-200 rounded-md px-2.5 py-1.5 font-medium text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      {structures.map((s) => {
+                        const sid = s._id || s.id;
+                        return (
+                          <option key={sid} value={sid}>
+                            {s.name} ({s.code})
+                          </option>
+                        );
+                      })}
+                    </select>
+                  )}
+                  {canEditSalaryRules ? (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      icon={Plus}
+                      onClick={handleOpenAddRule}
+                    >
+                      Add Salary Rule
+                    </Button>
+                  ) : (
+                    <Badge status="LOCKED" variant="WARNING">
+                      Read-Only (Payroll User)
+                    </Badge>
+                  )}
+                </div>
               }
             />
             <Table>
@@ -443,35 +494,53 @@ export default function PayrollFeature() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rules
-                  .sort((a, b) => a.sequence - b.sequence)
-                  .map((r) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-mono font-bold text-slate-800">{r.sequence}</TableCell>
-                      <TableCell className="font-mono font-bold text-emerald-700">[{r.code}]</TableCell>
-                      <TableCell className="font-semibold text-slate-900">{r.name}</TableCell>
-                      <TableCell>
-                        <Badge
-                          status={r.category}
-                          variant={
-                            r.category === 'BASIC'
-                              ? 'COMPUTED'
-                              : r.category === 'ALLOWANCE'
-                              ? 'PAID'
-                              : 'REFUSED'
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="text-xs text-slate-600">{r.calculationType}</TableCell>
-                      <TableCell className="font-mono text-xs text-slate-800">
-                        {r.calculationType === 'PERCENTAGE'
-                          ? `${r.percentage}% of Base`
-                          : r.calculationType === 'FORMULA'
-                          ? r.formula
-                          : formatCurrency(r.amount)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                {rules.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-6 text-slate-400">
+                      No salary rules configured for this structure yet.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  [...rules]
+                    .sort((a, b) => a.sequence - b.sequence)
+                    .map((r) => {
+                      const rId = r._id || r.id;
+                      const rType = r.computationType || r.calculationType || 'FIXED';
+                      const rCategory =
+                        r.category === 'ALW'
+                          ? 'ALLOWANCE'
+                          : r.category === 'DED'
+                          ? 'DEDUCTION'
+                          : r.category;
+                      return (
+                        <TableRow key={rId}>
+                          <TableCell className="font-mono font-bold text-slate-800">{r.sequence}</TableCell>
+                          <TableCell className="font-mono font-bold text-emerald-700">[{r.code}]</TableCell>
+                          <TableCell className="font-semibold text-slate-900">{r.name}</TableCell>
+                          <TableCell>
+                            <Badge
+                              status={rCategory}
+                              variant={
+                                rCategory === 'BASIC'
+                                  ? 'COMPUTED'
+                                  : rCategory === 'ALLOWANCE'
+                                  ? 'PAID'
+                                  : 'REFUSED'
+                              }
+                            />
+                          </TableCell>
+                          <TableCell className="text-xs text-slate-600 font-mono">{rType}</TableCell>
+                          <TableCell className="font-mono text-xs text-slate-800">
+                            {rType === 'PERCENTAGE'
+                              ? `${r.percentage}% of Base`
+                              : rType === 'FORMULA'
+                              ? r.formula
+                              : formatCurrency(r.fixedAmount ?? r.amount ?? 0)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                )}
               </TableBody>
             </Table>
           </Card>
@@ -486,45 +555,57 @@ export default function PayrollFeature() {
           title={`Payslip Breakdown: ${selectedPayslip.employeeName}`}
           description={`Period: ${formatDate(selectedPayslip.periodStart)} – ${formatDate(selectedPayslip.periodEnd)} • ${selectedPayslip.employeeCode}`}
           maxWidth="max-w-2xl"
-          footer={
-            <div className="flex items-center justify-between w-full">
-              <Button
-                variant="outline"
-                size="sm"
-                icon={Download}
-                onClick={() => handleDownloadPdf(selectedPayslip)}
-              >
-                Download PDF
-              </Button>
-              <Button variant="primary" size="sm" onClick={() => setSelectedPayslip(null)}>
-                Close
-              </Button>
-            </div>
-          }
         >
           <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100 text-center">
+              <div>
+                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Gross Pay</p>
+                <p className="text-base font-bold text-slate-900">{formatCurrency(selectedPayslip.gross)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Deductions</p>
+                <p className="text-base font-bold text-rose-600">-{formatCurrency(selectedPayslip.deductions)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Net Payable</p>
+                <p className="text-base font-bold text-emerald-600">{formatCurrency(selectedPayslip.net)}</p>
+              </div>
+            </div>
+
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Rule Line</TableHead>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Rule Name</TableHead>
                   <TableHead>Category</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Computed Total</TableHead>
+                  <TableHead className="text-right">Rate / Base</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {selectedPayslip.ruleLines?.map((line, idx) => (
                   <TableRow key={idx}>
+                    <TableCell className="font-mono font-bold text-emerald-700">[{line.code}]</TableCell>
+                    <TableCell className="font-medium text-slate-900">{line.name}</TableCell>
                     <TableCell>
-                      <p className="font-semibold text-slate-900 leading-tight">{line.name}</p>
-                      <p className="text-[11px] font-mono text-slate-400">[{line.code}]</p>
+                      <Badge
+                        status={line.category}
+                        variant={
+                          line.category === 'BASIC'
+                            ? 'COMPUTED'
+                            : line.category === 'ALLOWANCE' || line.category === 'ALW'
+                            ? 'PAID'
+                            : 'REFUSED'
+                        }
+                      />
                     </TableCell>
-                    <TableCell>
-                      <Badge status={line.category} />
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-600">{line.calculationType}</TableCell>
-                    <TableCell className="text-right font-mono font-bold text-slate-900">
-                      {formatCurrency(line.total)}
+                    <TableCell className="text-right text-xs font-mono text-slate-500">{line.rate || '-'}</TableCell>
+                    <TableCell
+                      className={`text-right font-mono font-bold ${
+                        line.category === 'DEDUCTION' || line.category === 'DED' ? 'text-rose-600' : 'text-slate-900'
+                      }`}
+                    >
+                      {formatCurrency(line.amount || line.total || 0)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -537,32 +618,47 @@ export default function PayrollFeature() {
                 {formatCurrency(selectedPayslip.net)}
               </span>
             </div>
+
+            <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                icon={Download}
+                onClick={() => handleDownloadPdf(selectedPayslip)}
+              >
+                Download PDF
+              </Button>
+              <Button variant="primary" size="sm" onClick={() => setSelectedPayslip(null)}>
+                Close
+              </Button>
+            </div>
+
           </div>
         </Modal>
       )}
 
-      {/* Bulk Send Report Modal */}
+      {/* Bulk Send Feedback Modal */}
       {isBulkSendModalOpen && bulkSendResults && (
         <Modal
           isOpen={isBulkSendModalOpen}
           onClose={() => setIsBulkSendModalOpen(false)}
-          title="Bulk Payslip Email Delivery Report"
-          description={`Delivery execution status for Payrun ID: ${bulkSendResults.payrunId}`}
+          title="Bulk Payslip Dispatch Complete"
+          description={`Delivery report for Payrun batch: ${selectedPayrunId}`}
           maxWidth="max-w-md"
         >
-          <div className="space-y-3">
-            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Bulk email delivery queued and executed successfully.</span>
-            </div>
-
-            <div className="space-y-2 pt-2">
-              {bulkSendResults.results?.map((res, idx) => (
-                <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-xs">
-                  <span className="font-mono text-slate-700">{res.payslipId}</span>
-                  <Badge status={res.status} />
-                </div>
-              ))}
+          <div className="space-y-4">
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">
+                ✓
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-emerald-900">
+                  {bulkSendResults.sentCount} of {bulkSendResults.totalCount} Delivered
+                </p>
+                <p className="text-xs text-emerald-700">
+                  All payslips dispatched via direct secure document delivery
+                </p>
+              </div>
             </div>
 
             <div className="pt-4 flex justify-end">
@@ -603,13 +699,35 @@ export default function PayrollFeature() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              createRuleMutation.mutate(ruleForm);
+              createRuleMutation.mutate({
+                ...ruleForm,
+                salaryStructureId: activeStructureId,
+                code: ruleForm.code.trim().toUpperCase(),
+                name: ruleForm.name.trim(),
+                sequence: Number(ruleForm.sequence) || 1,
+                computationType: ruleForm.computationType || 'FIXED',
+                calculationType: ruleForm.computationType || 'FIXED',
+                fixedAmount:
+                  ruleForm.computationType === 'FIXED'
+                    ? Number(ruleForm.fixedAmount || ruleForm.amount || 0)
+                    : 0,
+                amount:
+                  ruleForm.computationType === 'FIXED'
+                    ? Number(ruleForm.fixedAmount || ruleForm.amount || 0)
+                    : 0,
+                percentage:
+                  ruleForm.computationType === 'PERCENTAGE'
+                    ? Number(ruleForm.percentage || 0)
+                    : 0,
+                formula: ruleForm.computationType === 'FORMULA' ? ruleForm.formula : '',
+              });
             }}
             className="space-y-4"
           >
             <div className="grid grid-cols-2 gap-3">
               <Input
                 label="Rule Code"
+                placeholder="e.g. BONUS, HRA"
                 value={ruleForm.code}
                 onChange={(e) => setRuleForm({ ...ruleForm, code: e.target.value })}
                 required
@@ -617,6 +735,7 @@ export default function PayrollFeature() {
               <Input
                 label="Sequence #"
                 type="number"
+                min="1"
                 value={ruleForm.sequence}
                 onChange={(e) => setRuleForm({ ...ruleForm, sequence: Number(e.target.value) })}
                 required
@@ -625,6 +744,7 @@ export default function PayrollFeature() {
 
             <Input
               label="Rule Name"
+              placeholder="e.g. Quarterly Performance Bonus"
               value={ruleForm.name}
               onChange={(e) => setRuleForm({ ...ruleForm, name: e.target.value })}
               required
@@ -636,13 +756,22 @@ export default function PayrollFeature() {
                 value={ruleForm.category}
                 onChange={(e) => setRuleForm({ ...ruleForm, category: e.target.value })}
               >
-                <option value="ALLOWANCE">ALLOWANCE</option>
-                <option value="DEDUCTION">DEDUCTION</option>
+                <option value="ALW">Allowance (ALW)</option>
+                <option value="DED">Deduction (DED)</option>
+                <option value="BASIC">Basic Salary (BASIC)</option>
+                <option value="GROSS">Gross Addition (GROSS)</option>
+                <option value="NET">Net Component (NET)</option>
               </Select>
               <Select
                 label="Calculation Type"
-                value={ruleForm.calculationType}
-                onChange={(e) => setRuleForm({ ...ruleForm, calculationType: e.target.value })}
+                value={ruleForm.computationType || ruleForm.calculationType || 'FIXED'}
+                onChange={(e) =>
+                  setRuleForm({
+                    ...ruleForm,
+                    computationType: e.target.value,
+                    calculationType: e.target.value,
+                  })
+                }
               >
                 <option value="FIXED">FIXED</option>
                 <option value="PERCENTAGE">PERCENTAGE</option>
@@ -650,27 +779,39 @@ export default function PayrollFeature() {
               </Select>
             </div>
 
-            {ruleForm.calculationType === 'FIXED' && (
+            {(ruleForm.computationType === 'FIXED' || ruleForm.calculationType === 'FIXED') && (
               <Input
                 label="Fixed Amount ($)"
                 type="number"
-                value={ruleForm.amount}
-                onChange={(e) => setRuleForm({ ...ruleForm, amount: Number(e.target.value) })}
+                min="0"
+                step="any"
+                value={ruleForm.fixedAmount ?? ruleForm.amount ?? 0}
+                onChange={(e) =>
+                  setRuleForm({
+                    ...ruleForm,
+                    fixedAmount: Number(e.target.value),
+                    amount: Number(e.target.value),
+                  })
+                }
                 required
               />
             )}
 
-            {ruleForm.calculationType === 'PERCENTAGE' && (
+            {(ruleForm.computationType === 'PERCENTAGE' ||
+              ruleForm.calculationType === 'PERCENTAGE') && (
               <Input
                 label="Percentage of Base (%)"
                 type="number"
+                min="0"
+                step="any"
                 value={ruleForm.percentage}
                 onChange={(e) => setRuleForm({ ...ruleForm, percentage: Number(e.target.value) })}
                 required
               />
             )}
 
-            {ruleForm.calculationType === 'FORMULA' && (
+            {(ruleForm.computationType === 'FORMULA' ||
+              ruleForm.calculationType === 'FORMULA') && (
               <Input
                 label="Constrained Formula Expression"
                 placeholder="e.g. (BASIC + HRA) * 0.05"
@@ -684,8 +825,13 @@ export default function PayrollFeature() {
               <Button variant="outline" size="sm" onClick={() => setIsRuleModalOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" variant="primary" size="sm">
-                Save Salary Rule
+              <Button
+                type="submit"
+                variant="primary"
+                size="sm"
+                disabled={createRuleMutation.isLoading}
+              >
+                {createRuleMutation.isLoading ? 'Saving...' : 'Save Salary Rule'}
               </Button>
             </div>
           </form>
