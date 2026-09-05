@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { TimeOffType } from '../models/TimeOffType.js';
 import { TimeOffAllocation } from '../models/TimeOffAllocation.js';
 import { TimeOffRequest } from '../models/TimeOffRequest.js';
@@ -30,8 +31,8 @@ export async function createAllocation(data) {
 
 export async function getAllocations(query = {}) {
   const filter = {};
-  if (query.employeeId) filter.employeeId = query.employeeId;
-  if (query.typeId) filter.typeId = query.typeId;
+  if (query.employeeId && mongoose.isValidObjectId(query.employeeId)) filter.employeeId = query.employeeId;
+  if (query.typeId && mongoose.isValidObjectId(query.typeId)) filter.typeId = query.typeId;
   if (query.status) filter.status = query.status;
 
   return TimeOffAllocation.find(filter).populate('employeeId typeId').sort({ validFrom: -1 });
@@ -39,6 +40,12 @@ export async function getAllocations(query = {}) {
 
 // Requests
 export async function submitRequest(data) {
+  if (!mongoose.isValidObjectId(data.typeId)) {
+    const err = new Error('Time off type not found');
+    err.code = 'TYPE_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
   const type = await TimeOffType.findById(data.typeId);
   if (!type) {
     const err = new Error('Time off type not found');
@@ -74,12 +81,13 @@ export async function submitRequest(data) {
 
 export async function getRequests(query = {}) {
   const filter = {};
-  if (query.employeeId) filter.employeeId = query.employeeId;
-  if (query.typeId) filter.typeId = query.typeId;
+  if (query.employeeId && mongoose.isValidObjectId(query.employeeId)) filter.employeeId = query.employeeId;
+  if (query.typeId && mongoose.isValidObjectId(query.typeId)) filter.typeId = query.typeId;
   if (query.status) filter.status = query.status;
 
   return TimeOffRequest.find(filter).populate('employeeId typeId approvedBy').sort({ createdAt: -1 });
 }
+
 
 /**
  * Transactional & Idempotent Approval of Time Off Request (BR-04)

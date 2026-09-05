@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Employee } from '../models/Employee.js';
 import { Contract } from '../models/Contract.js';
 
@@ -24,6 +25,12 @@ export async function createEmployee(data) {
 }
 
 export async function updateEmployee(id, data) {
+  if (!mongoose.isValidObjectId(id)) {
+    const err = new Error('Employee not found');
+    err.code = 'EMPLOYEE_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
   const employee = await Employee.findByIdAndUpdate(id, data, { new: true, runValidators: true })
     .populate('departmentId managerId scheduleId');
   if (!employee) {
@@ -42,7 +49,7 @@ export async function getEmployees(query = {}) {
 
   const filter = {};
 
-  if (query.departmentId) {
+  if (query.departmentId && mongoose.isValidObjectId(query.departmentId)) {
     filter.departmentId = query.departmentId;
   }
   if (query.employeeType) {
@@ -51,7 +58,7 @@ export async function getEmployees(query = {}) {
   if (query.status) {
     filter.status = query.status;
   }
-  if (query.employeeId) {
+  if (query.employeeId && mongoose.isValidObjectId(query.employeeId)) {
     filter._id = query.employeeId;
   }
 
@@ -78,6 +85,13 @@ export async function getEmployees(query = {}) {
 }
 
 export async function getEmployeeById(id) {
+  if (!mongoose.isValidObjectId(id)) {
+    const err = new Error('Employee not found');
+    err.code = 'EMPLOYEE_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
+
   const employee = await Employee.findById(id).populate('departmentId managerId scheduleId');
   if (!employee) {
     const err = new Error('Employee not found');
@@ -85,6 +99,7 @@ export async function getEmployeeById(id) {
     err.statusCode = 404;
     throw err;
   }
+
 
   // Calculate related smart action record counts
   const contractCount = await Contract.countDocuments({ employeeId: id });

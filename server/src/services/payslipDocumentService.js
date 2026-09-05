@@ -76,8 +76,9 @@ export function generatePayslipPDFBuffer(payslip) {
  * Creates Nodemailer transport helper
  */
 function createTransporter() {
-  if (config.smtp.user && config.smtp.pass) {
+  if (config.smtp.user && config.smtp.pass && process.env.NODE_ENV !== 'test') {
     return nodemailer.createTransport({
+
       host: config.smtp.host,
       port: config.smtp.port,
       secure: config.smtp.port === 465,

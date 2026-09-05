@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Attendance } from '../models/Attendance.js';
 import { logAudit } from './auditService.js';
 
@@ -33,7 +34,18 @@ export async function checkIn({ employeeId, checkInTime = new Date() }) {
 }
 
 export async function checkOut({ attendanceId, employeeId, checkOutTime = new Date() }) {
-  const filter = attendanceId ? { _id: attendanceId } : { employeeId, checkOut: null };
+  const filter = {};
+  if (attendanceId && mongoose.isValidObjectId(attendanceId)) {
+    filter._id = attendanceId;
+  } else if (employeeId && mongoose.isValidObjectId(employeeId)) {
+    filter.employeeId = employeeId;
+    filter.checkOut = null;
+  } else {
+    const err = new Error('No open check-in attendance record found');
+    err.code = 'ATTENDANCE_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
   const attendance = await Attendance.findOne(filter);
 
   if (!attendance) {
@@ -54,6 +66,12 @@ export async function checkOut({ attendanceId, employeeId, checkOutTime = new Da
 }
 
 export async function correctAttendance({ attendanceId, checkIn, checkOut, status, reason, actorId }) {
+  if (!mongoose.isValidObjectId(attendanceId)) {
+    const err = new Error('Attendance record not found');
+    err.code = 'ATTENDANCE_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
   const attendance = await Attendance.findById(attendanceId);
   if (!attendance) {
     const err = new Error('Attendance record not found');
@@ -96,7 +114,7 @@ export async function getAttendanceList(query = {}) {
   const skip = (page - 1) * pageSize;
 
   const filter = {};
-  if (query.employeeId) filter.employeeId = query.employeeId;
+  if (query.employeeId && mongoose.isValidObjectId(query.employeeId)) filter.employeeId = query.employeeId;
   if (query.status) filter.status = query.status;
 
   if (query.startDate || query.endDate) {
@@ -112,3 +130,4 @@ export async function getAttendanceList(query = {}) {
 
   return { records, meta: { page, pageSize, total } };
 }
+
