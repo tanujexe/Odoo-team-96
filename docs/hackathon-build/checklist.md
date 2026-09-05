@@ -68,7 +68,7 @@
   - **Tests required:** Weekly-hour calculation tests; employee CRUD/ownership tests; historical, expired, and concurrent-contract resolver tests.
   - **Verify:** Server HR test suite plus API calls for employee list, schedule create, and period contract lookup.
 
-- [ ] **PP-06 — HR master-data client: employee workspace and schedule/contract screens**
+- [x] **PP-06 — HR master-data client: employee workspace and schedule/contract screens**
   - **Developer:** Developer 2
   - **Files/modules to modify:** `client/src/features/{employees,contracts,schedules}/`, `client/src/lib/api/{employees,contracts,schedules}.js`, `client/src/tests/hr/`.
   - **Spec ref:** `spec.md > Components And Responsibilities > Employee workspace; Contracts and schedules`; `PRD.md > 4.1-4.3; 10.2`.
