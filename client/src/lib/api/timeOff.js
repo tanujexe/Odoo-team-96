@@ -1,6 +1,11 @@
 import { apiClient } from './client';
 
 export let mockLeaveBalances = {
+  'emp-john-1': {
+    pto: { available: 16.0, total: 20.0, consumed: 4.0 },
+    sick: { available: 9.0, total: 10.0, consumed: 1.0 },
+    unpaid: { available: 0, total: 0, consumed: 0 },
+  },
   'emp-alex-1': {
     pto: { available: 14.5, total: 20.0, consumed: 5.5 },
     sick: { available: 8.0, total: 10.0, consumed: 2.0 },
@@ -19,6 +24,19 @@ export let mockLeaveBalances = {
 };
 
 export let mockLeaveRequests = [
+  {
+    id: 'req-john-1',
+    employeeId: 'emp-john-1',
+    employeeName: 'John Developer',
+    leaveType: 'PAID_TIME_OFF',
+    leaveTypeName: 'Paid Time Off (PTO)',
+    startDate: '2026-09-18',
+    endDate: '2026-09-20',
+    days: 3,
+    status: 'APPROVED',
+    reason: 'Family event',
+    createdAt: '2026-09-01T10:00:00Z',
+  },
   {
     id: 'req-1',
     employeeId: 'emp-marcus-1',

@@ -30,7 +30,7 @@ describe('Login Experience', () => {
     expect(screen.getByLabelText(/Corporate Email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Password/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Sign In to Workspace/i })).toBeInTheDocument();
-    expect(screen.getByText('Payroll Mgr')).toBeInTheDocument();
+    expect(screen.getByText('Payroll Manager')).toBeInTheDocument();
   });
 
   it('displays error alert on invalid credentials', async () => {

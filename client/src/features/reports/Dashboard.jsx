@@ -26,8 +26,10 @@ import {
   FileText,
 } from 'lucide-react';
 
+import EmployeeDashboard from './EmployeeDashboard';
+
 export default function DashboardFeature() {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [datePreset, setDatePreset] = useState('CURRENT_MONTH');

@@ -47,3 +47,45 @@ describe('Executive Dashboard & Live Filters (BR-11)', () => {
     });
   });
 });
+
+describe('Employee Self-Service Dashboard (BR-12)', () => {
+  it('renders employee profile details, attendance records, and leave balances on employee login', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider
+          initialUser={{
+            id: 'usr-emp-1',
+            name: 'John Developer',
+            email: 'employee@peoplepay.com',
+            role: ROLES.EMPLOYEE,
+            employeeId: 'emp-john-1',
+          }}
+        >
+          <MemoryRouter>
+            <DashboardFeature />
+          </MemoryRouter>
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    // 1. Employee profile details
+    expect(await screen.findByText(/Welcome back, John!/i)).toBeInTheDocument();
+    expect(screen.getByText(/Employment & Contract Details/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Senior Full Stack Engineer/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Standard Full-Time \(40h\)/i)).toBeInTheDocument();
+
+    // 2. Attendance terminal & records
+    expect(screen.getByText(/Attendance Terminal/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Check In/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Check Out/i })).toBeInTheDocument();
+    expect(screen.getByText(/Recent Attendance History/i)).toBeInTheDocument();
+
+    // 3. Leave balances & requests
+    expect(screen.getByText(/Time Off & Leave Balances/i)).toBeInTheDocument();
+    expect(screen.getByTestId('emp-pto-available')).toBeInTheDocument();
+    expect(screen.getByTestId('emp-sick-available')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Request Time Off/i })).toBeInTheDocument();
+  });
+});
