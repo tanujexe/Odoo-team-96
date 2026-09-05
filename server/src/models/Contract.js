@@ -2,6 +2,11 @@ import mongoose from 'mongoose';
 
 const contractSchema = new mongoose.Schema(
   {
+    contractCode: {
+      type: String,
+      trim: true,
+      index: true,
+    },
     employeeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Employee',

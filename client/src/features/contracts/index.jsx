@@ -168,20 +168,32 @@ export default function ContractsFeature() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {contracts.map((cnt) => (
-                  <TableRow key={cnt.id}>
-                    <TableCell className="font-mono text-xs font-bold text-slate-800">{cnt.contractCode}</TableCell>
-                    <TableCell className="font-semibold text-slate-900">{cnt.employeeName}</TableCell>
-                    <TableCell className="font-mono font-bold text-emerald-700">
-                      {formatCurrency(cnt.wage)} / mo
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-600">{formatDate(cnt.startDate)}</TableCell>
-                    <TableCell className="text-xs text-slate-400">{cnt.endDate ? formatDate(cnt.endDate) : 'Open-ended'}</TableCell>
-                    <TableCell>
-                      <Badge status={cnt.status} />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {contracts.map((cnt) => {
+                  const code = cnt.contractCode || (cnt.id ? `CNT-${String(cnt.id).slice(-4).toUpperCase()}` : 'CNT-001');
+                  return (
+                    <TableRow key={cnt.id || cnt._id}>
+                      <TableCell className="font-mono text-xs font-bold text-slate-800">{code}</TableCell>
+                      <TableCell className="font-semibold text-slate-900">
+                        <div>
+                          <span>{cnt.employeeName || 'Unassigned Employee'}</span>
+                          {cnt.employeeCode && (
+                            <span className="text-[11px] text-slate-500 font-mono block mt-0.5">
+                              {cnt.employeeCode}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono font-bold text-emerald-700">
+                        {formatCurrency(cnt.wage)} / mo
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-600">{formatDate(cnt.startDate)}</TableCell>
+                      <TableCell className="text-xs text-slate-400">{cnt.endDate ? formatDate(cnt.endDate) : 'Open-ended'}</TableCell>
+                      <TableCell>
+                        <Badge status={cnt.status} />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}

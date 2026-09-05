@@ -211,6 +211,7 @@ export async function seedDatabase(uri = config.mongoUri) {
   console.log('[Seeder] Seeding Contracts (with historical & current active contracts)...');
   // Historical expired contract for John
   await Contract.create({
+    contractCode: 'CNT-2025-001',
     employeeId: empJohn._id,
     startDate: new Date('2025-01-01'),
     endDate: new Date('2025-12-31'),
@@ -224,6 +225,7 @@ export async function seedDatabase(uri = config.mongoUri) {
   // Current active contracts
   await Contract.create([
     {
+      contractCode: 'CNT-2026-001',
       employeeId: empJohn._id,
       startDate: new Date('2026-01-01'),
       endDate: null,
@@ -234,6 +236,7 @@ export async function seedDatabase(uri = config.mongoUri) {
       status: 'ACTIVE',
     },
     {
+      contractCode: 'CNT-2026-002',
       employeeId: empJane._id,
       startDate: new Date('2026-01-01'),
       endDate: null,
@@ -244,6 +247,7 @@ export async function seedDatabase(uri = config.mongoUri) {
       status: 'ACTIVE',
     },
     {
+      contractCode: 'CNT-2026-003',
       employeeId: empCharlie._id,
       startDate: new Date('2026-01-01'),
       endDate: null,

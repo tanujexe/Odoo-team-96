@@ -1,14 +1,42 @@
 import { apiClient } from './client';
 import { mockContracts } from './mockData';
 
+export function normalizeContract(cnt) {
+  if (!cnt) return cnt;
+  const empObj = typeof cnt.employeeId === 'object' && cnt.employeeId !== null ? cnt.employeeId : null;
+  const empName =
+    cnt.employeeName ||
+    empObj?.name ||
+    (empObj?.firstName ? `${empObj.firstName} ${empObj.lastName || ''}`.trim() : null) ||
+    'Unassigned Employee';
+  const empCode = empObj?.employeeCode || (typeof cnt.employeeId === 'string' ? cnt.employeeId : '');
+  const code =
+    cnt.contractCode ||
+    (cnt._id || cnt.id ? `CNT-${String(cnt._id || cnt.id).slice(-6).toUpperCase()}` : 'CNT-2026-001');
+
+  return {
+    ...cnt,
+    id: cnt._id || cnt.id,
+    contractCode: code,
+    employeeId: empObj ? empObj._id || empObj.id : cnt.employeeId,
+    employeeCode: empCode,
+    employeeName: empName,
+    wage: typeof cnt.wage === 'number' ? cnt.wage : parseFloat(cnt.wage || 0),
+  };
+}
+
 export async function fetchContracts(params = {}) {
   try {
     const query = new URLSearchParams(params).toString();
     const response = await apiClient(`/contracts${query ? `?${query}` : ''}`);
-    return response.data;
+    const list = Array.isArray(response.data) ? response.data : [];
+    const normalized = list.map(normalizeContract);
+    const serverIds = new Set(normalized.map((c) => c.id));
+    const extraMocks = mockContracts.filter((m) => !serverIds.has(m.id)).map(normalizeContract);
+    return [...normalized, ...extraMocks];
   } catch (err) {
     console.warn('[Contracts API] Using fallback mock data:', err);
-    let filtered = [...mockContracts];
+    let filtered = mockContracts.map(normalizeContract);
     if (params.employeeId) {
       filtered = filtered.filter((c) => c.employeeId === params.employeeId);
     }
@@ -25,7 +53,7 @@ export async function createContract(data) {
       method: 'POST',
       body: data,
     });
-    return response.data;
+    return normalizeContract(response.data);
   } catch (err) {
     const newCnt = {
       id: `cnt-${Date.now()}`,
@@ -40,7 +68,7 @@ export async function createContract(data) {
       salaryStructureId: data.salaryStructureId || 'str-tech-1',
     };
     mockContracts.unshift(newCnt);
-    return newCnt;
+    return normalizeContract(newCnt);
   }
 }
 
