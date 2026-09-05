@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchUsersApi, createUserApi, updateUserApi } from '../../lib/api/users';
-import { fetchEmployees } from '../../lib/api/employees';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -9,7 +8,7 @@ import { Input, Select } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import { LoadingState, EmptyState } from '../../components/ui/States';
-import { ShieldCheck, UserPlus, CheckCircle2, AlertCircle, Link, UserCheck } from 'lucide-react';
+import { ShieldCheck, UserPlus, CheckCircle2, AlertCircle, Search, Edit2, Save, X } from 'lucide-react';
 import { ROLES } from '../../app/auth/AuthContext';
 
 export default function AdminFeature() {
@@ -18,13 +17,17 @@ export default function AdminFeature() {
   const [errorMsg, setErrorMsg] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
+  // State for inline Employee Code editing
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [editingEmpCode, setEditingEmpCode] = useState('');
+
   // New User Form State
   const [newUserForm, setNewUserForm] = useState({
     name: '',
     email: '',
     password: 'Password123!',
     role: ROLES.EMPLOYEE,
-    employeeId: '',
+    employeeCode: '',
   });
 
   const { data: users = [], isLoading: isUsersLoading } = useQuery({
@@ -32,18 +35,18 @@ export default function AdminFeature() {
     queryFn: fetchUsersApi,
   });
 
-  const { data: employees = [] } = useQuery({
-    queryKey: ['employees'],
-    queryFn: () => fetchEmployees(),
-  });
-
   const updateUserMutation = useMutation({
     mutationFn: ({ userId, data }) => updateUserApi(userId, data),
     onSuccess: (updatedUser) => {
       queryClient.invalidateQueries(['users']);
-      setSuccessMsg(`User account for ${updatedUser.name} updated successfully (Role: ${updatedUser.role})`);
+      setEditingUserId(null);
+      setSuccessMsg(
+        `User ${updatedUser.name} updated. Role: ${updatedUser.role}${
+          updatedUser.employeeCode ? ` | Linked to Employee Code: ${updatedUser.employeeCode} (${updatedUser.employeeName || ''})` : ' | (Unlinked)'
+        }`
+      );
       setErrorMsg('');
-      setTimeout(() => setSuccessMsg(''), 4000);
+      setTimeout(() => setSuccessMsg(''), 5000);
     },
     onError: (err) => {
       setErrorMsg(err.message || 'Failed to update user account');
@@ -61,11 +64,15 @@ export default function AdminFeature() {
         email: '',
         password: 'Password123!',
         role: ROLES.EMPLOYEE,
-        employeeId: '',
+        employeeCode: '',
       });
-      setSuccessMsg(`User account ${createdUser.email} created successfully with role ${createdUser.role}`);
+      setSuccessMsg(
+        `User account ${createdUser.email} created. Role: ${createdUser.role}${
+          createdUser.employeeCode ? ` | Linked to Employee Code: ${createdUser.employeeCode}` : ''
+        }`
+      );
       setErrorMsg('');
-      setTimeout(() => setSuccessMsg(''), 4000);
+      setTimeout(() => setSuccessMsg(''), 5000);
     },
     onError: (err) => {
       setErrorMsg(err.message || 'Failed to create user account');
@@ -76,15 +83,15 @@ export default function AdminFeature() {
     updateUserMutation.mutate({ userId, data: { role: newRole } });
   };
 
-  const handleEmployeeLinkChange = (userId, newEmpId) => {
-    updateUserMutation.mutate({ userId, data: { employeeId: newEmpId || null } });
+  const handleSaveEmpCode = (userId) => {
+    updateUserMutation.mutate({ userId, data: { employeeCode: editingEmpCode } });
   };
 
   const handleCreateUserSubmit = (e) => {
     e.preventDefault();
     createUserMutation.mutate({
       ...newUserForm,
-      employeeId: newUserForm.employeeId || null,
+      employeeCode: newUserForm.employeeCode.trim() || null,
     });
   };
 
@@ -93,9 +100,9 @@ export default function AdminFeature() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">System Administration & RBAC Management</h2>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">System Administration & RBAC Governance</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Admin Governance: Create users, assign employee IDs, and manage 5-tier role access permissions
+            Admin Governance: Create users, assign employee codes (validated against database), and manage 5-tier role access
           </p>
         </div>
         <Button variant="primary" size="sm" icon={UserPlus} onClick={() => setIsCreateModalOpen(true)}>
@@ -119,14 +126,14 @@ export default function AdminFeature() {
 
       <Card>
         <CardHeader
-          title="Authorized User Directory & Employee ID Linking"
-          subtitle="Assign roles and map user accounts to employee master records"
+          title="Authorized User Directory & Employee Code Verification"
+          subtitle="Assign roles and enter Employee Codes directly (existence verified in database)"
         />
 
         {isUsersLoading ? (
           <LoadingState message="Loading user directory and permissions..." />
         ) : users.length === 0 ? (
-          <EmptyState title="No registered users found" description="Users will appear here after registering or being added." />
+          <EmptyState title="No registered users found" description="Users will appear here after being added by an Admin." />
         ) : (
           <Table>
             <TableHeader>
@@ -134,13 +141,13 @@ export default function AdminFeature() {
                 <TableHead>User Account</TableHead>
                 <TableHead>Email Address</TableHead>
                 <TableHead>Assigned Role (Admin Power)</TableHead>
-                <TableHead>Linked Employee ID & Profile</TableHead>
+                <TableHead>Employee Code & Profile Verification</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.map((u) => {
-                const linkedEmp = employees.find((e) => (e.id || e._id) === u.employeeId);
+                const isEditingThisUser = editingUserId === u.id;
                 return (
                   <TableRow key={u.id}>
                     <TableCell>
@@ -184,22 +191,65 @@ export default function AdminFeature() {
                       </select>
                     </TableCell>
 
-                    {/* Employee Profile Linking Selector */}
+                    {/* Employee Code Direct Input & Verification */}
                     <TableCell>
-                      <select
-                        aria-label={`Employee profile linker for ${u.name}`}
-                        value={u.employeeId || ''}
-                        onChange={(e) => handleEmployeeLinkChange(u.id, e.target.value)}
-                        disabled={updateUserMutation.isPending}
-                        className="text-xs bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer max-w-[200px] truncate"
-                      >
-                        <option value="">-- No Linked Employee ID --</option>
-                        {employees.map((emp) => (
-                          <option key={emp.id || emp._id} value={emp.id || emp._id}>
-                            {emp.employeeCode} - {emp.firstName} {emp.lastName}
-                          </option>
-                        ))}
-                      </select>
+                      {isEditingThisUser ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            placeholder="e.g. EMP001"
+                            value={editingEmpCode}
+                            onChange={(e) => setEditingEmpCode(e.target.value)}
+                            className="text-xs border border-slate-300 rounded px-2 py-1 font-mono font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500 w-28"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSaveEmpCode(u.id)}
+                            disabled={updateUserMutation.isPending}
+                            title="Save & Validate Employee Code"
+                            className="p-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                          >
+                            <Save className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingUserId(null)}
+                            title="Cancel"
+                            className="p-1 rounded bg-slate-200 text-slate-600 hover:bg-slate-300 transition-colors"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          {u.employeeCode ? (
+                            <div>
+                              <span className="font-mono text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
+                                {u.employeeCode}
+                              </span>
+                              {u.employeeName && (
+                                <span className="text-[11px] text-slate-500 block mt-0.5 truncate max-w-[140px]">
+                                  {u.employeeName}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">No Employee Code</span>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingUserId(u.id);
+                              setEditingEmpCode(u.employeeCode || '');
+                            }}
+                            className="p-1 text-slate-400 hover:text-emerald-600 rounded transition-colors"
+                            title="Edit Employee Code"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </TableCell>
 
                     <TableCell>
@@ -218,7 +268,7 @@ export default function AdminFeature() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         title="Admin: Create User Account"
-        description="Create an authorized system user with role and optional employee profile link"
+        description="Create an authorized system user with assigned role and validated Employee Code"
         maxWidth="max-w-md"
       >
         <form onSubmit={handleCreateUserSubmit} className="space-y-4">
@@ -259,18 +309,17 @@ export default function AdminFeature() {
             <option value={ROLES.ADMIN}>ADMIN (System Governance)</option>
           </Select>
 
-          <Select
-            label="Link Employee Profile (Optional)"
-            value={newUserForm.employeeId}
-            onChange={(e) => setNewUserForm({ ...newUserForm, employeeId: e.target.value })}
-          >
-            <option value="">-- No Linked Employee ID --</option>
-            {employees.map((emp) => (
-              <option key={emp.id || emp._id} value={emp.id || emp._id}>
-                {emp.employeeCode} - {emp.firstName} {emp.lastName} ({emp.jobTitle})
-              </option>
-            ))}
-          </Select>
+          <div>
+            <Input
+              label="Employee Code (Checked against Database)"
+              placeholder="e.g. EMP001"
+              value={newUserForm.employeeCode}
+              onChange={(e) => setNewUserForm({ ...newUserForm, employeeCode: e.target.value })}
+            />
+            <p className="text-[11px] text-slate-500 mt-1">
+              Enter an existing Employee Code (e.g. <code>EMP001</code>). The database will verify that the Employee Code exists before saving.
+            </p>
+          </div>
 
           <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
             <Button variant="outline" size="sm" onClick={() => setIsCreateModalOpen(false)}>

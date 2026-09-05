@@ -29,7 +29,17 @@ import {
 import EmployeeDashboard from './EmployeeDashboard';
 
 export default function DashboardFeature() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+
+  if (role === ROLES.EMPLOYEE) {
+    return <EmployeeDashboard />;
+  }
+
+  return <ExecutiveDashboard />;
+}
+
+export function ExecutiveDashboard() {
+  const { user, role } = useAuth();
   const navigate = useNavigate();
 
   const [datePreset, setDatePreset] = useState('CURRENT_MONTH');

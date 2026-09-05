@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
+import { Employee } from '../models/Employee.js';
 import { config } from '../config/env.js';
 
 export async function hashPassword(password) {
@@ -37,6 +38,25 @@ function extractEmployeeId(user) {
   return user.employeeId._id ? user.employeeId._id.toString() : user.employeeId.toString();
 }
 
+async function resolveEmployeeByCodeOrId(codeOrId) {
+  if (!codeOrId || !String(codeOrId).trim()) return null;
+  const val = String(codeOrId).trim();
+  const isMongoId = /^[0-9a-fA-F]{24}$/.test(val);
+  const employee = await Employee.findOne({
+    $or: [
+      { employeeCode: new RegExp(`^${val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+      ...(isMongoId ? [{ _id: val }] : []),
+    ],
+  });
+  if (!employee) {
+    const err = new Error(`Employee Code '${val}' does not exist in the employee database`);
+    err.code = 'INVALID_EMPLOYEE_CODE';
+    err.statusCode = 400;
+    throw err;
+  }
+  return employee;
+}
+
 export async function loginUser(email, password) {
   const user = await User.findOne({ email: email.toLowerCase().trim() }).populate('employeeId');
   if (!user) {
@@ -62,6 +82,7 @@ export async function loginUser(email, password) {
   }
 
   const token = generateToken(user);
+  const empObj = typeof user.employeeId === 'object' && user.employeeId !== null ? user.employeeId : null;
 
   return {
     user: {
@@ -70,6 +91,8 @@ export async function loginUser(email, password) {
       email: user.email,
       role: user.role,
       employeeId: extractEmployeeId(user),
+      employeeCode: empObj?.employeeCode || null,
+      employeeName: empObj?.name || null,
       status: user.status,
     },
     token,
@@ -84,12 +107,15 @@ export async function getUserById(userId) {
     err.statusCode = 404;
     throw err;
   }
+  const empObj = typeof user.employeeId === 'object' && user.employeeId !== null ? user.employeeId : null;
   return {
     id: user._id.toString(),
     name: user.name,
     email: user.email,
     role: user.role,
     employeeId: extractEmployeeId(user),
+    employeeCode: empObj?.employeeCode || null,
+    employeeName: empObj?.name || null,
     status: user.status,
   };
 }
@@ -124,6 +150,8 @@ export async function registerUser({ name, email, password }) {
       email: newUser.email,
       role: newUser.role,
       employeeId: null,
+      employeeCode: null,
+      employeeName: null,
       status: newUser.status,
     },
     token,
@@ -132,15 +160,20 @@ export async function registerUser({ name, email, password }) {
 
 export async function getAllUsers() {
   const users = await User.find().select('-passwordHash').populate('employeeId').sort({ createdAt: -1 });
-  return users.map((u) => ({
-    id: u._id.toString(),
-    name: u.name,
-    email: u.email,
-    role: u.role,
-    status: u.status,
-    employeeId: extractEmployeeId(u),
-    createdAt: u.createdAt,
-  }));
+  return users.map((u) => {
+    const empObj = typeof u.employeeId === 'object' && u.employeeId !== null ? u.employeeId : null;
+    return {
+      id: u._id.toString(),
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      status: u.status,
+      employeeId: extractEmployeeId(u),
+      employeeCode: empObj?.employeeCode || null,
+      employeeName: empObj?.name || null,
+      createdAt: u.createdAt,
+    };
+  });
 }
 
 export async function updateUserRole(userId, newRole) {
@@ -158,12 +191,21 @@ export async function updateUserAccount(userId, data) {
 
   if (data.role) user.role = data.role;
   if (data.status) user.status = data.status;
-  if (data.employeeId !== undefined) {
-    user.employeeId = (data.employeeId && data.employeeId.length === 24) ? data.employeeId : null;
+
+  const targetCodeOrId = data.employeeCode !== undefined ? data.employeeCode : data.employeeId;
+  if (targetCodeOrId !== undefined) {
+    if (!targetCodeOrId || !String(targetCodeOrId).trim()) {
+      user.employeeId = null;
+    } else {
+      const emp = await resolveEmployeeByCodeOrId(targetCodeOrId);
+      user.employeeId = emp._id;
+    }
   }
 
   await user.save();
   await user.populate('employeeId');
+
+  const empObj = typeof user.employeeId === 'object' && user.employeeId !== null ? user.employeeId : null;
 
   return {
     id: user._id.toString(),
@@ -172,10 +214,12 @@ export async function updateUserAccount(userId, data) {
     role: user.role,
     status: user.status,
     employeeId: extractEmployeeId(user),
+    employeeCode: empObj?.employeeCode || null,
+    employeeName: empObj?.name || null,
   };
 }
 
-export async function adminCreateUser({ name, email, password, role, employeeId }) {
+export async function adminCreateUser({ name, email, password, role, employeeCode, employeeId }) {
   const cleanEmail = email.toLowerCase().trim();
   const existing = await User.findOne({ email: cleanEmail });
   if (existing) {
@@ -185,18 +229,27 @@ export async function adminCreateUser({ name, email, password, role, employeeId 
     throw err;
   }
 
+  const targetCodeOrId = employeeCode !== undefined ? employeeCode : employeeId;
+  let linkedEmpId = null;
+  if (targetCodeOrId && String(targetCodeOrId).trim()) {
+    const emp = await resolveEmployeeByCodeOrId(targetCodeOrId);
+    linkedEmpId = emp._id;
+  }
+
   const passwordHash = await hashPassword(password);
   const newUser = new User({
     name: name.trim(),
     email: cleanEmail,
     passwordHash,
     role: role || 'EMPLOYEE',
-    employeeId: (employeeId && employeeId.length === 24) ? employeeId : null,
+    employeeId: linkedEmpId,
     status: 'ACTIVE',
   });
 
   await newUser.save();
   await newUser.populate('employeeId');
+
+  const empObj = typeof newUser.employeeId === 'object' && newUser.employeeId !== null ? newUser.employeeId : null;
 
   return {
     id: newUser._id.toString(),
@@ -205,5 +258,7 @@ export async function adminCreateUser({ name, email, password, role, employeeId 
     role: newUser.role,
     status: newUser.status,
     employeeId: extractEmployeeId(newUser),
+    employeeCode: empObj?.employeeCode || null,
+    employeeName: empObj?.name || null,
   };
 }
