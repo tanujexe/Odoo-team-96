@@ -18,7 +18,7 @@
 
 ## Checklist
 
-- [ ] **PP-01 — Backend foundation and MongoDB connection**
+- [x] **PP-01 — Backend foundation and MongoDB connection**
   - **Developer:** Developer 1
   - **Files/modules to modify:** `server/package.json`, `server/src/app.js`, `server/src/server.js`, `server/src/config/`, `server/src/middleware/`, `server/src/models/`, `.env.example`, `README.md` (server setup section only).
   - **Spec ref:** `spec.md > Stack; File Structure; External APIs And Dependencies`.
@@ -38,7 +38,7 @@
   - **Tests required:** Vitest/React Testing Library tests for route rendering, error boundary, status badge, and permission-aware navigation visibility.
   - **Verify:** `npm test --workspace client` and manual browser check at the Vite URL.
 
-- [ ] **PP-03 — Identity, authentication, RBAC, and audit foundation**
+- [x] **PP-03 — Identity, authentication, RBAC, and audit foundation**
   - **Developer:** Developer 1
   - **Files/modules to modify:** `server/src/models/{User,Employee,AuditLog}.js`, `server/src/routes/auth.js`, `server/src/controllers/authController.js`, `server/src/services/authService.js`, `server/src/middleware/{authenticate,authorize,ownership}.js`, `server/src/tests/auth/`.
   - **Spec ref:** `spec.md > Architecture > Authorization model; Data Model`; `PRD.md > 2; BR-12 to BR-16`.
@@ -58,7 +58,7 @@
   - **Tests required:** Login success/failure tests, protected route test, role-navigation snapshots/assertions.
   - **Verify:** Run client tests; manually sign in with Employee and HR Payroll Manager seed accounts.
 
-- [ ] **PP-05 — HR master-data backend: employees, schedules, and contracts**
+- [x] **PP-05 — HR master-data backend: employees, schedules, and contracts**
   - **Developer:** Developer 1
   - **Files/modules to modify:** `server/src/models/{Department,Employee,WorkingSchedule,Contract}.js`, `server/src/routes/{employees,schedules,contracts}.js`, matching controllers/services/validators, `server/src/payroll/contractResolver.js`, `server/src/tests/hr/`, `docs/api-contracts.md`.
   - **Spec ref:** `spec.md > Components And Responsibilities > Employee workspace; Contracts and schedules`; `PRD.md > 4.1-4.3; BR-01 to BR-03`.
