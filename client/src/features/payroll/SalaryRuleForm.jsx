@@ -113,7 +113,7 @@ export function SalaryRuleForm({
               <span className="text-blue-600">{formData.name || (isNew ? 'New Rule' : 'Untitled')}</span>
             </h2>
           </div>
-          <p className="text-xs text-slate-500 font-medium ml-7 mt-0.5">Form view</p>
+          <p className="text-xs text-slate-500 font-medium ml-7 mt-0.5">Form view — Configure formula, fixed, or percentage salary components</p>
         </div>
 
         <div className="flex items-center gap-2 self-end sm:self-auto">

@@ -1,4 +1,77 @@
 import { apiClient } from './client';
+import { mockPayruns } from './mockData';
+
+export let mockPayslips = [
+  {
+    id: 'ps-1',
+    _id: 'ps-1',
+    payrunId: 'pr-2026-09',
+    employeeId: 'emp-alex-1',
+    employeeName: 'Alex Rivera',
+    employeeCode: 'EMP-002',
+    department: 'Engineering',
+    baseWage: 8500,
+    gross: 8500,
+    deductions: 1700,
+    net: 6800,
+    periodStart: '2026-09-01',
+    periodEnd: '2026-09-30',
+    deliveryStatus: 'NOT_SENT',
+    status: 'COMPUTED',
+    ruleLines: [
+      { code: 'BASIC', name: 'Basic Wage', category: 'BASIC', rate: '50%', amount: 4250 },
+      { code: 'HRA', name: 'House Rent Allowance', category: 'ALW', rate: '30%', amount: 2550 },
+      { code: 'PF', name: 'Provident Fund', category: 'DED', rate: '12%', amount: 1020 },
+      { code: 'TAX', name: 'Income Tax (TDS)', category: 'DED', rate: '8%', amount: 680 },
+    ],
+  },
+  {
+    id: 'ps-2',
+    _id: 'ps-2',
+    payrunId: 'pr-2026-09',
+    employeeId: 'emp-john-1',
+    employeeName: 'John Developer',
+    employeeCode: 'EMP001',
+    department: 'Engineering',
+    baseWage: 10000,
+    gross: 10000,
+    deductions: 2000,
+    net: 8000,
+    periodStart: '2026-09-01',
+    periodEnd: '2026-09-30',
+    deliveryStatus: 'SENT',
+    status: 'COMPUTED',
+    ruleLines: [
+      { code: 'BASIC', name: 'Basic Wage', category: 'BASIC', rate: '50%', amount: 5000 },
+      { code: 'HRA', name: 'House Rent Allowance', category: 'ALW', rate: '30%', amount: 3000 },
+      { code: 'PF', name: 'Provident Fund', category: 'DED', rate: '12%', amount: 1200 },
+      { code: 'TAX', name: 'Income Tax (TDS)', category: 'DED', rate: '8%', amount: 800 },
+    ],
+  },
+  {
+    id: 'ps-3',
+    _id: 'ps-3',
+    payrunId: 'pr-2026-09',
+    employeeId: 'emp-sarah-1',
+    employeeName: 'Sarah Connor',
+    employeeCode: 'EMP-003',
+    department: 'Finance & Payroll',
+    baseWage: 7200,
+    gross: 7200,
+    deductions: 1440,
+    net: 5760,
+    periodStart: '2026-09-01',
+    periodEnd: '2026-09-30',
+    deliveryStatus: 'NOT_SENT',
+    status: 'COMPUTED',
+    ruleLines: [
+      { code: 'BASIC', name: 'Basic Wage', category: 'BASIC', rate: '50%', amount: 3600 },
+      { code: 'HRA', name: 'House Rent Allowance', category: 'ALW', rate: '30%', amount: 2160 },
+      { code: 'PF', name: 'Provident Fund', category: 'DED', rate: '12%', amount: 864 },
+      { code: 'TAX', name: 'Income Tax (TDS)', category: 'DED', rate: '8%', amount: 576 },
+    ],
+  },
+];
 
 export let mockSalaryStructures = [
   {

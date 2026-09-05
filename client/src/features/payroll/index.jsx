@@ -21,6 +21,7 @@ import {
   fetchPayslipsByPayrun,
 } from '../../lib/api/payroll';
 import { fetchEmployees } from '../../lib/api/employees';
+import { mockPayruns } from '../../lib/api/mockData';
 import { downloadPayslipPdf, bulkSendPayslipsApi } from '../../lib/api/dashboard';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -97,6 +98,8 @@ export default function PayrollFeature() {
     queryFn: () => fetchPayrunById(selectedPayrunId),
     enabled: !!selectedPayrunId,
   });
+
+  const activePayrun = currentPayrun || payruns.find((p) => p.id === selectedPayrunId) || mockPayruns[0];
 
   const { data: payslips = [] } = useQuery({
     queryKey: ['payslips', selectedPayrunId],
@@ -409,14 +412,14 @@ export default function PayrollFeature() {
       {/* 1. PAYRUN BATCHES TAB */}
       {activeTab === 'payruns' && (
         <div className="space-y-6">
-          {currentPayrun && (
+          {activePayrun && (
             <Card className="border-blue-200 bg-white">
               <CardHeader
-                title={currentPayrun.name}
-                subtitle={`${currentPayrun.salaryStructureName} • Period: ${formatDate(currentPayrun.periodStart)} – ${formatDate(currentPayrun.periodEnd)}`}
+                title={activePayrun.name}
+                subtitle={`${activePayrun.salaryStructureName} • Period: ${formatDate(activePayrun.periodStart)} – ${formatDate(activePayrun.periodEnd)}`}
                 action={
                   <div className="flex items-center gap-2">
-                    <Badge status={currentPayrun.status} className="text-sm px-3 py-1" />
+                    <Badge status={activePayrun.status} className="text-sm px-3 py-1" />
                   </div>
                 }
               />
@@ -426,28 +429,28 @@ export default function PayrollFeature() {
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        ['DRAFT', 'COMPUTED', 'VALIDATED', 'PAID'].includes(currentPayrun.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
+                        ['DRAFT', 'COMPUTED', 'VALIDATED', 'PAID'].includes(activePayrun.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
                       }`}>1</span>
                       <span className="text-xs font-bold text-slate-800">DRAFT</span>
                     </div>
                     <ArrowRight className="w-4 h-4 text-slate-400" />
                     <div className="flex items-center gap-2">
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        ['COMPUTED', 'VALIDATED', 'PAID'].includes(currentPayrun.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
+                        ['COMPUTED', 'VALIDATED', 'PAID'].includes(activePayrun.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
                       }`}>2</span>
                       <span className="text-xs font-bold text-slate-800">COMPUTED</span>
                     </div>
                     <ArrowRight className="w-4 h-4 text-slate-400" />
                     <div className="flex items-center gap-2">
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        ['VALIDATED', 'PAID'].includes(currentPayrun.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
+                        ['VALIDATED', 'PAID'].includes(activePayrun.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
                       }`}>3</span>
                       <span className="text-xs font-bold text-slate-800">VALIDATED</span>
                     </div>
                     <ArrowRight className="w-4 h-4 text-slate-400" />
                     <div className="flex items-center gap-2">
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        currentPayrun.status === 'PAID' ? 'bg-blue-600 text-white' : 'bg-slate-300'
+                        activePayrun.status === 'PAID' ? 'bg-blue-600 text-white' : 'bg-slate-300'
                       }`}>4</span>
                       <span className="text-xs font-bold text-slate-800">PAID</span>
                     </div>
@@ -460,7 +463,7 @@ export default function PayrollFeature() {
                       size="sm"
                       icon={Play}
                       onClick={() => computeMutation.mutate()}
-                      disabled={currentPayrun.status === 'PAID' || computeMutation.isPending}
+                      disabled={activePayrun.status === 'PAID' || computeMutation.isPending}
                     >
                       {computeMutation.isPending ? 'Computing...' : 'Compute Salary Rules'}
                     </Button>
@@ -469,7 +472,7 @@ export default function PayrollFeature() {
                       size="sm"
                       icon={CheckCircle2}
                       onClick={() => validateMutation.mutate()}
-                      disabled={currentPayrun.status !== 'COMPUTED' || validateMutation.isPending}
+                      disabled={activePayrun.status !== 'COMPUTED' || validateMutation.isPending}
                     >
                       {validateMutation.isPending ? 'Validating...' : 'Validate & Lock'}
                     </Button>
@@ -478,12 +481,12 @@ export default function PayrollFeature() {
                       size="sm"
                       icon={DollarSign}
                       onClick={() => payMutation.mutate()}
-                      disabled={currentPayrun.status !== 'VALIDATED' || payMutation.isPending}
+                      disabled={activePayrun.status !== 'VALIDATED' || payMutation.isPending}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white"
                     >
                       {payMutation.isPending ? 'Processing...' : 'Mark as Paid'}
                     </Button>
-                    {currentPayrun.status === 'PAID' && (
+                    {activePayrun.status === 'PAID' && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -499,8 +502,8 @@ export default function PayrollFeature() {
                 </div>
 
                 {/* Warnings Banner */}
-                {currentPayrun.warnings && currentPayrun.warnings.length > 0 && (
-                  <WarningPanel warnings={currentPayrun.warnings} />
+                {activePayrun.warnings && activePayrun.warnings.length > 0 && (
+                  <WarningPanel warnings={activePayrun.warnings} />
                 )}
 
                 {/* Payrun Totals Summary */}
@@ -508,19 +511,19 @@ export default function PayrollFeature() {
                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                     <p className="text-xs uppercase font-bold text-slate-500 tracking-wider">Total Gross Pay</p>
                     <p className="text-2xl font-black text-slate-900 mt-1">
-                      {formatCurrency(currentPayrun.totals?.totalGross || 0)}
+                      {formatCurrency(activePayrun.totals?.totalGross || 0)}
                     </p>
                   </div>
                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                     <p className="text-xs uppercase font-bold text-slate-500 tracking-wider">Total Deductions</p>
                     <p className="text-2xl font-black text-rose-600 mt-1">
-                      -{formatCurrency(currentPayrun.totals?.totalDeductions || 0)}
+                      -{formatCurrency(activePayrun.totals?.totalDeductions || 0)}
                     </p>
                   </div>
                   <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200">
                     <p className="text-xs uppercase font-bold text-blue-800 tracking-wider">Total Net Disbursement</p>
                     <p className="text-2xl font-black text-blue-700 mt-1">
-                      {formatCurrency(currentPayrun.totals?.totalNet || 0)}
+                      {formatCurrency(activePayrun.totals?.totalNet || 0)}
                     </p>
                   </div>
                 </div>
