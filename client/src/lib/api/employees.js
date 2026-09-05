@@ -11,6 +11,7 @@ function normalizeEmployee(emp) {
     lastName: emp.lastName || nameParts.slice(1).join(' ') || '',
     jobTitle: emp.jobTitle || emp.jobPosition || 'Staff',
     department: emp.department || (typeof emp.departmentId === 'object' ? emp.departmentId?.name : 'General'),
+    employmentType: emp.employmentType || emp.employeeType || 'FULL_TIME',
   };
 }
 
