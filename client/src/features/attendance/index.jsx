@@ -99,16 +99,10 @@ export default function AttendanceFeature() {
       (user?.employeeCode && e.employeeCode === user.employeeCode)
   );
   const currentEmpId = matchedEmp?._id || matchedEmp?.id || user?.employeeId || (employees[0]?.id || 'emp-aarav-1');
-  const currentEmpId = user?.employeeId || (employees[0]?.id || 'emp-aarav-1');
   const todayDateStr = new Date().toISOString().split('T')[0];
 
   const todayUserLog =
-    logs.find((l) => (l.employeeId === currentEmpId || l.employeeName === user?.name || l.employeeCode === user?.employeeCode) && l.date === todayDateStr);
-    logs.find(
-      (l) =>
-        (l.employeeId === currentEmpId || l.employeeName === user?.name) &&
-        l.date === todayDateStr
-    ) || logs[0];
+    logs.find((l) => (l.employeeId === currentEmpId || l.employeeName === user?.name || l.employeeCode === user?.employeeCode) && l.date === todayDateStr) || logs[0];
 
   const isCheckedIn = !!todayUserLog && !todayUserLog.checkOut;
   const activeRecord = selectedLog || todayUserLog || logs[0] || {};

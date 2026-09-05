@@ -597,10 +597,6 @@ export default function AdminFeature() {
                 <Select
                   label="Working Schedule (Database)"
                   value={newUserForm.workingSchedule || (schedules[0]?.name || '40 Hours / Week')}
-                <Input
-                  label="Working Schedule"
-                  placeholder="40 Hours / Week"
-                  value={newUserForm.workingSchedule}
                   onChange={(e) => setNewUserForm((prev) => ({ ...prev, workingSchedule: e.target.value }))}
                 >
                   {schedules.map((sch) => (

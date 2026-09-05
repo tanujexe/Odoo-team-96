@@ -14,6 +14,7 @@ import { Input, Select } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { LoadingState } from '../../components/ui/States';
 import { Pagination } from '../../components/ui/Pagination';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../components/ui/Table';
 import { ScheduleEditor } from '../schedules/ScheduleEditor';
 import { ContractFormView } from './ContractFormView';
 import { ContractFormViewModal } from './ContractFormViewModal';
@@ -27,6 +28,7 @@ import {
   Bell,
   Settings,
   Info,
+  ExternalLink,
 } from 'lucide-react';
 
 /* Helper to format short date string as 'Jan 9, 2026' */
@@ -427,74 +429,83 @@ export default function ContractsFeature() {
               {isContractsLoading ? (
                 <LoadingState message="Loading contracts..." />
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Contract Code</TableHead>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Wage / Salary</TableHead>
-                      <TableHead>Start Date</TableHead>
-                      <TableHead>End Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contracts.map((cnt) => {
-                      const code = cnt.contractCode || (cnt.id ? `CON/2026/00${String(cnt.id).slice(-2)}` : 'CON/2026/0042');
-                      return (
-                        <TableRow
-                          key={cnt.id || cnt._id}
-                          onClick={() => {
-                            setSelectedContract(cnt);
-                            setContractSubView('form');
-                          }}
-                          className="cursor-pointer hover:bg-emerald-50/50 transition-colors group"
-                        >
-                          <TableCell className="font-mono text-xs font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">
-                            <span className="flex items-center gap-1.5">
-                              {code}
-                              <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </span>
-                          </TableCell>
-                          <TableCell className="font-semibold text-slate-900">
-                            <div>
-                              <span>{cnt.employeeName || 'Unassigned Employee'}</span>
-                              {cnt.employeeCode && (
-                                <span className="text-[11px] text-slate-500 font-mono block mt-0.5">
-                                  {cnt.employeeCode}
-                                </span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-mono font-bold text-emerald-700">
-                            ₹{Number(cnt.wage || 85000).toLocaleString('en-IN')} / mo
-                          </TableCell>
-                          <TableCell className="text-xs text-slate-600">{formatDate(cnt.startDate)}</TableCell>
-                          <TableCell className="text-xs text-slate-400">{cnt.endDate ? formatDate(cnt.endDate) : '--'}</TableCell>
-                          <TableCell>
-                            <Badge status={cnt.status} />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedContract(cnt);
-                                setContractSubView('form');
-                              }}
-                            >
-                              Open Form
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Contract Code</TableHead>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Wage / Salary</TableHead>
+                        <TableHead>Start Date</TableHead>
+                        <TableHead>End Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedContracts.map((cnt) => {
+                        const code = cnt.contractCode || (cnt.id ? `CON/2026/00${String(cnt.id).slice(-2)}` : 'CON/2026/0042');
+                        return (
+                          <TableRow
+                            key={cnt.id || cnt._id}
+                            onClick={() => {
+                              setSelectedContract(cnt);
+                              setContractSubView('form');
+                            }}
+                            className="cursor-pointer hover:bg-emerald-50/50 transition-colors group"
+                          >
+                            <TableCell className="font-mono text-xs font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">
+                              <span className="flex items-center gap-1.5">
+                                {code}
+                                <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </span>
+                            </TableCell>
+                            <TableCell className="font-semibold text-slate-900">
+                              <div>
+                                <span>{cnt.employeeName || 'Unassigned Employee'}</span>
+                                {cnt.employeeCode && (
+                                  <span className="text-[11px] text-slate-500 font-mono block mt-0.5">
+                                    {cnt.employeeCode}
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-mono font-bold text-emerald-700">
+                              ₹{Number(cnt.wage || 85000).toLocaleString('en-IN')} / mo
+                            </TableCell>
+                            <TableCell className="text-xs text-slate-600">{formatDate(cnt.startDate)}</TableCell>
+                            <TableCell className="text-xs text-slate-400">{cnt.endDate ? formatDate(cnt.endDate) : '--'}</TableCell>
+                            <TableCell>
+                              <Badge status={cnt.status} />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedContract(cnt);
+                                  setContractSubView('form');
+                                }}
+                              >
+                                Open Form
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                  <Pagination
+                    currentPage={currentPage}
+                    totalRecords={filteredContractsList.length}
+                    pageSize={pageSize}
+                    onPageChange={(p) => setCurrentPage(p)}
+                    onPageSizeChange={(s) => { setPageSize(s); setCurrentPage(1); }}
+                  />
+                </>
               )}
-            </Card>
+            </div>
           ) : (
             /* Form View of One Contract matching exact wireframe design */
             <ContractFormView
