@@ -147,6 +147,7 @@ export default function EmployeeDashboard() {
   return (
     <div className="space-y-6">
       {/* Top Banner & Quick Greeting */}
+      {/* Top Header with Upper-Right Corner Check-In / Check-Out Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">
@@ -156,14 +157,40 @@ export default function EmployeeDashboard() {
             Personal employment details, live attendance records, and leave allocations
           </p>
         </div>
-        <div className="flex items-center gap-3">
+
+        {/* Upper Right Corner Attendance Terminal Controls */}
+        <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-100">
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${
+                isCheckedIn ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+              }`}
+            />
+            <span className="text-xs font-semibold text-slate-700">
+              {isCheckedIn ? 'Checked In' : 'Checked Out'}
+            </span>
+          </div>
+
           <Button
             variant="primary"
             size="sm"
-            icon={Plus}
-            onClick={() => setIsTimeOffModalOpen(true)}
+            icon={LogIn}
+            disabled={isCheckedIn}
+            isLoading={checkInMutation.isPending}
+            onClick={() => checkInMutation.mutate()}
           >
-            Request Time Off
+            Check In
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            icon={LogOut}
+            disabled={!isCheckedIn}
+            isLoading={checkOutMutation.isPending}
+            onClick={() => checkOutMutation.mutate()}
+          >
+            Check Out
           </Button>
         </div>
       </div>
@@ -182,7 +209,20 @@ export default function EmployeeDashboard() {
                   <h3 className="text-lg font-bold tracking-tight text-white">
                     {matchedEmployee?.firstName} {matchedEmployee?.lastName}
                   </h3>
-                  <Badge status={matchedEmployee?.status || 'ACTIVE'} />
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                      isCheckedIn
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        : 'bg-slate-700/80 text-slate-300 border border-slate-600'
+                    }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        isCheckedIn ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'
+                      }`}
+                    />
+                    {isCheckedIn ? 'ACTIVE (ON DUTY)' : 'INACTIVE (CHECKED OUT)'}
+                  </span>
                 </div>
                 <p className="text-xs text-emerald-300 font-medium mt-0.5">
                   {matchedEmployee?.jobTitle} • {matchedEmployee?.department}

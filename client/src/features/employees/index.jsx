@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { fetchEmployees, createEmployee, fetchEmployeeById } from '../../lib/api/employees';
+import { isEmployeeCheckedIn } from '../../lib/api/attendance';
 import { fetchContracts } from '../../lib/api/contracts';
 import { createUserApi } from '../../lib/api/users';
 import { mockDepartments } from '../../lib/api/mockData';
@@ -349,7 +350,14 @@ export default function EmployeesFeature() {
                     <span className="text-xs text-slate-600">{emp.employmentType}</span>
                   </TableCell>
                   <TableCell>
-                    <Badge status={emp.status} />
+                    {(() => {
+                      const active = isEmployeeCheckedIn(emp.id || emp._id, emp.employeeCode);
+                      return (
+                        <Badge status={active ? 'ACTIVE' : 'INACTIVE'}>
+                          {active ? 'ACTIVE (ON DUTY)' : 'INACTIVE (OFF DUTY)'}
+                        </Badge>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
@@ -368,25 +376,29 @@ export default function EmployeesFeature() {
       ) : (
         /* Kanban Card Grid View */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {finalEmployeesList.map((emp, idx) => (
-            <Card key={emp.id || emp._id || idx} className="hover:border-slate-300 transition-all hover:shadow-md">
+          {finalEmployeesList.map((emp, idx) => {
+            const active = isEmployeeCheckedIn(emp.id || emp._id, emp.employeeCode);
+            return (
+              <Card key={emp.id || emp._id || idx} className="hover:border-slate-300 transition-all hover:shadow-md">
 
-              <CardContent className="p-5 space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-bold text-sm flex items-center justify-center">
-                      {emp.firstName?.[0]}
-                      {emp.lastName?.[0]}
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-bold text-sm flex items-center justify-center">
+                        {emp.firstName?.[0]}
+                        {emp.lastName?.[0]}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-slate-900">
+                          {emp.firstName} {emp.lastName}
+                        </h4>
+                        <p className="text-xs text-slate-500">{emp.jobTitle}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-900">
-                        {emp.firstName} {emp.lastName}
-                      </h4>
-                      <p className="text-xs text-slate-500">{emp.jobTitle}</p>
-                    </div>
+                    <Badge status={active ? 'ACTIVE' : 'INACTIVE'}>
+                      {active ? 'ACTIVE' : 'INACTIVE'}
+                    </Badge>
                   </div>
-                  <Badge status={emp.status} />
-                </div>
 
                 <div className="pt-2 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
                   <div>
@@ -409,7 +421,8 @@ export default function EmployeesFeature() {
                 </Button>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 

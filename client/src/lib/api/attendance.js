@@ -106,6 +106,34 @@ export let mockAttendanceLogs = [
   },
 ];
 
+export let checkedInEmployeeIds = new Set(['emp-alex-1', 'EMP001', 'emp-john-1', 'emp-aarav-1']);
+
+export function isEmployeeCheckedIn(employeeId, employeeCode) {
+  if (!employeeId && !employeeCode) return false;
+  if (
+    (employeeId && checkedInEmployeeIds.has(employeeId)) ||
+    (employeeCode && checkedInEmployeeIds.has(employeeCode))
+  ) {
+    return true;
+  }
+  return mockAttendanceLogs.some(
+    (a) =>
+      (a.employeeId === employeeId || a.employeeCode === employeeCode) &&
+      a.checkIn &&
+      !a.checkOut
+  );
+}
+
+export function setEmployeeCheckInStatus(employeeId, employeeCode, isCheckedIn) {
+  if (isCheckedIn) {
+    if (employeeId) checkedInEmployeeIds.add(employeeId);
+    if (employeeCode) checkedInEmployeeIds.add(employeeCode);
+  } else {
+    if (employeeId) checkedInEmployeeIds.delete(employeeId);
+    if (employeeCode) checkedInEmployeeIds.delete(employeeCode);
+  }
+}
+
 export async function fetchAttendance(params = {}) {
   try {
     const query = new URLSearchParams(params).toString();
@@ -128,6 +156,7 @@ export async function fetchAttendance(params = {}) {
 }
 
 export async function checkInApi(employeeId = 'emp-aarav-1') {
+  setEmployeeCheckInStatus(employeeId, null, true);
   try {
     const response = await apiClient('/attendance/check-in', {
       method: 'POST',
@@ -156,7 +185,8 @@ export async function checkInApi(employeeId = 'emp-aarav-1') {
   }
 }
 
-export async function checkOutApi(id) {
+export async function checkOutApi(id, employeeId = 'emp-aarav-1') {
+  setEmployeeCheckInStatus(employeeId, null, false);
   try {
     const response = await apiClient('/attendance/check-out', {
       method: 'POST',
