@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { fetchContracts, createContract, resolveContract } from '../../lib/api/contracts';
+import { fetchContracts, createContract, updateContract, resolveContract } from '../../lib/api/contracts';
 import { fetchSchedules, createSchedule } from '../../lib/api/schedules';
 import { mockEmployees } from '../../lib/api/mockData';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
@@ -12,6 +12,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import { LoadingState } from '../../components/ui/States';
 import { ScheduleEditor } from '../schedules/ScheduleEditor';
+import { ContractFormViewModal } from './ContractFormViewModal';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import {
   FileSignature,
@@ -22,6 +23,7 @@ import {
   AlertOctagon,
   CheckCircle2,
   HelpCircle,
+  ExternalLink,
 } from 'lucide-react';
 
 export default function ContractsFeature() {
@@ -32,6 +34,7 @@ export default function ContractsFeature() {
   const [activeTab, setActiveTab] = useState('contracts'); // 'contracts' | 'schedules' | 'resolver'
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [selectedContract, setSelectedContract] = useState(null);
 
   // Contract form
   const [contractForm, setContractForm] = useState({
@@ -71,6 +74,14 @@ export default function ContractsFeature() {
     onSuccess: () => {
       queryClient.invalidateQueries(['contracts']);
       setIsContractModalOpen(false);
+    },
+  });
+
+  const updateContractMutation = useMutation({
+    mutationFn: (data) => updateContract(data.id || data._id, data),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries(['contracts']);
+      setSelectedContract(updated);
     },
   });
 
@@ -156,7 +167,7 @@ export default function ContractsFeature() {
         <Card>
           <CardHeader
             title="Employment Contracts"
-            subtitle={filteredEmployeeId ? `Filtered by Employee ID: ${filteredEmployeeId}` : 'All registered contracts'}
+            subtitle={filteredEmployeeId ? `Filtered by Employee ID: ${filteredEmployeeId}` : 'All registered contracts (click any contract to view details)'}
           />
           {isContractsLoading ? (
             <LoadingState message="Loading contracts..." />
@@ -176,8 +187,18 @@ export default function ContractsFeature() {
                 {contracts.map((cnt) => {
                   const code = cnt.contractCode || (cnt.id ? `CNT-${String(cnt.id).slice(-4).toUpperCase()}` : 'CNT-001');
                   return (
-                    <TableRow key={cnt.id || cnt._id}>
-                      <TableCell className="font-mono text-xs font-bold text-slate-800">{code}</TableCell>
+                    <TableRow
+                      key={cnt.id || cnt._id}
+                      onClick={() => setSelectedContract(cnt)}
+                      className="cursor-pointer hover:bg-emerald-50/50 transition-colors group"
+                      title="Click to view contract form"
+                    >
+                      <TableCell className="font-mono text-xs font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">
+                        <span className="flex items-center gap-1.5">
+                          {code}
+                          <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </span>
+                      </TableCell>
                       <TableCell className="font-semibold text-slate-900">
                         <div>
                           <span>{cnt.employeeName || 'Unassigned Employee'}</span>
@@ -569,6 +590,15 @@ export default function ContractsFeature() {
           </div>
         </form>
       </Modal>
+
+      {/* Form View of One Contract Modal (Popup) */}
+      <ContractFormViewModal
+        isOpen={!!selectedContract}
+        onClose={() => setSelectedContract(null)}
+        contract={selectedContract}
+        onSave={(data) => updateContractMutation.mutate(data)}
+        isSaving={updateContractMutation.isPending}
+      />
     </div>
   );
 }
