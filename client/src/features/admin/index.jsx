@@ -3,6 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchUsersApi, createUserApi, updateUserApi } from '../../lib/api/users';
 import { fetchEmployees } from '../../lib/api/employees';
 import { fetchContracts } from '../../lib/api/contracts';
+import { fetchSchedules } from '../../lib/api/schedules';
+import { fetchSalaryStructures } from '../../lib/api/payroll';
+import { isEmployeeCheckedIn } from '../../lib/api/attendance';
 import { mockDepartments } from '../../lib/api/mockData';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -102,6 +105,16 @@ export default function AdminFeature() {
   const { data: contracts = [] } = useQuery({
     queryKey: ['contracts'],
     queryFn: () => fetchContracts(),
+  });
+
+  const { data: schedules = [] } = useQuery({
+    queryKey: ['schedules'],
+    queryFn: fetchSchedules,
+  });
+
+  const { data: salaryStructures = [] } = useQuery({
+    queryKey: ['salaryStructures'],
+    queryFn: fetchSalaryStructures,
   });
 
   // When opening modal or when employees load, auto-suggest next Employee ID & Contract Code
@@ -382,7 +395,17 @@ export default function AdminFeature() {
                     </TableCell>
 
                     <TableCell>
-                      <Badge status={u.status || 'ACTIVE'} />
+                      {(() => {
+                        const isCheckedIn = isEmployeeCheckedIn(u.employeeId, u.employeeCode);
+                        if (u.status === 'INACTIVE') {
+                          return <Badge status="INACTIVE">ACCOUNT INACTIVE</Badge>;
+                        }
+                        return (
+                          <Badge status={isCheckedIn ? 'ACTIVE' : 'INACTIVE'}>
+                            {isCheckedIn ? 'ACTIVE (ON DUTY)' : 'INACTIVE (OFF DUTY)'}
+                          </Badge>
+                        );
+                      })()}
                     </TableCell>
                   </TableRow>
                 );
@@ -571,15 +594,39 @@ export default function AdminFeature() {
                   required
                 />
 
-                <Input
-                  label="Working Schedule"
-                  placeholder="e.g. 40 Hours / Week"
-                  value={newUserForm.workingSchedule}
+                <Select
+                  label="Working Schedule (Database)"
+                  value={newUserForm.workingSchedule || (schedules[0]?.name || '40 Hours / Week')}
                   onChange={(e) => setNewUserForm((prev) => ({ ...prev, workingSchedule: e.target.value }))}
-                />
+                >
+                  {schedules.map((sch) => (
+                    <option key={sch.id || sch._id} value={sch.name}>
+                      {sch.name} ({sch.hoursPerWeek || '40h'})
+                    </option>
+                  ))}
+                </Select>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Select
+                  label="Salary Structure (Database)"
+                  value={newUserForm.salaryStructureId || (salaryStructures[0]?.id || '')}
+                  onChange={(e) => {
+                    const matchedStr = salaryStructures.find((s) => (s.id || s._id) === e.target.value);
+                    setNewUserForm((prev) => ({
+                      ...prev,
+                      salaryStructureId: e.target.value,
+                      salaryStructureName: matchedStr?.name || 'Employee Salary',
+                    }));
+                  }}
+                >
+                  {salaryStructures.map((str) => (
+                    <option key={str.id || str._id} value={str.id || str._id}>
+                      {str.name} ({str.code})
+                    </option>
+                  ))}
+                </Select>
+
                 <Input
                   label="Contract Start Date"
                   type="date"
@@ -587,13 +634,28 @@ export default function AdminFeature() {
                   onChange={(e) => setNewUserForm((prev) => ({ ...prev, startDate: e.target.value }))}
                   required
                 />
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
                   label="Contract End Date (Optional)"
                   type="date"
                   value={newUserForm.endDate || ''}
                   onChange={(e) => setNewUserForm((prev) => ({ ...prev, endDate: e.target.value }))}
                 />
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    Contract Notes / Terms
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Notes regarding contract terms..."
+                    value={newUserForm.notes}
+                    onChange={(e) => setNewUserForm((prev) => ({ ...prev, notes: e.target.value }))}
+                    className="w-full text-xs border border-slate-300 rounded-lg p-2 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
               </div>
 
               <div>

@@ -43,6 +43,11 @@ export function normalizeContract(cnt) {
     cnt.contractCode ||
     (cnt._id || cnt.id ? `CNT-${String(cnt._id || cnt.id).slice(-6).toUpperCase()}` : 'CNT-2026-001');
 
+  let computedStatus = cnt.status || 'ACTIVE';
+  if (cnt.endDate && new Date(cnt.endDate) < new Date()) {
+    computedStatus = 'EXPIRED';
+  }
+
   return {
     ...cnt,
     id: cnt._id || cnt.id,
@@ -56,7 +61,7 @@ export function normalizeContract(cnt) {
     salaryStructureName: cnt.salaryStructureName || 'Employee Salary',
     notes: cnt.notes || 'This running contract is the source for payroll calculation in the active period.',
     wage: typeof cnt.wage === 'number' ? cnt.wage : parseFloat(cnt.wage || 0),
-    status: cnt.status || 'ACTIVE',
+    status: computedStatus,
   };
 }
 

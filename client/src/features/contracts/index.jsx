@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { fetchContracts, createContract, updateContract, resolveContract } from '../../lib/api/contracts';
+import { isEmployeeCheckedIn } from '../../lib/api/attendance';
 import { fetchSchedules, createSchedule, updateSchedule } from '../../lib/api/schedules';
+import { fetchSalaryStructures } from '../../lib/api/payroll';
 import { fetchEmployees } from '../../lib/api/employees';
 import { mockEmployees } from '../../lib/api/mockData';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
@@ -155,6 +157,11 @@ export default function ContractsFeature() {
   const { data: schedules = [], isLoading: isSchedulesLoading } = useQuery({
     queryKey: ['schedules'],
     queryFn: fetchSchedules,
+  });
+
+  const { data: salaryStructures = [] } = useQuery({
+    queryKey: ['salaryStructures'],
+    queryFn: fetchSalaryStructures,
   });
 
   const contractMutation = useMutation({
@@ -342,7 +349,21 @@ export default function ContractsFeature() {
                           <TableCell className="text-xs text-slate-600">{formatDate(cnt.startDate)}</TableCell>
                           <TableCell className="text-xs text-slate-400">{cnt.endDate ? formatDate(cnt.endDate) : '--'}</TableCell>
                           <TableCell>
-                            <Badge status={cnt.status} />
+                            <div className="flex flex-col gap-1">
+                              <Badge status={cnt.status} />
+                              {(() => {
+                                const isCheckedIn = isEmployeeCheckedIn(cnt.employeeId, cnt.employeeCode);
+                                return (
+                                  <span
+                                    className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded w-fit ${
+                                      isCheckedIn ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'
+                                    }`}
+                                  >
+                                    {isCheckedIn ? 'DUTY: ON DUTY' : 'DUTY: OFF DUTY'}
+                                  </span>
+                                );
+                              })()}
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
                             <Button
@@ -370,6 +391,7 @@ export default function ContractsFeature() {
               contract={selectedContract || contractForm}
               allEmployees={allEmployees}
               schedules={schedules}
+              salaryStructures={salaryStructures}
               onSave={(formData) => {
                 if (selectedContract?._id || selectedContract?.id) {
                   updateContractMutation.mutate({ ...formData, id: selectedContract.id || selectedContract._id });
@@ -772,6 +794,8 @@ export default function ContractsFeature() {
         isOpen={!!selectedContract}
         onClose={() => setSelectedContract(null)}
         contract={selectedContract}
+        schedules={schedules}
+        salaryStructures={salaryStructures}
         onSave={(data) => updateContractMutation.mutate(data)}
         isSaving={updateContractMutation.isPending}
       />

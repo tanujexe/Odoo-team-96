@@ -9,6 +9,7 @@ export function ContractFormView({
   contract,
   allEmployees = [],
   schedules = [],
+  salaryStructures = [],
   onSave,
   onCancel,
   isPending = false,
@@ -198,18 +199,13 @@ export function ContractFormView({
               </div>
 
               <Select
-                label="Working Schedule"
-                value={formData.workingSchedule}
+                label="Working Schedule (Database)"
+                value={formData.workingSchedule || (schedules[0]?.name || '40 Hours / Week')}
                 onChange={(e) => setFormData({ ...formData, workingSchedule: e.target.value })}
               >
-                <option value="40 Hours / Week">40 Hours / Week</option>
-                <option value="Night Shift">Night Shift</option>
-                <option value="Retail Weekend">Retail Weekend</option>
-                <option value="Flexible Hybrid">Flexible Hybrid</option>
-                <option value="Part-time 20h">Part-time 20h</option>
                 {schedules.map((s) => (
-                  <option key={s.id} value={s.name}>
-                    {s.name}
+                  <option key={s.id || s._id} value={s.name}>
+                    {s.name} ({s.hoursPerWeek || '40h'})
                   </option>
                 ))}
               </Select>
@@ -226,14 +222,27 @@ export function ContractFormView({
             <div className="space-y-3 pt-1">
               <div>
                 <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                  Structure Type:
+                  Structure Type (Database):
                 </label>
-                <input
-                  type="text"
-                  value={formData.salaryStructure}
-                  onChange={(e) => setFormData({ ...formData, salaryStructure: e.target.value })}
-                  className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
+                <select
+                  value={formData.salaryStructureId || (salaryStructures[0]?.id || '')}
+                  onChange={(e) => {
+                    const matchedStr = salaryStructures.find((s) => (s.id || s._id) === e.target.value);
+                    setFormData({
+                      ...formData,
+                      salaryStructureId: e.target.value,
+                      salaryStructure: matchedStr?.name || 'Employee Salary',
+                      salaryStructureName: matchedStr?.name || 'Employee Salary',
+                    });
+                  }}
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold"
+                >
+                  {salaryStructures.map((str) => (
+                    <option key={str.id || str._id} value={str.id || str._id}>
+                      {str.name} ({str.code})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
