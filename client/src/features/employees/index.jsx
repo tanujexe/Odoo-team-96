@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { fetchEmployees, createEmployee, fetchEmployeeById } from '../../lib/api/employees';
 import { mockDepartments } from '../../lib/api/mockData';
+import { useAuth, ROLES } from '../../app/auth/AuthContext';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -25,10 +26,13 @@ import {
 } from 'lucide-react';
 
 export default function EmployeesFeature() {
+  const { role } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'kanban'
+  const canManageEmployees = [ROLES.ADMIN, ROLES.HR_MANAGER, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER].includes(role);
+
+  const [viewMode, setViewMode] = useState('kanban'); // Default view: 'kanban' | 'list'
   const [search, setSearch] = useState('');
   const [selectedDept, setSelectedDept] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -115,9 +119,11 @@ export default function EmployeesFeature() {
               <LayoutGrid className="w-4 h-4" />
             </button>
           </div>
-          <Button variant="primary" size="sm" icon={UserPlus} onClick={() => setIsCreateModalOpen(true)}>
-            Add Employee
-          </Button>
+          {canManageEmployees && (
+            <Button variant="primary" size="sm" icon={UserPlus} onClick={() => setIsCreateModalOpen(true)}>
+              Add Employee
+            </Button>
+          )}
         </div>
       </div>
 
