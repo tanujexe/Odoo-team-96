@@ -1,0 +1,138 @@
+/**
+ * Realistic Mock Data Fixtures according to PRD & Technical Spec
+ * Allows Developer 2 to build full UI workflows offline before backend integration
+ */
+
+export const mockDepartments = [
+  { id: 'dept-eng', name: 'Engineering', code: 'ENG', employeeCount: 14 },
+  { id: 'dept-prod', name: 'Product Management', code: 'PROD', employeeCount: 4 },
+  { id: 'dept-hr', name: 'People & Culture', code: 'HR', employeeCount: 3 },
+  { id: 'dept-fin', name: 'Finance & Payroll', code: 'FIN', employeeCount: 3 },
+];
+
+export const mockEmployees = [
+  {
+    id: 'emp-alex-1',
+    employeeCode: 'EMP-001',
+    firstName: 'Alex',
+    lastName: 'Rivera',
+    email: 'alex.rivera@peoplepay360.com',
+    jobTitle: 'Staff Software Engineer',
+    departmentId: 'dept-eng',
+    department: 'Engineering',
+    employmentType: 'FULL_TIME',
+    status: 'ACTIVE',
+    hireDate: '2023-03-15',
+    activeContractId: 'cnt-1',
+    workingScheduleId: 'sch-1',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'emp-sarah-1',
+    employeeCode: 'EMP-002',
+    firstName: 'Sarah',
+    lastName: 'Connor',
+    email: 'sarah.payroll@peoplepay360.com',
+    jobTitle: 'Payroll Lead',
+    departmentId: 'dept-fin',
+    department: 'Finance & Payroll',
+    employmentType: 'FULL_TIME',
+    status: 'ACTIVE',
+    hireDate: '2022-01-10',
+    activeContractId: 'cnt-2',
+    workingScheduleId: 'sch-1',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'emp-marcus-1',
+    employeeCode: 'EMP-003',
+    firstName: 'Marcus',
+    lastName: 'Vance',
+    email: 'marcus.v@peoplepay360.com',
+    jobTitle: 'Senior UI/UX Designer',
+    departmentId: 'dept-prod',
+    department: 'Product Management',
+    employmentType: 'FULL_TIME',
+    status: 'ACTIVE',
+    hireDate: '2024-02-01',
+    activeContractId: 'cnt-3',
+    workingScheduleId: 'sch-1',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+  },
+];
+
+export const mockWorkingSchedules = [
+  {
+    id: 'sch-1',
+    name: 'Standard Full-Time (40h)',
+    workDays: [
+      { day: 'Monday', isWorkDay: true, start: '09:00', end: '17:30', breakMinutes: 30 },
+      { day: 'Tuesday', isWorkDay: true, start: '09:00', end: '17:30', breakMinutes: 30 },
+      { day: 'Wednesday', isWorkDay: true, start: '09:00', end: '17:30', breakMinutes: 30 },
+      { day: 'Thursday', isWorkDay: true, start: '09:00', end: '17:30', breakMinutes: 30 },
+      { day: 'Friday', isWorkDay: true, start: '09:00', end: '17:30', breakMinutes: 30 },
+      { day: 'Saturday', isWorkDay: false, start: '00:00', end: '00:00', breakMinutes: 0 },
+      { day: 'Sunday', isWorkDay: false, start: '00:00', end: '00:00', breakMinutes: 0 },
+    ],
+    calculatedWeeklyHours: 40,
+  },
+];
+
+export const mockContracts = [
+  {
+    id: 'cnt-1',
+    contractCode: 'CNT-2024-001',
+    employeeId: 'emp-alex-1',
+    employeeName: 'Alex Rivera',
+    wage: 8500,
+    wageType: 'MONTHLY',
+    startDate: '2024-01-01',
+    endDate: null,
+    status: 'ACTIVE',
+    salaryStructureId: 'str-tech-1',
+  },
+  {
+    id: 'cnt-2',
+    contractCode: 'CNT-2023-042',
+    employeeId: 'emp-sarah-1',
+    employeeName: 'Sarah Connor',
+    wage: 7200,
+    wageType: 'MONTHLY',
+    startDate: '2023-06-01',
+    endDate: null,
+    status: 'ACTIVE',
+    salaryStructureId: 'str-corp-1',
+  },
+];
+
+export const mockPayruns = [
+  {
+    id: 'pr-2026-09',
+    name: 'September 2026 Regular Payrun',
+    periodStart: '2026-09-01',
+    periodEnd: '2026-09-30',
+    status: 'COMPUTED',
+    salaryStructureName: 'Standard Tech Structure',
+    employeeCount: 3,
+    totalGross: 24200,
+    totalNet: 18950,
+    warningsCount: 1,
+    createdAt: '2026-09-02T10:00:00Z',
+  },
+];
+
+export const mockDashboardMetrics = {
+  totalEmployees: 24,
+  activeContracts: 23,
+  payrollExpenditure: 142500,
+  pendingLeaveRequests: 2,
+  attendanceExceptions: 1,
+  monthlyPayrollTrends: [
+    { month: 'Apr', amount: 135000 },
+    { month: 'May', amount: 136200 },
+    { month: 'Jun', amount: 138000 },
+    { month: 'Jul', amount: 140500 },
+    { month: 'Aug', amount: 141000 },
+    { month: 'Sep', amount: 142500 },
+  ],
+};
