@@ -98,7 +98,7 @@
   - **Tests required:** Self-service visibility test, check-in/out mutation state test, leave request validation test, HR approval UI test.
   - **Verify:** Manual leave scenario from allocation to approval and balance refresh; run client feature tests.
 
-- [ ] **PP-09 — Salary configuration and deterministic payroll engine**
+- [x] **PP-09 — Salary configuration and deterministic payroll engine**
   - **Developer:** Developer 1
   - **Files/modules to modify:** `server/src/models/{SalaryStructure,SalaryRule,Payrun,Payslip}.js`, `server/src/routes/{salaryStructures,salaryRules,payruns,payslips}.js`, `server/src/payroll/{ruleEngine,calculator,warningService,contractResolver}.js`, matching services/validators/tests, `docs/api-contracts.md`.
   - **Spec ref:** `spec.md > Data Flow; Salary rule evaluation; Components And Responsibilities > Salary configuration and calculator; Payroll operations`; `PRD.md > 4.6-4.10; BR-05 to BR-10`.

@@ -264,7 +264,74 @@ All API endpoints MUST respond using a uniform JSON envelope structure.
 
 ## 5. Payroll & Salary Configuration (`/api/salary-structures`, `/api/salary-rules`, `/api/payruns`, `/api/payslips`)
 
-*(Documented in PP-09)*
+### `POST /api/payruns` (Step 2 of Payrun Wizard)
+- **Access**: HR Payroll User, HR Payroll Manager, Admin
+- **Request Body**:
+  ```json
+  {
+    "name": "September 2026 Regular Payrun",
+    "salaryStructureId": "66d9b01a1c9d8b0012a4f050",
+    "periodStart": "2026-09-01",
+    "periodEnd": "2026-09-30",
+    "employeeIds": ["66d9b01a1c9d8b0012a4f002"]
+  }
+  ```
+- **Success Response (`201 Created`)**:
+  ```json
+  {
+    "data": {
+      "id": "66d9b01a1c9d8b0012a4f060",
+      "name": "September 2026 Regular Payrun",
+      "status": "DRAFT",
+      "employeeIds": ["66d9b01a1c9d8b0012a4f002"]
+    }
+  }
+  ```
+
+### `POST /api/payruns/:id/compute`
+- **Access**: HR Payroll User, HR Payroll Manager, Admin
+- **Success Response (`200 OK`)**:
+  ```json
+  {
+    "data": {
+      "payrun": { "id": "66d9b01a1c9d8b0012a4f060", "status": "COMPUTED", "totals": { "totalGross": 6000, "totalDeductions": 500, "totalNet": 5500 } },
+      "payslips": [ ... ],
+      "warnings": []
+    }
+  }
+  ```
+
+### `POST /api/payruns/:id/validate`
+- **Access**: HR Payroll User, HR Payroll Manager, Admin
+- **Success Response (`200 OK`)**:
+  ```json
+  {
+    "data": {
+      "id": "66d9b01a1c9d8b0012a4f060",
+      "status": "VALIDATED"
+    }
+  }
+  ```
+- **Error Response on Blocking Warning (`409 Conflict`)**:
+  ```json
+  {
+    "error": {
+      "code": "BLOCKING_WARNINGS_EXIST",
+      "message": "Payrun cannot be validated due to 1 unresolved blocking warning(s)",
+      "warnings": [
+        {
+          "code": "AMBIGUOUS_CONTRACT",
+          "severity": "BLOCKING",
+          "message": "Multiple active contracts overlap payroll period."
+        }
+      ]
+    }
+  }
+  ```
+
+### `POST /api/payruns/:id/pay`
+- **Access**: HR Payroll User, HR Payroll Manager, Admin
+- **Description**: Marks validated payrun as PAID. State transitions `VALIDATED -> PAID`.
 
 ---
 

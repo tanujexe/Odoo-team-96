@@ -12,6 +12,10 @@ import schedulesRouter from './routes/schedules.js';
 import contractsRouter from './routes/contracts.js';
 import attendanceRouter from './routes/attendance.js';
 import timeOffRouter from './routes/timeOff.js';
+import salaryStructuresRouter from './routes/salaryStructures.js';
+import salaryRulesRouter from './routes/salaryRules.js';
+import payrunsRouter from './routes/payruns.js';
+import payslipsRouter from './routes/payslips.js';
 
 const app = express();
 
@@ -31,6 +35,10 @@ app.use('/api/schedules', schedulesRouter);
 app.use('/api/contracts', contractsRouter);
 app.use('/api/attendance', attendanceRouter);
 app.use('/api/time-off', timeOffRouter);
+app.use('/api/salary-structures', salaryStructuresRouter);
+app.use('/api/salary-rules', salaryRulesRouter);
+app.use('/api/payruns', payrunsRouter);
+app.use('/api/payslips', payslipsRouter);
 
 // Fallbacks and error handling
 app.use(notFoundHandler);
