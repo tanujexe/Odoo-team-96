@@ -45,6 +45,11 @@ export default function ContractsFeature() {
     status: 'ACTIVE',
   });
 
+  // Working Schedule State
+  const [scheduleSubTab, setScheduleSubTab] = useState('list'); // 'list' | 'calendar'
+  const [scheduleSearch, setScheduleSearch] = useState('');
+  const [selectedSchedule, setSelectedSchedule] = useState(null);
+
   // Resolver widget state
   const [resolverEmployeeId, setResolverEmployeeId] = useState(mockEmployees[0]?.id || '');
   const [resolverStart, setResolverStart] = useState('2026-09-01');
@@ -200,36 +205,180 @@ export default function ContractsFeature() {
         </Card>
       )}
 
-      {/* Schedules Tab */}
+      {/* Schedules Tab: List & Form Views matching exact wireframe design */}
       {activeTab === 'schedules' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {schedules.map((sch) => (
-              <Card key={sch.id} className="border-slate-200">
-                <CardHeader
-                  title={sch.name}
-                  subtitle="Weekly work pattern"
-                  action={
-                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                      {sch.calculatedWeeklyHours}h / week
-                    </span>
-                  }
-                />
-                <CardContent className="space-y-2">
-                  <p className="text-xs text-slate-500">Standard working hours:</p>
-                  <div className="bg-slate-50 p-3 rounded-lg text-xs space-y-1 text-slate-700">
-                    <div className="flex justify-between">
-                      <span>Mon – Fri:</span>
-                      <span className="font-mono font-semibold">09:00 - 17:30 (30m break)</span>
-                    </div>
-                    <div className="flex justify-between text-slate-400">
-                      <span>Sat – Sun:</span>
-                      <span>Off</span>
-                    </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Panel: Schedules List / Calendar View */}
+          <div className="lg:col-span-6 space-y-4">
+            <Card className="border-slate-800 bg-slate-900 text-slate-100 shadow-xl overflow-hidden">
+              {/* Header */}
+              <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={Plus}
+                    onClick={() =>
+                      setSelectedSchedule({
+                        id: `sch-${Date.now()}`,
+                        name: 'New Working Schedule',
+                        company: 'My Company',
+                        timezone: 'Company timezone',
+                        status: 'Active',
+                        workDays: [
+                          { day: 'Monday', isWorkDay: true, startTime: '09:00', endTime: '18:00', breakMinutes: 60 },
+                          { day: 'Tuesday', isWorkDay: true, startTime: '09:00', endTime: '18:00', breakMinutes: 60 },
+                          { day: 'Wednesday', isWorkDay: true, startTime: '09:00', endTime: '18:00', breakMinutes: 60 },
+                          { day: 'Thursday', isWorkDay: true, startTime: '09:00', endTime: '18:00', breakMinutes: 60 },
+                          { day: 'Friday', isWorkDay: true, startTime: '09:00', endTime: '18:00', breakMinutes: 60 },
+                        ],
+                      })
+                    }
+                  >
+                    + New Schedule
+                  </Button>
+                  <h3 className="text-base font-bold text-white tracking-tight">Working Schedules</h3>
+                </div>
+              </div>
+
+              {/* Sub-tabs: List | Calendar */}
+              <div className="px-4 pt-3 flex items-center justify-between border-b border-slate-800">
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setScheduleSubTab('list')}
+                    className={`pb-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors ${
+                      scheduleSubTab === 'list'
+                        ? 'border-emerald-400 text-emerald-400'
+                        : 'border-transparent text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    List
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setScheduleSubTab('calendar')}
+                    className={`pb-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors ${
+                      scheduleSubTab === 'calendar'
+                        ? 'border-emerald-400 text-emerald-400'
+                        : 'border-transparent text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Calendar
+                  </button>
+                </div>
+              </div>
+
+              {/* Search & Actions Bar */}
+              <div className="p-4 bg-slate-950/60 border-b border-slate-800 flex items-center gap-3">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="Search schedules..."
+                    value={scheduleSearch}
+                    onChange={(e) => setScheduleSearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="px-3 py-1.5 text-xs font-medium bg-slate-800 border border-slate-700 rounded-lg text-slate-300 hover:bg-slate-700"
+                >
+                  Filter
+                </button>
+                <button
+                  type="button"
+                  className="px-3 py-1.5 text-xs font-medium bg-slate-800 border border-slate-700 rounded-lg text-slate-300 hover:bg-slate-700"
+                >
+                  Columns
+                </button>
+              </div>
+
+              {/* SubTab Content */}
+              {scheduleSubTab === 'list' ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-950 text-slate-400 uppercase text-[11px] font-semibold tracking-wider border-b border-slate-800">
+                      <tr>
+                        <th className="py-3 px-4">Schedule Name</th>
+                        <th className="py-3 px-3">Days / Week</th>
+                        <th className="py-3 px-3">Hours / Week</th>
+                        <th className="py-3 px-3">Company</th>
+                        <th className="py-3 px-4 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {schedules
+                        .filter((s) => (s.name || '').toLowerCase().includes(scheduleSearch.toLowerCase()))
+                        .map((sch) => {
+                          const isSelected = selectedSchedule?.id === sch.id;
+                          const daysCount = sch.daysPerWeek || sch.workDays?.filter((d) => d.isWorkDay !== false).length || 5;
+                          const hoursText = sch.hoursPerWeek || `${sch.calculatedWeeklyHours || 40}h`;
+                          const statusStr = sch.status || 'Active';
+
+                          return (
+                            <tr
+                              key={sch.id}
+                              onClick={() => setSelectedSchedule(sch)}
+                              className={`cursor-pointer transition-colors ${
+                                isSelected
+                                  ? 'bg-emerald-950/50 border-l-4 border-emerald-400 text-white font-bold'
+                                  : 'hover:bg-slate-800/50 text-slate-300'
+                              }`}
+                            >
+                              <td className="py-3.5 px-4 font-semibold text-emerald-300">{sch.name}</td>
+                              <td className="py-3.5 px-3 font-mono">{daysCount}</td>
+                              <td className="py-3.5 px-3 font-mono text-emerald-400 font-bold">{hoursText}</td>
+                              <td className="py-3.5 px-3 text-slate-400">{sch.company || 'My Company'}</td>
+                              <td className="py-3.5 px-4 text-right">
+                                <span
+                                  className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
+                                    statusStr === 'Active'
+                                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                      : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                  }`}
+                                >
+                                  {statusStr}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                  <div className="p-3 bg-slate-950/40 text-[11px] text-slate-500 italic border-t border-slate-800">
+                    Select a schedule to open to Form view
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              ) : (
+                /* Calendar Grid View */
+                <div className="p-4 space-y-3">
+                  <p className="text-xs text-slate-400 font-medium">Weekly Shift Schedule Calendar View</p>
+                  <div className="grid grid-cols-7 gap-2 text-center text-xs">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                      <div key={day} className="bg-slate-800 p-2.5 rounded-lg border border-slate-700">
+                        <span className="font-bold text-emerald-400 block uppercase text-[10px]">{day}</span>
+                        <span className="text-[11px] text-slate-300 font-mono mt-1 block">09:00 - 18:00</span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">8h work</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/* Right Panel: Form View / Schedule Editor */}
+          <div className="lg:col-span-6">
+            <ScheduleEditor
+              initialSchedule={selectedSchedule || schedules[0]}
+              onSave={(updated) => {
+                scheduleMutation.mutate(updated);
+                setSelectedSchedule(updated);
+              }}
+              onCancel={() => setSelectedSchedule(null)}
+            />
           </div>
         </div>
       )}
