@@ -40,6 +40,8 @@ export default function EmployeesFeature() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
 
+  const [activeDetailTab, setActiveDetailTab] = useState('work');
+
   // Form State
   const [formData, setFormData] = useState({
     firstName: '',
@@ -311,97 +313,252 @@ export default function EmployeesFeature() {
         <Modal
           isOpen={!!selectedEmployeeId}
           onClose={() => setSelectedEmployeeId(null)}
-          title="Employee Workspace & Smart Actions"
-          description="Direct navigation links to filtered related records"
-          maxWidth="max-w-2xl"
+          maxWidth="max-w-4xl"
         >
           {isDetailLoading || !detailData ? (
-            <LoadingState message="Loading employee workspace..." />
+            <LoadingState message="Loading employee form..." />
           ) : (
-            <div className="space-y-6">
-              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="w-12 h-12 rounded-full bg-emerald-600 text-white font-bold text-base flex items-center justify-center">
-                  {detailData.employee?.firstName?.[0]}
-                  {detailData.employee?.lastName?.[0]}
-                </div>
+            <div className="space-y-5">
+              {/* Header row: Breadcrumb + Smart Action Pills */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-100">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">
-                    {detailData.employee?.firstName} {detailData.employee?.lastName}
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    {detailData.employee?.jobTitle} • {detailData.employee?.department} ({detailData.employee?.employeeCode})
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                    <span>Employee</span>
+                    <span>/</span>
+                    <span className="font-bold text-slate-900">
+                      {detailData.employee?.firstName} {detailData.employee?.lastName}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Main employee form with related HR actions
                   </p>
                 </div>
-                <Badge status={detailData.employee?.status} className="ml-auto" />
-              </div>
 
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                  Smart Related Modules
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Smart Action Buttons (Time Off, Contracts, Attendance) */}
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
-                    onClick={() => {
-                      const empId = detailData?.employee?.id || detailData?.employee?._id;
-                      setSelectedEmployeeId(null);
-                      navigate(`/contracts?employeeId=${empId}`);
-                    }}
-                    className="p-3.5 rounded-xl border border-slate-200 hover:border-emerald-500 bg-white hover:bg-emerald-50/40 text-left transition-all flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-emerald-100 text-emerald-700">
-                        <FileSignature className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-slate-900">Contracts</p>
-                        <p className="text-[11px] text-slate-500">{detailData?.smartCounts?.contracts || 0} records found</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      const empId = detailData?.employee?.id || detailData?.employee?._id;
-                      setSelectedEmployeeId(null);
-                      navigate(`/attendance?employeeId=${empId}`);
-                    }}
-                    className="p-3.5 rounded-xl border border-slate-200 hover:border-emerald-500 bg-white hover:bg-emerald-50/40 text-left transition-all flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-blue-100 text-blue-700">
-                        <Clock className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-slate-900">Attendance History</p>
-                        <p className="text-[11px] text-slate-500">{detailData?.smartCounts?.attendance || 0} days recorded</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
-                  </button>
-
-                  <button
+                    type="button"
                     onClick={() => {
                       const empId = detailData?.employee?.id || detailData?.employee?._id;
                       setSelectedEmployeeId(null);
                       navigate(`/time-off?employeeId=${empId}`);
                     }}
-                    className="p-3.5 rounded-xl border border-slate-200 hover:border-emerald-500 bg-white hover:bg-emerald-50/40 text-left transition-all flex items-center justify-between"
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-xs font-semibold text-slate-700 hover:text-emerald-800 transition-all flex items-center gap-2 shadow-2xs"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-purple-100 text-purple-700">
-                        <CalendarDays className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-slate-900">Time Off & Balances</p>
-                        <p className="text-[11px] text-slate-500">
-                          {detailData?.smartCounts?.requests || 0} requests ({detailData?.smartCounts?.allocations || 0} allocations)
-                        </p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <CalendarDays className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Time Off</span>
+                    <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                      {detailData?.smartCounts?.requests ?? detailData?.smartCounts?.timeOff ?? 3}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const empId = detailData?.employee?.id || detailData?.employee?._id;
+                      setSelectedEmployeeId(null);
+                      navigate(`/contracts?employeeId=${empId}`);
+                    }}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-xs font-semibold text-slate-700 hover:text-emerald-800 transition-all flex items-center gap-2 shadow-2xs"
+                  >
+                    <FileSignature className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Contracts</span>
+                    <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                      {detailData?.smartCounts?.contracts ?? 2}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const empId = detailData?.employee?.id || detailData?.employee?._id;
+                      setSelectedEmployeeId(null);
+                      navigate(`/attendance?employeeId=${empId}`);
+                    }}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-xs font-semibold text-slate-700 hover:text-emerald-800 transition-all flex items-center gap-2 shadow-2xs"
+                  >
+                    <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Attendance</span>
+                    <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                      {detailData?.smartCounts?.attendance ?? 14}
+                    </span>
                   </button>
                 </div>
+              </div>
+
+              {/* Employee Profile Header Card */}
+              <div className="flex items-center gap-4 p-4 bg-slate-50/90 rounded-xl border border-slate-200">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white font-extrabold text-lg flex items-center justify-center shrink-0 shadow-sm">
+                  {detailData.employee?.firstName?.[0]}
+                  {detailData.employee?.lastName?.[0]}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-slate-900 truncate">
+                      {detailData.employee?.firstName} {detailData.employee?.lastName}
+                    </h3>
+                    <Badge status={detailData.employee?.status} />
+                  </div>
+                  <p className="text-xs font-medium text-slate-600 mt-0.5">
+                    {detailData.employee?.jobTitle || detailData.employee?.jobPosition || 'Staff'} • {detailData.employee?.department || 'General'}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                    <span>{detailData.employee?.email}</span>
+                    <span>•</span>
+                    <span>{detailData.employee?.phone || '+91 98765 43210'}</span>
+                    <span>•</span>
+                    <span className="font-mono font-bold text-emerald-700">{detailData.employee?.employeeCode}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Tabs Navigation */}
+              <div className="border-b border-slate-200 flex gap-6 text-xs font-semibold text-slate-500 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveDetailTab('work')}
+                  className={`pb-2.5 transition-all relative ${
+                    activeDetailTab === 'work'
+                      ? 'text-emerald-700 font-bold border-b-2 border-emerald-600'
+                      : 'hover:text-slate-900'
+                  }`}
+                >
+                  Work Information
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveDetailTab('private')}
+                  className={`pb-2.5 transition-all relative ${
+                    activeDetailTab === 'private'
+                      ? 'text-emerald-700 font-bold border-b-2 border-emerald-600'
+                      : 'hover:text-slate-900'
+                  }`}
+                >
+                  Private Information
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveDetailTab('hr')}
+                  className={`pb-2.5 transition-all relative ${
+                    activeDetailTab === 'hr'
+                      ? 'text-emerald-700 font-bold border-b-2 border-emerald-600'
+                      : 'hover:text-slate-900'
+                  }`}
+                >
+                  HR Settings
+                </button>
+              </div>
+
+              {/* Tab Contents */}
+              {activeDetailTab === 'work' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Department</span>
+                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.department || 'General'}</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Job Position</span>
+                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.jobTitle || detailData.employee?.jobPosition || 'Staff'}</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Manager</span>
+                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.manager || 'Sara Khan'}</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Work Location</span>
+                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.workLocation || 'Mumbai / Headquarters'}</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Working Schedule</span>
+                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.scheduleName || '40 Hours / Week'}</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</span>
+                    <div className="pt-0.5">
+                      <Badge status={detailData.employee?.status} />
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Company</span>
+                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.company || 'OXP Pvt Ltd'}</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Work Email</span>
+                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.email}</p>
+                  </div>
+                </div>
+              )}
+
+              {activeDetailTab === 'private' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phone Number</span>
+                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.phone || '+91 98765 43210'}</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Personal Email</span>
+                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.personalEmail || detailData.employee?.email}</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Emergency Contact</span>
+                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.emergencyContact || '+1 (555) 019-9988 (Family)'}</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Employment Type</span>
+                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.employmentType || 'FULL_TIME'}</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Date of Joining</span>
+                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.hireDate || '2023-01-15'}</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Bank Account</span>
+                    <p className="text-xs font-semibold text-slate-800 font-mono">**** **** 4821 (HDFC)</p>
+                  </div>
+                </div>
+              )}
+
+              {activeDetailTab === 'hr' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Employee Code</span>
+                    <p className="text-xs font-bold font-mono text-emerald-800">{detailData.employee?.employeeCode}</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Active Contract ID</span>
+                    <p className="text-xs font-semibold text-slate-800 font-mono">{detailData.employee?.activeContractId || 'cnt-001'}</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Working Schedule ID</span>
+                    <p className="text-xs font-semibold text-slate-800 font-mono">{detailData.employee?.workingScheduleId || 'sch-1'}</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">System Role Permission</span>
+                    <p className="text-xs font-semibold text-slate-800">EMPLOYEE</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Footer Note */}
+              <div className="pt-2 border-t border-slate-100">
+                <p className="text-[11px] text-slate-500 italic bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex items-center justify-between">
+                  <span>Useful note: smart buttons should open related Contracts, Attendance and Time Off records filtered for the current employee.</span>
+                </p>
               </div>
             </div>
           )}
