@@ -66,6 +66,11 @@ export function SalaryRulesList({
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Salary Rules</h2>
           <p className="text-xs text-slate-500 font-medium mt-0.5">List view</p>
         </div>
+        {!canEdit && (
+          <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
+            Read-Only (Payroll User)
+          </span>
+        )}
       </div>
 
       {/* Action Bar & Search Filter (Wireframe Image 3: NEW + Search salary rules... + Structure Filter pill) */}
@@ -77,6 +82,7 @@ export function SalaryRulesList({
               size="md"
               icon={Plus}
               onClick={onNewRule}
+              aria-label="Add Salary Rule"
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-sm"
             >
               NEW
