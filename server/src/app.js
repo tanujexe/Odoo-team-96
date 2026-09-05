@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import morgan from 'morgan';
 import {
   responseEnvelopeMiddleware,
   notFoundHandler,
@@ -19,6 +20,10 @@ import payslipsRouter from './routes/payslips.js';
 import dashboardRouter from './routes/dashboard.js';
 
 const app = express();
+
+if (process.env.NODE_ENV !== 'test') {
+  app.use(morgan('dev'));
+}
 
 // Standard response helpers attached first
 app.use(responseEnvelopeMiddleware);
