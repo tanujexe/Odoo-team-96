@@ -48,7 +48,7 @@
   - **Tests required:** Role matrix API tests, cross-employee ownership test, password-hash test, audit helper test.
   - **Verify:** `npm test --workspace server -- auth`.
 
-- [ ] **PP-04 — Login and client authorization experience**
+- [x] **PP-04 — Login and client authorization experience**
   - **Developer:** Developer 2
   - **Files/modules to modify:** `client/src/features/auth/`, `client/src/app/{router,providers,auth}.jsx`, `client/src/lib/api/auth.js`, `client/src/components/ProtectedRoute.jsx`, `client/src/tests/auth/`.
   - **Spec ref:** `spec.md > Architecture > Frontend; Authorization model`; `PRD.md > 2; 10.3`.

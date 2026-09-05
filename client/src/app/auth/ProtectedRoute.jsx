@@ -1,12 +1,20 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, ArrowLeft } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 export function ProtectedRoute({ children, allowedRoles = [] }) {
-  const { isAuthenticated, hasAccess, user } = useAuth();
+  const { isAuthenticated, hasAccess, user, isLoading } = useAuth();
   const location = useLocation();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-8 h-8 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -14,16 +22,26 @@ export function ProtectedRoute({ children, allowedRoles = [] }) {
 
   if (allowedRoles.length > 0 && !hasAccess(allowedRoles)) {
     return (
-      <div data-testid="unauthorized-state" className="p-12 max-w-lg mx-auto text-center mt-12 bg-white rounded-2xl border border-slate-200 shadow-sm">
+      <div data-testid="unauthorized-state" className="p-10 max-w-lg mx-auto text-center mt-12 bg-white rounded-2xl border border-slate-200 shadow-sm">
         <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
           <ShieldAlert className="w-8 h-8" />
         </div>
         <h2 className="text-xl font-bold text-slate-900 mb-2">Access Restricted</h2>
-        <p className="text-sm text-slate-600 mb-6">
-          Your role (<span className="font-semibold text-slate-900">{user?.role}</span>) does not have permission to access this module.
+        <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+          Your role (<span className="font-semibold text-slate-900">{user?.role}</span>) does not have sufficient permissions to view this module.
         </p>
-        <Button variant="outline" onClick={() => window.history.back()}>
-          Go Back
+        <Button
+          variant="outline"
+          icon={ArrowLeft}
+          onClick={() => {
+            if (window.history.length > 2) {
+              window.history.back();
+            } else {
+              window.location.href = '/';
+            }
+          }}
+        >
+          Return to Dashboard
         </Button>
       </div>
     );
