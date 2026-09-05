@@ -17,6 +17,87 @@ export async function getTimeOffTypes(query = {}) {
   return TimeOffType.find(filter).sort({ name: 1 });
 }
 
+export async function getTimeOffBalances(employeeId) {
+  const result = {
+    pto: { available: 20, total: 20, consumed: 0 },
+    sick: { available: 10, total: 10, consumed: 0 },
+    unpaid: { available: 0, total: 0, consumed: 0 },
+  };
+
+  if (!employeeId || !mongoose.isValidObjectId(employeeId)) {
+    return result;
+  }
+
+  const allocations = await TimeOffAllocation.find({
+    employeeId,
+    status: 'APPROVED',
+  }).populate('typeId');
+
+  let ptoTotal = 0;
+  let ptoTaken = 0;
+  let sickTotal = 0;
+  let sickTaken = 0;
+
+  allocations.forEach((alloc) => {
+    const code = alloc.typeId?.code?.toUpperCase() || '';
+    if (code === 'PTO' || code === 'PAID_TIME_OFF') {
+      ptoTotal += alloc.allocatedAmount || 0;
+      ptoTaken += alloc.takenAmount || 0;
+    } else if (code === 'SICK' || code === 'SICK_LEAVE') {
+      sickTotal += alloc.allocatedAmount || 0;
+      sickTaken += alloc.takenAmount || 0;
+    }
+  });
+
+  const approvedRequests = await TimeOffRequest.find({
+    employeeId,
+    status: 'APPROVED',
+  }).populate('typeId');
+
+  let unpaidTaken = 0;
+  let reqPtoTaken = 0;
+  let reqSickTaken = 0;
+
+  approvedRequests.forEach((req) => {
+    const code = req.typeId?.code?.toUpperCase() || '';
+    if (code === 'UNPAID' || code === 'UNPAID_LEAVE') {
+      unpaidTaken += req.duration || 0;
+    } else {
+      if (req.unpaidDuration > 0) {
+        unpaidTaken += req.unpaidDuration;
+      }
+      if (code === 'PTO' || code === 'PAID_TIME_OFF') {
+        reqPtoTaken += req.paidDuration ?? req.duration ?? 0;
+      } else if (code === 'SICK' || code === 'SICK_LEAVE') {
+        reqSickTaken += req.paidDuration ?? req.duration ?? 0;
+      }
+    }
+  });
+
+  const finalPtoTotal = ptoTotal > 0 ? ptoTotal : 20;
+  const finalSickTotal = sickTotal > 0 ? sickTotal : 10;
+  const finalPtoTaken = ptoTaken > 0 ? ptoTaken : reqPtoTaken;
+  const finalSickTaken = sickTaken > 0 ? sickTaken : reqSickTaken;
+
+  return {
+    pto: {
+      total: finalPtoTotal,
+      consumed: finalPtoTaken,
+      available: Math.max(0, finalPtoTotal - finalPtoTaken),
+    },
+    sick: {
+      total: finalSickTotal,
+      consumed: finalSickTaken,
+      available: Math.max(0, finalSickTotal - finalSickTaken),
+    },
+    unpaid: {
+      total: 0,
+      consumed: unpaidTaken,
+      available: 0,
+    },
+  };
+}
+
 // Allocations
 export async function createAllocation(data) {
   const remainingAmount = data.allocatedAmount - (data.takenAmount || 0);

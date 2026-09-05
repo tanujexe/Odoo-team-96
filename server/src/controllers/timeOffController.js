@@ -25,6 +25,17 @@ export async function createType(req, res, next) {
   }
 }
 
+// Balances
+export async function getBalances(req, res, next) {
+  try {
+    const employeeId = req.query.employeeId || req.actor?.employeeId;
+    const balances = await timeOffService.getTimeOffBalances(employeeId);
+    return res.success(balances);
+  } catch (error) {
+    next(error);
+  }
+}
+
 // Allocations
 export async function listAllocations(req, res, next) {
   try {
