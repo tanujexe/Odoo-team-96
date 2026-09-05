@@ -21,38 +21,38 @@ export const ROLES = {
 export const DEFAULT_USERS = {
   [ROLES.ADMIN]: {
     id: 'usr-admin-1',
-    name: 'Eleanor Vance',
+    name: 'System Admin',
     email: 'admin@peoplepay.com',
     role: ROLES.ADMIN,
     employeeId: null,
   },
   [ROLES.HR_PAYROLL_MANAGER]: {
     id: 'usr-pm-1',
-    name: 'Sarah Connor',
-    email: 'hrmanager@peoplepay.com',
+    name: 'Charlie Payroll Manager',
+    email: 'payrollmanager@peoplepay.com',
     role: ROLES.HR_PAYROLL_MANAGER,
-    employeeId: 'emp-sarah-1',
+    employeeId: 'emp-charlie-1',
   },
   [ROLES.HR_PAYROLL_USER]: {
     id: 'usr-pu-1',
-    name: 'David Miller',
+    name: 'Payroll User Account',
     email: 'payrolluser@peoplepay.com',
     role: ROLES.HR_PAYROLL_USER,
-    employeeId: 'emp-david-1',
+    employeeId: 'emp-charlie-1',
   },
   [ROLES.HR_MANAGER]: {
     id: 'usr-hm-1',
-    name: 'Rachel Green',
+    name: 'Jane HR Specialist',
     email: 'hrmanager@peoplepay.com',
     role: ROLES.HR_MANAGER,
-    employeeId: 'emp-rachel-1',
+    employeeId: 'emp-jane-1',
   },
   [ROLES.EMPLOYEE]: {
     id: 'usr-emp-1',
-    name: 'Alex Rivera',
+    name: 'John Developer',
     email: 'employee@peoplepay.com',
     role: ROLES.EMPLOYEE,
-    employeeId: 'emp-alex-1',
+    employeeId: 'emp-john-1',
   },
 };
 
@@ -139,14 +139,26 @@ export function AuthProvider({ children, initialUser, initialToken }) {
     localStorage.removeItem('peoplepay_token');
   };
 
-  const switchRole = (roleKey) => {
-    if (DEFAULT_USERS[roleKey]) {
-      const newUser = DEFAULT_USERS[roleKey];
-      const mockToken = `mock-token-${newUser.role.toLowerCase()}`;
-      setCurrentUser(newUser);
-      setToken(mockToken);
-      localStorage.setItem('peoplepay_token', mockToken);
+  const switchRole = async (roleKey) => {
+    const defaultUser = DEFAULT_USERS[roleKey];
+    if (!defaultUser) return;
+
+    try {
+      const result = await loginApi({ email: defaultUser.email, password: 'Password123!' });
+      if (result?.user && result?.token) {
+        setCurrentUser(result.user);
+        setToken(result.token);
+        localStorage.setItem('peoplepay_token', result.token);
+        return;
+      }
+    } catch (err) {
+      console.warn(`[Auth] Real login failed for ${roleKey}, using local fallback:`, err);
     }
+
+    const mockToken = `mock-token-${defaultUser.role.toLowerCase()}`;
+    setCurrentUser(defaultUser);
+    setToken(mockToken);
+    localStorage.setItem('peoplepay_token', mockToken);
   };
 
   /**

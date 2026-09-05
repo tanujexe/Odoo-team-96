@@ -104,8 +104,21 @@ export default function LoginFeature() {
                       : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:text-white'
                   }`}
                 >
-                  <span className="font-semibold block text-emerald-400 text-[11px]">Payroll Mgr</span>
-                  <span className="text-[10px] text-slate-400 block truncate">Sarah Connor</span>
+                  <span className="font-semibold block text-emerald-400 text-[11px]">Payroll Manager</span>
+                  <span className="text-[10px] text-slate-400 block truncate">Charlie Payroll Manager</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleRoleQuickSelect(ROLES.HR_PAYROLL_USER)}
+                  className={`p-2.5 rounded-lg border text-left transition-all ${
+                    selectedRole === ROLES.HR_PAYROLL_USER
+                      ? 'bg-teal-950/40 border-teal-500 text-white'
+                      : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:text-white'
+                  }`}
+                >
+                  <span className="font-semibold block text-teal-400 text-[11px]">Payroll User</span>
+                  <span className="text-[10px] text-slate-400 block truncate">Payroll User Account</span>
                 </button>
 
                 <button
@@ -118,7 +131,7 @@ export default function LoginFeature() {
                   }`}
                 >
                   <span className="font-semibold block text-purple-400 text-[11px]">Admin</span>
-                  <span className="text-[10px] text-slate-400 block truncate">Eleanor Vance</span>
+                  <span className="text-[10px] text-slate-400 block truncate">System Admin</span>
                 </button>
 
                 <button
@@ -131,7 +144,7 @@ export default function LoginFeature() {
                   }`}
                 >
                   <span className="font-semibold block text-blue-400 text-[11px]">HR Manager</span>
-                  <span className="text-[10px] text-slate-400 block truncate">Rachel Green</span>
+                  <span className="text-[10px] text-slate-400 block truncate">Jane HR Specialist</span>
                 </button>
 
                 <button
@@ -144,7 +157,7 @@ export default function LoginFeature() {
                   }`}
                 >
                   <span className="font-semibold block text-amber-400 text-[11px]">Employee</span>
-                  <span className="text-[10px] text-slate-400 block truncate">Alex Rivera</span>
+                  <span className="text-[10px] text-slate-400 block truncate">John Developer</span>
                 </button>
               </div>
             </div>
