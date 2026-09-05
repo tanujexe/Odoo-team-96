@@ -7,6 +7,8 @@ export const createTimeOffTypeSchema = z.object({
   allocationRequired: z.boolean().optional(),
   approvalWorkflow: z.boolean().optional(),
   payrollIntegration: z.boolean().optional(),
+  allowUnpaidOverflow: z.boolean().optional(),
+  isPaid: z.boolean().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });
 
@@ -25,4 +27,6 @@ export const createRequestSchema = z.object({
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().min(1, 'End date is required'),
   duration: z.number().positive().optional(),
+  requestUnit: z.enum(['FULL', 'HALF_AM', 'HALF_PM']).optional(),
+  description: z.string().optional(),
 });

@@ -31,6 +31,14 @@ const timeOffTypeSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    allowUnpaidOverflow: {
+      type: Boolean,
+      default: false,
+    },
+    isPaid: {
+      type: Boolean,
+      default: true,
+    },
     status: {
       type: String,
       enum: ['ACTIVE', 'INACTIVE'],

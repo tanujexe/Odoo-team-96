@@ -28,6 +28,23 @@ const timeOffRequestSchema = new mongoose.Schema(
       required: true,
       min: 0.5,
     },
+    requestUnit: {
+      type: String,
+      enum: ['FULL', 'HALF_AM', 'HALF_PM'],
+      default: 'FULL',
+    },
+    paidDuration: {
+      type: Number,
+      default: null,
+    },
+    unpaidDuration: {
+      type: Number,
+      default: null,
+    },
+    description: {
+      type: String,
+      default: '',
+    },
     status: {
       type: String,
       enum: ['DRAFT', 'PENDING', 'APPROVED', 'REFUSED', 'CANCELLED'],

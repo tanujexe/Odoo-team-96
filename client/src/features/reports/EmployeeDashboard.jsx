@@ -559,25 +559,31 @@ export default function EmployeeDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leaveRequests.slice(0, 4).map((req) => (
-                    <TableRow key={req.id}>
-                      <TableCell className="font-semibold text-slate-800 text-xs">
-                        {req.leaveTypeName || req.leaveType}
-                      </TableCell>
-                      <TableCell className="text-xs text-slate-600">
-                        {formatDate(req.startDate)} {req.startDate !== req.endDate ? `– ${formatDate(req.endDate)}` : ''}
-                      </TableCell>
-                      <TableCell className="font-bold text-slate-900 font-mono text-xs">
-                        {req.days} {req.days === 1 ? 'day' : 'days'}
-                      </TableCell>
-                      <TableCell className="text-xs text-slate-500 max-w-xs truncate">
-                        {req.reason || '—'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge status={req.status} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {leaveRequests.slice(0, 4).map((req) => {
+                    const reqId = req._id || req.id;
+                    const typeName = req.leaveTypeName || (typeof req.typeId === 'object' ? req.typeId?.name : req.leaveType) || 'Time Off';
+                    const durationDays = req.duration ?? req.days ?? 1;
+
+                    return (
+                      <TableRow key={reqId}>
+                        <TableCell className="font-semibold text-slate-800 text-xs">
+                          {typeName}
+                        </TableCell>
+                        <TableCell className="text-xs text-slate-600">
+                          {formatDate(req.startDate)} {req.startDate !== req.endDate ? `– ${formatDate(req.endDate)}` : ''}
+                        </TableCell>
+                        <TableCell className="font-bold text-slate-900 font-mono text-xs">
+                          {durationDays} {durationDays === 1 ? 'day' : 'days'}
+                        </TableCell>
+                        <TableCell className="text-xs text-slate-500 max-w-xs truncate">
+                          {req.reason || req.description || '—'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge status={req.status} />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}

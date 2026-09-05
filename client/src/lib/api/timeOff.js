@@ -75,45 +75,114 @@ export async function fetchTimeOffBalances(employeeId = 'emp-alex-1') {
 }
 
 export async function fetchTimeOffRequests(params = {}) {
+  const cleanParams = {};
+  if (params.employeeId && params.employeeId !== 'null' && params.employeeId !== 'undefined') {
+    cleanParams.employeeId = params.employeeId;
+  }
+  if (params.status) {
+    cleanParams.status = params.status;
+  }
+
   try {
-    const query = new URLSearchParams(params).toString();
+    const query = new URLSearchParams(cleanParams).toString();
     const response = await apiClient(`/time-off/requests${query ? `?${query}` : ''}`);
-    return response.data;
+    if (response && response.data) {
+      return response.data;
+    }
+    throw new Error('No data returned');
   } catch (err) {
     let filtered = [...mockLeaveRequests];
-    if (params.employeeId) {
-      filtered = filtered.filter((r) => r.employeeId === params.employeeId);
+    if (cleanParams.employeeId) {
+      filtered = filtered.filter((r) => r.employeeId === cleanParams.employeeId);
     }
-    if (params.status) {
-      filtered = filtered.filter((r) => r.status === params.status);
+    if (cleanParams.status) {
+      filtered = filtered.filter((r) => r.status === cleanParams.status);
     }
     return filtered;
   }
 }
 
 export async function createTimeOffRequest(data) {
+  const isHalf = data.requestUnit === 'HALF_AM' || data.requestUnit === 'HALF_PM';
+  const totalDays = isHalf ? 0.5 : Number(data.days) || 1;
+
+  // Resolve typeId for backend API if needed
+  let typeId = data.typeId;
+  if (!typeId) {
+    try {
+      const typesRes = await apiClient('/time-off/types');
+      if (typesRes && typesRes.data && Array.isArray(typesRes.data)) {
+        const targetCode =
+          data.leaveType === 'SICK_LEAVE'
+            ? 'SICK'
+            : data.leaveType === 'UNPAID_LEAVE'
+            ? 'UNPAID'
+            : 'PTO';
+        const found = typesRes.data.find(
+          (t) => t.code === targetCode || t.name.toLowerCase().includes(targetCode.toLowerCase())
+        );
+        if (found) typeId = found._id;
+      }
+    } catch (e) {
+      // Fallback if types endpoint is unavailable
+    }
+  }
+
+  const payload = {
+    ...data,
+    typeId: typeId || '66d9f8000000000000000001',
+    duration: totalDays,
+    description: data.reason || data.description || '',
+  };
+
+  const newMockReq = {
+    id: `req-${Date.now()}`,
+    _id: `req-${Date.now()}`,
+    employeeId: data.employeeId || 'emp-alex-1',
+    employeeName: data.employeeName || 'Alex Rivera',
+    leaveType: data.leaveType || 'PAID_TIME_OFF',
+    leaveTypeName:
+      data.leaveType === 'SICK_LEAVE'
+        ? 'Sick Leave'
+        : data.leaveType === 'UNPAID_LEAVE'
+        ? 'Unpaid Leave (LWP)'
+        : 'Paid Time Off (PTO)',
+    requestUnit: data.requestUnit || 'FULL',
+    startDate: data.startDate,
+    endDate: data.endDate,
+    days: totalDays,
+    duration: totalDays,
+    paidDuration: totalDays,
+    unpaidDuration: 0,
+    status: 'PENDING',
+    reason: data.reason || 'Personal time off',
+    createdAt: new Date().toISOString(),
+  };
+
   try {
     const response = await apiClient('/time-off/requests', {
       method: 'POST',
-      body: data,
+      body: payload,
     });
+    mockLeaveRequests.unshift(newMockReq);
     return response.data;
   } catch (err) {
-    const newReq = {
-      id: `req-${Date.now()}`,
-      employeeId: data.employeeId || 'emp-alex-1',
-      employeeName: data.employeeName || 'Alex Rivera',
-      leaveType: data.leaveType || 'PAID_TIME_OFF',
-      leaveTypeName: data.leaveType === 'SICK_LEAVE' ? 'Sick Leave' : 'Paid Time Off (PTO)',
-      startDate: data.startDate,
-      endDate: data.endDate,
-      days: Number(data.days) || 1,
-      status: 'PENDING',
-      reason: data.reason || 'Personal time off',
-      createdAt: new Date().toISOString(),
-    };
-    mockLeaveRequests.unshift(newReq);
-    return newReq;
+    // Calculate balance overflow in mock store
+    const bal = mockLeaveBalances[data.employeeId || 'emp-alex-1'] || mockLeaveBalances['emp-alex-1'];
+    let available = 0;
+    if (data.leaveType === 'PAID_TIME_OFF') available = bal?.pto?.available || 0;
+    else if (data.leaveType === 'SICK_LEAVE') available = bal?.sick?.available || 0;
+
+    if (data.leaveType === 'UNPAID_LEAVE') {
+      newMockReq.paidDuration = 0;
+      newMockReq.unpaidDuration = totalDays;
+    } else if (totalDays > available) {
+      newMockReq.paidDuration = Math.max(0, available);
+      newMockReq.unpaidDuration = totalDays - newMockReq.paidDuration;
+    }
+
+    mockLeaveRequests.unshift(newMockReq);
+    return newMockReq;
   }
 }
 
@@ -128,28 +197,34 @@ export async function approveTimeOffRequest(id) {
     if (req) {
       req.status = 'APPROVED';
       const bal = mockLeaveBalances[req.employeeId] || mockLeaveBalances['emp-alex-1'];
+      const paidToDeduct = req.paidDuration ?? req.days;
+      const unpaidToAdd = req.unpaidDuration ?? 0;
+
       if (req.leaveType === 'PAID_TIME_OFF') {
-        bal.pto.available = Math.max(0, bal.pto.available - req.days);
-        bal.pto.consumed += req.days;
+        bal.pto.available = Math.max(0, bal.pto.available - paidToDeduct);
+        bal.pto.consumed += paidToDeduct;
       } else if (req.leaveType === 'SICK_LEAVE') {
-        bal.sick.available = Math.max(0, bal.sick.available - req.days);
-        bal.sick.consumed += req.days;
+        bal.sick.available = Math.max(0, bal.sick.available - paidToDeduct);
+        bal.sick.consumed += paidToDeduct;
       }
+      bal.unpaid.consumed += unpaidToAdd;
     }
     return req;
   }
 }
 
-export async function refuseTimeOffRequest(id) {
+export async function refuseTimeOffRequest({ id, reason }) {
   try {
     const response = await apiClient(`/time-off/requests/${id}/refuse`, {
       method: 'POST',
+      body: { reason },
     });
     return response.data;
   } catch (err) {
     const req = mockLeaveRequests.find((r) => r.id === id);
     if (req) {
       req.status = 'REFUSED';
+      req.refusalReason = reason || 'Not approved by manager';
     }
     return req;
   }
@@ -166,13 +241,17 @@ export async function cancelTimeOffRequest(id) {
     if (req) {
       if (req.status === 'APPROVED') {
         const bal = mockLeaveBalances[req.employeeId] || mockLeaveBalances['emp-alex-1'];
+        const paidToRestore = req.paidDuration ?? req.days;
+        const unpaidToRestore = req.unpaidDuration ?? 0;
+
         if (req.leaveType === 'PAID_TIME_OFF') {
-          bal.pto.available += req.days;
-          bal.pto.consumed = Math.max(0, bal.pto.consumed - req.days);
+          bal.pto.available += paidToRestore;
+          bal.pto.consumed = Math.max(0, bal.pto.consumed - paidToRestore);
         } else if (req.leaveType === 'SICK_LEAVE') {
-          bal.sick.available += req.days;
-          bal.sick.consumed = Math.max(0, bal.sick.consumed - req.days);
+          bal.sick.available += paidToRestore;
+          bal.sick.consumed = Math.max(0, bal.sick.consumed - paidToRestore);
         }
+        bal.unpaid.consumed = Math.max(0, bal.unpaid.consumed - unpaidToRestore);
       }
       req.status = 'CANCELLED';
     }

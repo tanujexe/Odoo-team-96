@@ -54,25 +54,55 @@ export async function submitRequest(data) {
     throw err;
   }
 
-  // Calculate duration in days if not provided
+  const requestUnit = data.requestUnit || 'FULL';
   let duration = data.duration;
-  if (!duration) {
+
+  if (requestUnit === 'HALF_AM' || requestUnit === 'HALF_PM') {
+    duration = 0.5;
+  } else if (!duration) {
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);
     const diffTime = Math.abs(end - start);
     duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   }
 
+  let paidDuration = duration;
+  let unpaidDuration = 0;
+
+  if (type.allocationRequired) {
+    // Find active allocation balance
+    const allocation = await TimeOffAllocation.findOne({
+      employeeId: data.employeeId,
+      typeId: data.typeId,
+      status: 'APPROVED',
+      validFrom: { $lte: new Date(data.startDate) },
+      validTo: { $gte: new Date(data.endDate) },
+    });
+
+    const availableBalance = allocation ? allocation.remainingAmount : 0;
+
+    if (duration > availableBalance && type.allowUnpaidOverflow === true) {
+      paidDuration = Math.max(0, availableBalance);
+      unpaidDuration = duration - paidDuration;
+    }
+  } else if (!type.isPaid) {
+    paidDuration = 0;
+    unpaidDuration = duration;
+  }
+
   const request = new TimeOffRequest({
     ...data,
+    requestUnit,
     duration,
+    paidDuration,
+    unpaidDuration,
     status: type.approvalWorkflow ? 'PENDING' : 'APPROVED',
   });
 
   await request.save();
 
   // If auto-approved (no approval workflow), consume allocation
-  if (!type.approvalWorkflow && type.allocationRequired) {
+  if (!type.approvalWorkflow && type.allocationRequired && paidDuration > 0) {
     await approveRequest({ requestId: request._id, actorId: data.employeeId });
   }
 
@@ -102,9 +132,10 @@ export async function approveRequest({ requestId, actorId }) {
   }
 
   const type = await TimeOffType.findById(request.typeId);
+  const amountToDeduct = (request.paidDuration !== null && request.paidDuration !== undefined) ? request.paidDuration : request.duration;
 
-  // If allocation is required for this leave type
-  if (type && type.allocationRequired) {
+  // If allocation is required for this leave type and there is a paid duration
+  if (type && type.allocationRequired && amountToDeduct > 0) {
     // Find active allocation for this employee & type
     const allocation = await TimeOffAllocation.findOne({
       employeeId: request.employeeId,
@@ -128,9 +159,9 @@ export async function approveRequest({ requestId, actorId }) {
     });
 
     if (!existingConsumption) {
-      if (allocation.remainingAmount < request.duration) {
+      if (allocation.remainingAmount < amountToDeduct) {
         const err = new Error(
-          `Insufficient leave balance. Remaining: ${allocation.remainingAmount}, Requested: ${request.duration}`
+          `Insufficient leave balance. Remaining: ${allocation.remainingAmount}, Requested: ${amountToDeduct}`
         );
         err.code = 'INSUFFICIENT_BALANCE';
         err.statusCode = 400;
@@ -138,15 +169,15 @@ export async function approveRequest({ requestId, actorId }) {
       }
 
       // Deduct balance
-      allocation.takenAmount += request.duration;
-      allocation.remainingAmount -= request.duration;
+      allocation.takenAmount += amountToDeduct;
+      allocation.remainingAmount -= amountToDeduct;
       await allocation.save();
 
       // Write idempotency ledger row
       await AllocationConsumption.create({
         requestId: request._id,
         allocationId: allocation._id,
-        consumedAmount: request.duration,
+        consumedAmount: amountToDeduct,
       });
     }
   }
