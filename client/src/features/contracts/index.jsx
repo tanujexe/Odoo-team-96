@@ -13,6 +13,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import { LoadingState } from '../../components/ui/States';
 import { ScheduleEditor } from '../schedules/ScheduleEditor';
+import { ContractFormView } from './ContractFormView';
 import { ContractFormViewModal } from './ContractFormViewModal';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import {
@@ -25,6 +26,8 @@ import {
   CheckCircle2,
   HelpCircle,
   ExternalLink,
+  LayoutList,
+  FileText,
 } from 'lucide-react';
 
 export default function ContractsFeature() {
@@ -33,6 +36,7 @@ export default function ContractsFeature() {
   const filteredEmployeeId = searchParams.get('employeeId') || '';
 
   const [activeTab, setActiveTab] = useState('contracts'); // 'contracts' | 'schedules' | 'resolver'
+  const [contractSubView, setContractSubView] = useState('list'); // 'list' | 'form'
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
@@ -58,17 +62,22 @@ export default function ContractsFeature() {
     contractCode: '',
     employeeId: '',
     employeeName: '',
-    wage: 8000,
+    department: 'Finance',
+    position: 'Payroll Specialist',
+    wage: 85000,
     wageType: 'MONTHLY',
+    workingSchedule: '40 Hours / Week',
     startDate: '2026-01-01',
     endDate: '',
+    salaryStructure: 'Employee Salary',
+    notes: 'This running contract is the source for payroll calculation in the active period.',
     status: 'ACTIVE',
   });
 
-  // Helper to generate next unique contract code
+  // Helper to generate next unique contract code in CON/2026/0042 format
   const generateNextContractCode = (contractList) => {
     const year = new Date().getFullYear();
-    let maxNum = 0;
+    let maxNum = 42;
     (contractList || []).forEach((c) => {
       const code = c.contractCode || '';
       const match = code.match(/\d+/g);
@@ -79,23 +88,35 @@ export default function ContractsFeature() {
         }
       }
     });
-    const nextSeq = maxNum > 0 ? maxNum + 1 : (contractList?.length || 0) + 1;
-    return `CNT-${year}-${String(nextSeq).padStart(3, '0')}`;
+    const nextSeq = maxNum + 1;
+    return `CON/${year}/${String(nextSeq).padStart(4, '0')}`;
+  };
+
+  const handleOpenNewContractForm = () => {
+    const defaultEmp = allEmployees[0] || mockEmployees[0];
+    const autoCode = generateNextContractCode(contracts);
+    const newForm = {
+      contractCode: autoCode,
+      employeeId: defaultEmp?.id || defaultEmp?._id || '',
+      employeeName: defaultEmp ? `${defaultEmp.firstName || defaultEmp.name || ''} ${defaultEmp.lastName || ''}`.trim() : 'Aarav Mehta',
+      department: defaultEmp?.department || 'Finance',
+      position: defaultEmp?.jobTitle || 'Payroll Specialist',
+      wage: 85000,
+      wageType: 'MONTHLY',
+      workingSchedule: '40 Hours / Week',
+      startDate: '2026-01-01',
+      endDate: '',
+      salaryStructure: 'Employee Salary',
+      notes: 'This running contract is the source for payroll calculation in the active period.',
+      status: 'ACTIVE',
+    };
+    setContractForm(newForm);
+    setSelectedContract(null);
+    setContractSubView('form');
   };
 
   const handleOpenContractModal = () => {
-    const defaultEmp = allEmployees[0] || mockEmployees[0];
-    const autoCode = generateNextContractCode(contracts);
-    setContractForm({
-      contractCode: autoCode,
-      employeeId: defaultEmp?.id || defaultEmp?._id || '',
-      employeeName: defaultEmp ? `${defaultEmp.firstName || defaultEmp.name || ''} ${defaultEmp.lastName || ''}`.trim() : 'Selected Employee',
-      wage: 8000,
-      wageType: 'MONTHLY',
-      startDate: '2026-01-01',
-      endDate: '',
-      status: 'ACTIVE',
-    });
+    handleOpenNewContractForm();
     setIsContractModalOpen(true);
   };
 
@@ -127,6 +148,7 @@ export default function ContractsFeature() {
       queryClient.invalidateQueries(['employees']);
       queryClient.invalidateQueries(['payslips']);
       setIsContractModalOpen(false);
+      setContractSubView('list');
     },
   });
 
@@ -135,6 +157,7 @@ export default function ContractsFeature() {
     onSuccess: (updated) => {
       queryClient.invalidateQueries(['contracts']);
       setSelectedContract(updated);
+      setContractSubView('list');
     },
   });
 
@@ -169,7 +192,7 @@ export default function ContractsFeature() {
         </div>
         <div className="flex items-center gap-3">
           {activeTab === 'contracts' && (
-            <Button variant="primary" size="sm" icon={Plus} onClick={handleOpenContractModal}>
+            <Button variant="primary" size="sm" icon={Plus} onClick={handleOpenNewContractForm}>
               New Contract
             </Button>
           )}
@@ -181,7 +204,7 @@ export default function ContractsFeature() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Main Tabs */}
       <div className="flex border-b border-slate-200 gap-6">
         <button
           onClick={() => setActiveTab('contracts')}
@@ -212,68 +235,140 @@ export default function ContractsFeature() {
         </button>
       </div>
 
-      {/* Contracts Tab */}
+      {/* Contracts Tab Container */}
       {activeTab === 'contracts' && (
-        <Card>
-          <CardHeader
-            title="Employment Contracts"
-            subtitle={filteredEmployeeId ? `Filtered by Employee ID: ${filteredEmployeeId}` : 'All registered contracts (click any contract to view details)'}
-          />
-          {isContractsLoading ? (
-            <LoadingState message="Loading contracts..." />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Contract Code</TableHead>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Wage / Salary</TableHead>
-                  <TableHead>Start Date</TableHead>
-                  <TableHead>End Date</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {contracts.map((cnt) => {
-                  const code = cnt.contractCode || (cnt.id ? `CNT-${String(cnt.id).slice(-4).toUpperCase()}` : 'CNT-001');
-                  return (
-                    <TableRow
-                      key={cnt.id || cnt._id}
-                      onClick={() => setSelectedContract(cnt)}
-                      className="cursor-pointer hover:bg-emerald-50/50 transition-colors group"
-                      title="Click to view contract form"
-                    >
-                      <TableCell className="font-mono text-xs font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">
-                        <span className="flex items-center gap-1.5">
-                          {code}
-                          <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </span>
-                      </TableCell>
-                      <TableCell className="font-semibold text-slate-900">
-                        <div>
-                          <span>{cnt.employeeName || 'Unassigned Employee'}</span>
-                          {cnt.employeeCode && (
-                            <span className="text-[11px] text-slate-500 font-mono block mt-0.5">
-                              {cnt.employeeCode}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono font-bold text-emerald-700">
-                        {formatCurrency(cnt.wage)} / mo
-                      </TableCell>
-                      <TableCell className="text-xs text-slate-600">{formatDate(cnt.startDate)}</TableCell>
-                      <TableCell className="text-xs text-slate-400">{cnt.endDate ? formatDate(cnt.endDate) : 'Open-ended'}</TableCell>
-                      <TableCell>
-                        <Badge status={cnt.status} />
-                      </TableCell>
+        <div className="space-y-4">
+          {/* Sub-view toggle bar: List View | Form View */}
+          <div className="flex items-center justify-between bg-slate-50/80 p-2 border border-slate-200 rounded-xl">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setContractSubView('list')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  contractSubView === 'list'
+                    ? 'bg-white text-emerald-800 shadow-sm border border-slate-200'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <LayoutList className="w-3.5 h-3.5" />
+                Contracts List
+              </button>
+              <button
+                onClick={() => setContractSubView('form')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  contractSubView === 'form'
+                    ? 'bg-white text-emerald-800 shadow-sm border border-slate-200'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                Form View of One Contract
+              </button>
+            </div>
+
+            {contractSubView === 'list' && (
+              <Button variant="subtle" size="sm" icon={Plus} onClick={handleOpenNewContractForm}>
+                Create New Contract
+              </Button>
+            )}
+          </div>
+
+          {/* Render List View or Form View */}
+          {contractSubView === 'list' ? (
+            <Card>
+              <CardHeader
+                title="Employment Contracts"
+                subtitle={filteredEmployeeId ? `Filtered by Employee ID: ${filteredEmployeeId}` : 'All registered contracts (click any row to open in Form View)'}
+              />
+              {isContractsLoading ? (
+                <LoadingState message="Loading contracts..." />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Contract Code</TableHead>
+                      <TableHead>Employee</TableHead>
+                      <TableHead>Wage / Salary</TableHead>
+                      <TableHead>Start Date</TableHead>
+                      <TableHead>End Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {contracts.map((cnt) => {
+                      const code = cnt.contractCode || (cnt.id ? `CON/2026/00${String(cnt.id).slice(-2)}` : 'CON/2026/0042');
+                      return (
+                        <TableRow
+                          key={cnt.id || cnt._id}
+                          onClick={() => {
+                            setSelectedContract(cnt);
+                            setContractSubView('form');
+                          }}
+                          className="cursor-pointer hover:bg-emerald-50/50 transition-colors group"
+                        >
+                          <TableCell className="font-mono text-xs font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">
+                            <span className="flex items-center gap-1.5">
+                              {code}
+                              <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </span>
+                          </TableCell>
+                          <TableCell className="font-semibold text-slate-900">
+                            <div>
+                              <span>{cnt.employeeName || 'Unassigned Employee'}</span>
+                              {cnt.employeeCode && (
+                                <span className="text-[11px] text-slate-500 font-mono block mt-0.5">
+                                  {cnt.employeeCode}
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-mono font-bold text-emerald-700">
+                            ₹{Number(cnt.wage || 85000).toLocaleString('en-IN')} / mo
+                          </TableCell>
+                          <TableCell className="text-xs text-slate-600">{formatDate(cnt.startDate)}</TableCell>
+                          <TableCell className="text-xs text-slate-400">{cnt.endDate ? formatDate(cnt.endDate) : '--'}</TableCell>
+                          <TableCell>
+                            <Badge status={cnt.status} />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedContract(cnt);
+                                setContractSubView('form');
+                              }}
+                            >
+                              Open Form
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </Card>
+          ) : (
+            /* Form View of One Contract matching exact wireframe design */
+            <ContractFormView
+              contract={selectedContract || contractForm}
+              allEmployees={allEmployees}
+              schedules={schedules}
+              onSave={(formData) => {
+                if (selectedContract?._id || selectedContract?.id) {
+                  updateContractMutation.mutate({ ...formData, id: selectedContract.id || selectedContract._id });
+                } else {
+                  contractMutation.mutate(formData);
+                }
+              }}
+              onCancel={() => setContractSubView('list')}
+              onNewContract={handleOpenNewContractForm}
+              isPending={contractMutation.isPending || updateContractMutation.isPending}
+            />
           )}
-        </Card>
+        </div>
       )}
 
       {/* Schedules Tab: List & Form Views matching exact wireframe design */}

@@ -48,9 +48,9 @@ describe('Employee Directory & Workspace', () => {
     fireEvent.click(workspaceButtons[0]);
 
     await waitFor(() => {
-      expect(screen.getByText(/Smart Related Modules/i)).toBeInTheDocument();
-      expect(screen.getByText(/Contracts/i)).toBeInTheDocument();
-      expect(screen.getByText(/Attendance History/i)).toBeInTheDocument();
+      expect(screen.getByText(/Main employee form with related HR actions/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Contracts/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Attendance/i).length).toBeGreaterThan(0);
     });
   });
 });

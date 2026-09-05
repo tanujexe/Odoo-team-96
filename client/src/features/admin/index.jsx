@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchUsersApi, createUserApi, updateUserApi } from '../../lib/api/users';
 import { fetchEmployees } from '../../lib/api/employees';
+import { fetchContracts } from '../../lib/api/contracts';
 import { mockDepartments } from '../../lib/api/mockData';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -20,6 +21,8 @@ import {
   Save,
   X,
   Sparkles,
+  UserCheck,
+  FileSignature,
 } from 'lucide-react';
 import { ROLES } from '../../app/auth/AuthContext';
 
@@ -38,6 +41,24 @@ const getNextEmployeeCode = (employeeList = []) => {
   });
   const nextNum = maxNum + 1;
   return `EMP-${String(nextNum).padStart(3, '0')}`;
+};
+
+// Helper function to calculate next Contract Code from list of contracts
+const getNextContractCode = (contractList = []) => {
+  const year = new Date().getFullYear();
+  let maxNum = 42;
+  (contractList || []).forEach((c) => {
+    const code = c.contractCode || c.code || '';
+    const match = code.match(/\d+/g);
+    if (match) {
+      const lastNum = parseInt(match[match.length - 1], 10);
+      if (!isNaN(lastNum) && lastNum > maxNum) {
+        maxNum = lastNum;
+      }
+    }
+  });
+  const nextSeq = maxNum + 1;
+  return `CON/${year}/${String(nextSeq).padStart(4, '0')}`;
 };
 
 export default function AdminFeature() {
@@ -59,6 +80,13 @@ export default function AdminFeature() {
     employeeCode: '',
     jobPosition: '',
     departmentId: '',
+    contractCode: '',
+    wage: 85000,
+    workingSchedule: '40 Hours / Week',
+    startDate: '2026-01-01',
+    endDate: '',
+    notes: 'This running contract is the source for payroll calculation in the active period.',
+    contractStatus: 'ACTIVE',
   });
 
   const { data: users = [], isLoading: isUsersLoading } = useQuery({
@@ -71,9 +99,15 @@ export default function AdminFeature() {
     queryFn: fetchEmployees,
   });
 
-  // When opening modal or when employees load, auto-suggest next Employee ID
+  const { data: contracts = [] } = useQuery({
+    queryKey: ['contracts'],
+    queryFn: () => fetchContracts(),
+  });
+
+  // When opening modal or when employees load, auto-suggest next Employee ID & Contract Code
   const handleOpenCreateModal = () => {
     const nextCode = getNextEmployeeCode(employees);
+    const nextContractCode = getNextContractCode(contracts);
     setNewUserForm({
       name: '',
       email: '',
@@ -82,6 +116,13 @@ export default function AdminFeature() {
       employeeCode: nextCode,
       jobPosition: 'Employee',
       departmentId: mockDepartments[0]?.id || '',
+      contractCode: nextContractCode,
+      wage: 85000,
+      workingSchedule: '40 Hours / Week',
+      startDate: '2026-01-01',
+      endDate: '',
+      notes: 'This running contract is the source for payroll calculation in the active period.',
+      contractStatus: 'ACTIVE',
     });
     setIsCreateModalOpen(true);
   };
@@ -91,6 +132,7 @@ export default function AdminFeature() {
     onSuccess: (updatedUser) => {
       queryClient.invalidateQueries(['users']);
       queryClient.invalidateQueries(['employees']);
+      queryClient.invalidateQueries(['contracts']);
       setEditingUserId(null);
       setSuccessMsg(
         `User ${updatedUser.name} updated. Role: ${updatedUser.role}${updatedUser.employeeCode ? ` | Linked to Employee Code: ${updatedUser.employeeCode} (${updatedUser.employeeName || ''})` : ' | (Unlinked)'
@@ -106,10 +148,11 @@ export default function AdminFeature() {
   });
 
   const createUserMutation = useMutation({
-    mutationFn: createUserApi,
+    mutationFn: (data) => createUserApi(data),
     onSuccess: (createdUser) => {
       queryClient.invalidateQueries(['users']);
       queryClient.invalidateQueries(['employees']);
+      queryClient.invalidateQueries(['contracts']);
       setIsCreateModalOpen(false);
       setNewUserForm({
         name: '',
@@ -119,6 +162,13 @@ export default function AdminFeature() {
         employeeCode: '',
         jobPosition: '',
         departmentId: '',
+        contractCode: '',
+        wage: 85000,
+        workingSchedule: '40 Hours / Week',
+        startDate: '2026-01-01',
+        endDate: '',
+        notes: '',
+        contractStatus: 'ACTIVE',
       });
       setSuccessMsg(
         `User account ${createdUser.email} created. Role: ${createdUser.role}${createdUser.employeeCode ? ` | Linked to Employee ID: ${createdUser.employeeCode} (${createdUser.employeeName || createdUser.name})` : ''
@@ -346,134 +396,227 @@ export default function AdminFeature() {
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        title="Admin: Create User & Assign Employee ID"
-        description="Create an authorized system user with assigned role and provision a new or existing Employee ID"
-        maxWidth="max-w-lg"
+        title="Admin: Create User Account & Employment Contract"
+        description="Create authorized system user, assign role permissions, and provision employment contract setup"
+        maxWidth="max-w-2xl"
       >
-        <form onSubmit={handleCreateUserSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              label="Full Name"
-              placeholder="e.g. Marcus Vance"
-              value={newUserForm.name}
-              onChange={(e) => setNewUserForm({ ...newUserForm, name: e.target.value })}
-              required
-            />
+        <form onSubmit={handleCreateUserSubmit} className="space-y-5">
+          {/* SECTION 1: USER ACCOUNT & EMPLOYEE PROFILE */}
+          <div className="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-200 text-slate-900 font-bold text-xs uppercase tracking-wider">
+              <UserCheck className="w-4 h-4 text-emerald-600" />
+              <span>Section 1: User Account Credentials & Role Permissions</span>
+            </div>
 
-            <Input
-              label="Corporate Email"
-              type="email"
-              placeholder="marcus@company.com"
-              value={newUserForm.email}
-              onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
-              required
-            />
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Full Name"
+                placeholder="e.g. Marcus Vance"
+                value={newUserForm.name}
+                onChange={(e) => setNewUserForm((prev) => ({ ...prev, name: e.target.value }))}
+                required
+              />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Enter password"
-              value={newUserForm.password}
-              onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
-              required
-            />
+              <Input
+                label="Corporate Email"
+                type="email"
+                placeholder="marcus@company.com"
+                value={newUserForm.email}
+                onChange={(e) => setNewUserForm((prev) => ({ ...prev, email: e.target.value }))}
+                required
+              />
+            </div>
 
-            <Select
-              label="Assign Role"
-              value={newUserForm.role}
-              onChange={(e) => setNewUserForm({ ...newUserForm, role: e.target.value })}
-            >
-              <option value={ROLES.EMPLOYEE}>EMPLOYEE</option>
-              <option value={ROLES.HR_MANAGER}>HR_MANAGER (Human Resources)</option>
-              <option value={ROLES.HR_PAYROLL_USER}>HR_PAYROLL_USER (Payroll Staff)</option>
-              <option value={ROLES.HR_PAYROLL_MANAGER}>HR_PAYROLL_MANAGER (Payroll Lead)</option>
-              <option value={ROLES.ADMIN}>ADMIN (System Governance)</option>
-            </Select>
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Password"
+                type="password"
+                placeholder="Enter password"
+                value={newUserForm.password}
+                onChange={(e) => setNewUserForm((prev) => ({ ...prev, password: e.target.value }))}
+                required
+              />
 
-          {/* Employee ID Assignment */}
-          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1.5">
-                Employee Profile & ID Assignment
-              </label>
-              <div className="space-y-3 pt-1">
+              <Select
+                label="Assign Role Permission"
+                value={newUserForm.role}
+                onChange={(e) => setNewUserForm((prev) => ({ ...prev, role: e.target.value }))}
+              >
+                <option value={ROLES.EMPLOYEE}>EMPLOYEE (Self-Service View)</option>
+                <option value={ROLES.HR_MANAGER}>HR_MANAGER (Human Resources)</option>
+                <option value={ROLES.HR_PAYROLL_USER}>HR_PAYROLL_USER (Payroll Specialist)</option>
+                <option value={ROLES.HR_PAYROLL_MANAGER}>HR_PAYROLL_MANAGER (Payroll Lead)</option>
+                <option value={ROLES.ADMIN}>ADMIN (System Governance)</option>
+              </Select>
+            </div>
+
+            <div className="space-y-3 pt-1">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Employee ID / Code
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newUserForm.employeeCode}
+                    onChange={(e) => setNewUserForm((prev) => ({ ...prev, employeeCode: e.target.value }))}
+                    placeholder="e.g. EMP-005"
+                    className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNewUserForm((prev) => ({
+                        ...prev,
+                        employeeCode: getNextEmployeeCode(employees),
+                      }))
+                    }
+                    title="Auto-generate sequential next ID"
+                    className="px-3 py-2 text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                    Auto-Generate
+                  </button>
+                </div>
+                <p className="text-[11px] text-emerald-700 font-medium mt-1 flex items-center gap-1">
+                  <span>✓</span> Employee profile ID <code className="font-bold">{newUserForm.employeeCode || 'EMP-xxx'}</code> will be linked to this User Account.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                    Employee ID / Code
+                    Job Position (Optional)
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newUserForm.employeeCode}
-                      onChange={(e) => setNewUserForm({ ...newUserForm, employeeCode: e.target.value })}
-                      placeholder="e.g. EMP-005"
-                      className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setNewUserForm((prev) => ({
-                          ...prev,
-                          employeeCode: getNextEmployeeCode(employees),
-                        }))
-                      }
-                      title="Auto-generate sequential next ID"
-                      className="px-3 py-2 text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                      Auto-Generate
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-emerald-700 font-medium mt-1.5 flex items-center gap-1">
-                    <span>✓</span> An employee profile with ID <code className="font-bold">{newUserForm.employeeCode || 'EMP-xxx'}</code> will be automatically created in the Employee Directory.
-                  </p>
+                  <input
+                    type="text"
+                    placeholder="e.g. Software Engineer"
+                    value={newUserForm.jobPosition}
+                    onChange={(e) => setNewUserForm((prev) => ({ ...prev, jobPosition: e.target.value }))}
+                    className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                      Job Position (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Software Engineer"
-                      value={newUserForm.jobPosition}
-                      onChange={(e) => setNewUserForm({ ...newUserForm, jobPosition: e.target.value })}
-                      className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                      Department (Optional)
-                    </label>
-                    <select
-                      value={newUserForm.departmentId}
-                      onChange={(e) => setNewUserForm({ ...newUserForm, departmentId: e.target.value })}
-                      className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    >
-                      <option value="">-- Select Department --</option>
-                      {mockDepartments.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    Department (Optional)
+                  </label>
+                  <select
+                    value={newUserForm.departmentId}
+                    onChange={(e) => setNewUserForm((prev) => ({ ...prev, departmentId: e.target.value }))}
+                    className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  >
+                    <option value="">-- Select Department --</option>
+                    {mockDepartments.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          {/* SECTION 2: EMPLOYMENT CONTRACT SETUP */}
+          <div className="space-y-3 p-4 bg-emerald-50/50 border border-emerald-200 rounded-xl">
+            <div className="flex items-center justify-between pb-2 border-b border-emerald-200/80 text-emerald-900 font-bold text-xs uppercase tracking-wider">
+              <div className="flex items-center gap-2">
+                <FileSignature className="w-4 h-4 text-emerald-700" />
+                <span>Section 2: Employment Contract Setup</span>
+              </div>
+              <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-mono font-bold">
+                Auto-Linked
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Contract Reference / Code
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newUserForm.contractCode}
+                    onChange={(e) => setNewUserForm((prev) => ({ ...prev, contractCode: e.target.value }))}
+                    placeholder="e.g. CON/2026/0043"
+                    className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNewUserForm((prev) => ({
+                        ...prev,
+                        contractCode: getNextContractCode(contracts),
+                      }))
+                    }
+                    title="Auto-generate next unique contract code"
+                    className="px-3 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex items-center gap-1.5 shrink-0 shadow-sm"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Auto-Generate
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="Base Wage / Month (₹)"
+                  type="number"
+                  placeholder="85000"
+                  value={newUserForm.wage}
+                  onChange={(e) => setNewUserForm((prev) => ({ ...prev, wage: e.target.value }))}
+                  required
+                />
+
+                <Input
+                  label="Working Schedule"
+                  placeholder="e.g. 40 Hours / Week"
+                  value={newUserForm.workingSchedule}
+                  onChange={(e) => setNewUserForm((prev) => ({ ...prev, workingSchedule: e.target.value }))}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="Contract Start Date"
+                  type="date"
+                  value={newUserForm.startDate}
+                  onChange={(e) => setNewUserForm((prev) => ({ ...prev, startDate: e.target.value }))}
+                  required
+                />
+
+                <Input
+                  label="Contract End Date (Optional)"
+                  type="date"
+                  value={newUserForm.endDate || ''}
+                  onChange={(e) => setNewUserForm((prev) => ({ ...prev, endDate: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Salary Structure / Contract Notes
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Notes regarding contract structure, allowances or terms..."
+                  value={newUserForm.notes}
+                  onChange={(e) => setNewUserForm((prev) => ({ ...prev, notes: e.target.value }))}
+                  className="w-full text-xs border border-slate-300 rounded-lg p-2 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-3">
             <Button variant="outline" size="sm" onClick={() => setIsCreateModalOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" variant="primary" size="sm" isLoading={createUserMutation.isPending}>
-              Create & Assign User
+              Create User & Contract Account
             </Button>
           </div>
         </form>

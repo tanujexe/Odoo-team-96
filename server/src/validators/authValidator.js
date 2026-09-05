@@ -26,6 +26,15 @@ export const createUserAdminSchema = z.object({
   jobTitle: z.string().optional(),
   department: z.string().optional(),
   departmentId: z.string().nullable().optional(),
+  // Initial contract fields
+  contractCode: z.string().optional(),
+  wage: z.union([z.number(), z.string()]).optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().nullable().optional().or(z.literal('')),
+  workingSchedule: z.string().optional(),
+  salaryStructure: z.string().optional(),
+  notes: z.string().optional(),
+  contractStatus: z.string().optional(),
 });
 
 export const updateUserAdminSchema = z.object({

@@ -16,6 +16,10 @@ vi.mock('../../lib/api/employees', () => ({
   fetchEmployees: vi.fn(),
 }));
 
+vi.mock('../../lib/api/contracts', () => ({
+  fetchContracts: vi.fn().mockResolvedValue([]),
+}));
+
 describe('Admin User Account & Employee ID Provisioning', () => {
   let queryClient;
 
@@ -58,7 +62,7 @@ describe('Admin User Account & Employee ID Provisioning', () => {
     expect(screen.getByText('EMP-001')).toBeInTheDocument();
   });
 
-  it('opens modal with Assign New Employee ID mode pre-selected and auto-suggested ID', async () => {
+  it('opens modal with auto-suggested Employee ID and Contract Code', async () => {
     render(
       <QueryClientProvider client={queryClient}>
         <AdminFeature />
@@ -69,12 +73,11 @@ describe('Admin User Account & Employee ID Provisioning', () => {
     const createBtn = screen.getByRole('button', { name: /Create User Account/i });
     fireEvent.click(createBtn);
 
-    expect(screen.getByText('Admin: Create User & Assign Employee ID')).toBeInTheDocument();
-    expect(screen.getByText('Assign New ID')).toBeInTheDocument();
+    expect(screen.getByText(/Admin: Create User Account & Employment Contract/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText('e.g. EMP-005')).toHaveValue('EMP-005');
   });
 
-  it('submits new user with new Employee ID', async () => {
+  it('submits new user with new Employee ID and contract setup', async () => {
     usersApi.createUserApi.mockResolvedValueOnce({
       id: 'u2',
       name: 'New Dev',
@@ -92,13 +95,16 @@ describe('Admin User Account & Employee ID Provisioning', () => {
     await screen.findAllByText('Admin User');
     fireEvent.click(screen.getByRole('button', { name: /Create User Account/i }));
 
-    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'New Dev' } });
-    fireEvent.change(screen.getByLabelText(/Corporate Email/i), { target: { value: 'newdev@company.com' } });
+    fireEvent.change(screen.getByPlaceholderText(/Marcus Vance/i), { target: { value: 'New Dev' } });
+    fireEvent.change(screen.getByPlaceholderText(/marcus@company.com/i), { target: { value: 'newdev@company.com' } });
+    fireEvent.change(screen.getByPlaceholderText(/Enter password/i), { target: { value: 'password123' } });
 
-    const submitBtn = screen.getByRole('button', { name: /Create & Assign User/i });
+    const submitBtn = screen.getByRole('button', { name: /Create User & Contract Account/i });
+    fireEvent.click(submitBtn);
     fireEvent.submit(submitBtn.closest('form'));
 
     await waitFor(() => {
+      console.log('MOCK CALLS:', usersApi.createUserApi.mock.calls);
       expect(usersApi.createUserApi).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'New Dev',

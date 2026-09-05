@@ -79,6 +79,15 @@ export async function createEmployee(data) {
     employeeType: data.employmentType || data.employeeType || 'FULL_TIME',
     departmentId: isMongoId(data.departmentId) ? data.departmentId : null,
     status: data.status || 'ACTIVE',
+    password: data.password,
+    role: data.role || 'EMPLOYEE',
+    contractCode: data.contractCode,
+    wage: data.wage !== undefined ? Number(data.wage) : undefined,
+    workingSchedule: data.workingSchedule,
+    startDate: data.startDate,
+    endDate: data.endDate || null,
+    notes: data.notes,
+    contractStatus: data.contractStatus,
   };
 
   try {

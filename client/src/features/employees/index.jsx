@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { fetchEmployees, createEmployee, fetchEmployeeById } from '../../lib/api/employees';
+import { fetchContracts } from '../../lib/api/contracts';
 import { createUserApi } from '../../lib/api/users';
 import { mockDepartments } from '../../lib/api/mockData';
 import { useAuth, ROLES } from '../../app/auth/AuthContext';
@@ -44,6 +45,24 @@ const getNextEmployeeCode = (employeeList = []) => {
   return `EMP-${String(nextNum).padStart(3, '0')}`;
 };
 
+// Helper function to calculate next Contract Code from list of contracts
+const getNextContractCode = (contractList = []) => {
+  const year = new Date().getFullYear();
+  let maxNum = 42;
+  (contractList || []).forEach((c) => {
+    const code = c.contractCode || c.code || '';
+    const match = code.match(/\d+/g);
+    if (match) {
+      const lastNum = parseInt(match[match.length - 1], 10);
+      if (!isNaN(lastNum) && lastNum > maxNum) {
+        maxNum = lastNum;
+      }
+    }
+  });
+  const nextSeq = maxNum + 1;
+  return `CON/${year}/${String(nextSeq).padStart(4, '0')}`;
+};
+
 export default function EmployeesFeature() {
   const { user, role } = useAuth();
   const queryClient = useQueryClient();
@@ -73,11 +92,23 @@ export default function EmployeesFeature() {
     departmentId: 'dept-eng',
     employmentType: 'FULL_TIME',
     status: 'ACTIVE',
+    contractCode: '',
+    wage: 85000,
+    workingSchedule: '40 Hours / Week',
+    startDate: '2026-01-01',
+    endDate: '',
+    contractStatus: 'ACTIVE',
+    notes: 'This running contract is the source for payroll calculation in the active period.',
   });
 
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ['employees', { search, departmentId: selectedDept, status: selectedStatus }],
     queryFn: () => fetchEmployees({ search, departmentId: selectedDept, status: selectedStatus }),
+  });
+
+  const { data: contracts = [] } = useQuery({
+    queryKey: ['contracts'],
+    queryFn: () => fetchContracts(),
   });
 
   const isEmployeeRole = role === ROLES.EMPLOYEE;
@@ -118,6 +149,7 @@ export default function EmployeesFeature() {
 
   const handleOpenCreateModal = () => {
     const nextCode = getNextEmployeeCode(employees);
+    const nextContractCode = getNextContractCode(contracts);
     setFormData({
       firstName: '',
       lastName: '',
@@ -129,6 +161,13 @@ export default function EmployeesFeature() {
       departmentId: mockDepartments[0]?.id || 'dept-eng',
       employmentType: 'FULL_TIME',
       status: 'ACTIVE',
+      contractCode: nextContractCode,
+      wage: 85000,
+      workingSchedule: '40 Hours / Week',
+      startDate: '2026-01-01',
+      endDate: '',
+      contractStatus: 'ACTIVE',
+      notes: 'This running contract is the source for payroll calculation in the active period.',
     });
     setIsCreateModalOpen(true);
   };
@@ -144,6 +183,12 @@ export default function EmployeesFeature() {
           employeeCode: data.employeeCode,
           jobPosition: data.jobTitle,
           departmentId: data.departmentId,
+          contractCode: data.contractCode,
+          wage: data.wage,
+          workingSchedule: data.workingSchedule,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          notes: data.notes,
         });
       } catch (err) {
         console.warn('[Employees] createUserApi fallback:', err);
@@ -153,6 +198,7 @@ export default function EmployeesFeature() {
     onSuccess: () => {
       queryClient.invalidateQueries(['employees']);
       queryClient.invalidateQueries(['users']);
+      queryClient.invalidateQueries(['contracts']);
       setIsCreateModalOpen(false);
       setFormData({
         firstName: '',
@@ -165,6 +211,13 @@ export default function EmployeesFeature() {
         departmentId: 'dept-eng',
         employmentType: 'FULL_TIME',
         status: 'ACTIVE',
+        contractCode: '',
+        wage: 85000,
+        workingSchedule: '40 Hours / Week',
+        startDate: '2026-01-01',
+        endDate: '',
+        contractStatus: 'ACTIVE',
+        notes: '',
       });
     },
   });
@@ -618,131 +671,223 @@ export default function EmployeesFeature() {
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        title="Add New Employee Account"
-        description="Create an employee profile and user login account with password"
-        maxWidth="max-w-xl"
+        title="Add New Employee & Contract Account"
+        description="Provision employee profile, login credentials, and initial employment contract setup"
+        maxWidth="max-w-2xl"
       >
-        <form onSubmit={handleCreateSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              label="First Name"
-              placeholder="e.g. Marcus"
-              value={formData.firstName}
-              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-              required
-            />
-            <Input
-              label="Last Name"
-              placeholder="e.g. Vance"
-              value={formData.lastName}
-              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-              required
-            />
-          </div>
+        <form onSubmit={handleCreateSubmit} className="space-y-5">
+          {/* SECTION 1: EMPLOYEE PROFILE & USER ACCOUNT */}
+          <div className="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-200 text-slate-900 font-bold text-xs uppercase tracking-wider">
+              <UserCheck className="w-4 h-4 text-emerald-600" />
+              <span>Section 1: Employee Profile & Login Account Setup</span>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              label="Corporate Email"
-              type="email"
-              placeholder="marcus@company.com"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="First Name"
+                placeholder="e.g. Marcus"
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                required
+              />
+              <Input
+                label="Last Name"
+                placeholder="e.g. Vance"
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                required
+              />
+            </div>
 
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Enter password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              required
-            />
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Corporate Email"
+                type="email"
+                placeholder="marcus@company.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+              />
+              <Input
+                label="Password"
+                type="password"
+                placeholder="Enter password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+              />
+            </div>
 
-          {/* Employee ID Assignment */}
-          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1.5">
-                Employee Profile & ID Assignment
-              </label>
-              <div className="space-y-3 pt-1">
+            <div className="space-y-3 pt-1">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Employee ID / Code
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={formData.employeeCode}
+                    onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
+                    placeholder="e.g. EMP-005"
+                    className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        employeeCode: getNextEmployeeCode(employees),
+                      }))
+                    }
+                    title="Auto-generate sequential next ID"
+                    className="px-3 py-2 text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                    Auto-Generate
+                  </button>
+                </div>
+                <p className="text-[11px] text-emerald-700 font-medium mt-1 flex items-center gap-1">
+                  <span>✓</span> Employee profile ID <code className="font-bold">{formData.employeeCode || 'EMP-xxx'}</code> will be linked in Employee Directory.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                    Employee ID / Code
+                    Job Position (Optional)
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={formData.employeeCode}
-                      onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
-                      placeholder="e.g. EMP-005"
-                      className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          employeeCode: getNextEmployeeCode(employees),
-                        }))
-                      }
-                      title="Auto-generate sequential next ID"
-                      className="px-3 py-2 text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                      Auto-Generate
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-emerald-700 font-medium mt-1.5 flex items-center gap-1">
-                    <span>✓</span> An employee profile with ID <code className="font-bold">{formData.employeeCode || 'EMP-xxx'}</code> will be automatically created in the Employee Directory.
-                  </p>
+                  <input
+                    type="text"
+                    placeholder="e.g. Software Engineer"
+                    value={formData.jobTitle}
+                    onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+                    className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                      Job Position (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Software Engineer"
-                      value={formData.jobTitle}
-                      onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-                      className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                      Department (Optional)
-                    </label>
-                    <select
-                      value={formData.departmentId}
-                      onChange={(e) => {
-                        const d = mockDepartments.find((x) => x.id === e.target.value);
-                        setFormData({
-                          ...formData,
-                          departmentId: e.target.value,
-                          department: d ? d.name : 'Engineering',
-                        });
-                      }}
-                      className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    >
-                      <option value="">-- Select Department --</option>
-                      {mockDepartments.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    Department (Optional)
+                  </label>
+                  <select
+                    value={formData.departmentId}
+                    onChange={(e) => {
+                      const d = mockDepartments.find((x) => x.id === e.target.value);
+                      setFormData({
+                        ...formData,
+                        departmentId: e.target.value,
+                        department: d ? d.name : 'Engineering',
+                      });
+                    }}
+                    className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  >
+                    <option value="">-- Select Department --</option>
+                    {mockDepartments.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          {/* SECTION 2: EMPLOYMENT CONTRACT SETUP */}
+          <div className="space-y-3 p-4 bg-emerald-50/50 border border-emerald-200 rounded-xl">
+            <div className="flex items-center justify-between pb-2 border-b border-emerald-200/80 text-emerald-900 font-bold text-xs uppercase tracking-wider">
+              <div className="flex items-center gap-2">
+                <FileSignature className="w-4 h-4 text-emerald-700" />
+                <span>Section 2: Employment Contract Setup</span>
+              </div>
+              <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-mono font-bold">
+                Auto-Linked
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Contract Reference / Code
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={formData.contractCode}
+                    onChange={(e) => setFormData({ ...formData, contractCode: e.target.value })}
+                    placeholder="e.g. CON/2026/0043"
+                    className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        contractCode: getNextContractCode(contracts),
+                      }))
+                    }
+                    title="Auto-generate next unique contract code"
+                    className="px-3 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex items-center gap-1.5 shrink-0 shadow-sm"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Auto-Generate
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="Base Wage / Month (₹)"
+                  type="number"
+                  placeholder="85000"
+                  value={formData.wage}
+                  onChange={(e) => setFormData({ ...formData, wage: e.target.value })}
+                  required
+                />
+
+                <Input
+                  label="Working Schedule"
+                  placeholder="e.g. 40 Hours / Week"
+                  value={formData.workingSchedule}
+                  onChange={(e) => setFormData({ ...formData, workingSchedule: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="Contract Start Date"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  required
+                />
+
+                <Input
+                  label="Contract End Date (Optional)"
+                  type="date"
+                  value={formData.endDate || ''}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Salary Structure / Contract Notes
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Notes regarding contract structure, allowances or terms..."
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full text-xs border border-slate-300 rounded-lg p-2 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-3">
             <Button variant="outline" size="sm" onClick={() => setIsCreateModalOpen(false)}>
               Cancel
             </Button>
@@ -752,7 +897,7 @@ export default function EmployeesFeature() {
               size="sm"
               isLoading={createMutation.isPending}
             >
-              Create Employee & Account
+              Create Employee & Contract Account
             </Button>
           </div>
         </form>

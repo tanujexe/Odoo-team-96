@@ -272,7 +272,8 @@ export async function updateUserAccount(userId, data) {
   };
 }
 
-export async function adminCreateUser({ name, email, password, role, employeeCode, employeeId, jobPosition, jobTitle, departmentId }) {
+export async function adminCreateUser(params) {
+  const { name, email, password, role, employeeCode, employeeId, jobPosition, jobTitle, departmentId } = params;
   const cleanEmail = email.toLowerCase().trim();
   const existing = await User.findOne({ email: cleanEmail });
   if (existing) {
@@ -284,8 +285,10 @@ export async function adminCreateUser({ name, email, password, role, employeeCod
 
   const targetCodeOrId = employeeCode !== undefined ? employeeCode : employeeId;
   let linkedEmpId = null;
+  let emp = null;
+
   if (targetCodeOrId && String(targetCodeOrId).trim()) {
-    const emp = await resolveOrCreateEmployee({
+    emp = await resolveOrCreateEmployee({
       codeOrId: targetCodeOrId,
       name: name.trim(),
       email: cleanEmail,
@@ -308,6 +311,28 @@ export async function adminCreateUser({ name, email, password, role, employeeCod
   });
 
   await newUser.save();
+
+  // Provision Initial Employment Contract if contract terms provided
+  if (linkedEmpId && (params.wage || params.contractCode || params.workingSchedule || params.startDate || params.notes)) {
+    const year = new Date().getFullYear();
+    const count = await Contract.countDocuments();
+    const defaultCode = `CON/${year}/${String(count + 42).padStart(4, '0')}`;
+
+    const contract = new Contract({
+      contractCode: params.contractCode || defaultCode,
+      employeeId: linkedEmpId,
+      startDate: params.startDate ? new Date(params.startDate) : new Date('2026-01-01'),
+      endDate: params.endDate ? new Date(params.endDate) : null,
+      wage: Number(params.wage || 85000),
+      departmentId: departmentId || null,
+      position: jobPosition || jobTitle || 'Employee',
+      workingSchedule: params.workingSchedule || '40 Hours / Week',
+      notes: params.notes || 'This running contract is the source for payroll calculation in the active period.',
+      status: params.contractStatus || 'ACTIVE',
+    });
+    await contract.save();
+  }
+
   await newUser.populate('employeeId');
 
   const empObj = typeof newUser.employeeId === 'object' && newUser.employeeId !== null ? newUser.employeeId : null;
