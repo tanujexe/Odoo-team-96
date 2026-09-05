@@ -1,11 +1,25 @@
 import { apiClient } from './client';
 import { mockEmployees } from './mockData';
 
+function normalizeEmployee(emp) {
+  if (!emp) return emp;
+  const nameParts = (emp.name || '').split(' ');
+  return {
+    ...emp,
+    id: emp._id || emp.id,
+    firstName: emp.firstName || nameParts[0] || 'Employee',
+    lastName: emp.lastName || nameParts.slice(1).join(' ') || '',
+    jobTitle: emp.jobTitle || emp.jobPosition || 'Staff',
+    department: emp.department || (typeof emp.departmentId === 'object' ? emp.departmentId?.name : 'General'),
+  };
+}
+
 export async function fetchEmployees(params = {}) {
   try {
     const query = new URLSearchParams(params).toString();
     const response = await apiClient(`/employees${query ? `?${query}` : ''}`);
-    return response.data;
+    const list = Array.isArray(response.data) ? response.data : [];
+    return list.map(normalizeEmployee);
   } catch (err) {
     console.warn('[Employees API] Using fallback mock data:', err);
     let filtered = [...mockEmployees];
@@ -32,7 +46,10 @@ export async function fetchEmployees(params = {}) {
 export async function fetchEmployeeById(id) {
   try {
     const response = await apiClient(`/employees/${id}`);
-    return response.data;
+    return {
+      ...response.data,
+      employee: normalizeEmployee(response.data.employee),
+    };
   } catch (err) {
     const emp = mockEmployees.find((e) => e.id === id) || mockEmployees[0];
     return {
@@ -46,6 +63,7 @@ export async function fetchEmployeeById(id) {
     };
   }
 }
+
 
 export async function createEmployee(data) {
   try {

@@ -183,8 +183,8 @@ export default function EmployeesFeature() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {employees.map((emp) => (
-                <TableRow key={emp.id} isSelected={selectedEmployeeId === emp.id}>
+              {employees.map((emp, idx) => (
+                <TableRow key={emp.id || emp._id || idx} isSelected={selectedEmployeeId === (emp.id || emp._id)}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center shrink-0">
@@ -212,7 +212,7 @@ export default function EmployeesFeature() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setSelectedEmployeeId(emp.id)}
+                      onClick={() => setSelectedEmployeeId(emp.id || emp._id)}
                     >
                       Workspace
                     </Button>
@@ -225,8 +225,9 @@ export default function EmployeesFeature() {
       ) : (
         /* Kanban Card Grid View */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {employees.map((emp) => (
-            <Card key={emp.id} className="hover:border-slate-300 transition-all hover:shadow-md">
+          {employees.map((emp, idx) => (
+            <Card key={emp.id || emp._id || idx} className="hover:border-slate-300 transition-all hover:shadow-md">
+
               <CardContent className="p-5 space-y-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">

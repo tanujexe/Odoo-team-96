@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Payslip } from '../models/Payslip.js';
 import { ROLES } from '../models/User.js';
 import { generatePayslipPDFBuffer } from '../services/payslipDocumentService.js';
@@ -9,8 +10,8 @@ export async function listPayslips(req, res, next) {
     const skip = (page - 1) * pageSize;
 
     const filter = {};
-    if (req.query.employeeId) filter.employeeId = req.query.employeeId;
-    if (req.query.payrunId) filter.payrunId = req.query.payrunId;
+    if (req.query.employeeId && mongoose.isValidObjectId(req.query.employeeId)) filter.employeeId = req.query.employeeId;
+    if (req.query.payrunId && mongoose.isValidObjectId(req.query.payrunId)) filter.payrunId = req.query.payrunId;
     if (req.query.status) filter.status = req.query.status;
 
     const [payslips, total] = await Promise.all([
@@ -27,6 +28,7 @@ export async function listPayslips(req, res, next) {
     next(error);
   }
 }
+
 
 export async function getPayslip(req, res, next) {
   try {

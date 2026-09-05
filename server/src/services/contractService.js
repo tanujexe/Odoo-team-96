@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Contract } from '../models/Contract.js';
 
 export async function createContract(data) {
@@ -7,6 +8,12 @@ export async function createContract(data) {
 }
 
 export async function updateContract(id, data) {
+  if (!mongoose.isValidObjectId(id)) {
+    const err = new Error('Contract not found');
+    err.code = 'CONTRACT_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
   const contract = await Contract.findByIdAndUpdate(id, data, { new: true, runValidators: true })
     .populate('employeeId departmentId salaryStructureId');
 
@@ -25,13 +32,13 @@ export async function getContracts(query = {}) {
   const skip = (page - 1) * pageSize;
 
   const filter = {};
-  if (query.employeeId) {
+  if (query.employeeId && mongoose.isValidObjectId(query.employeeId)) {
     filter.employeeId = query.employeeId;
   }
   if (query.status) {
     filter.status = query.status;
   }
-  if (query.departmentId) {
+  if (query.departmentId && mongoose.isValidObjectId(query.departmentId)) {
     filter.departmentId = query.departmentId;
   }
 
@@ -48,6 +55,12 @@ export async function getContracts(query = {}) {
 }
 
 export async function getContractById(id) {
+  if (!mongoose.isValidObjectId(id)) {
+    const err = new Error('Contract not found');
+    err.code = 'CONTRACT_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
   const contract = await Contract.findById(id).populate('employeeId departmentId salaryStructureId');
   if (!contract) {
     const err = new Error('Contract not found');
@@ -57,3 +70,4 @@ export async function getContractById(id) {
   }
   return contract;
 }
+

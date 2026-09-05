@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Contract } from '../models/Contract.js';
 import '../models/SalaryStructure.js';
 
@@ -22,6 +23,18 @@ export async function resolveApplicableContract({ employeeId, periodStart, perio
   const pStart = new Date(periodStart);
   const pEnd = new Date(periodEnd);
 
+  if (!employeeId || !mongoose.isValidObjectId(employeeId)) {
+    return {
+      contract: null,
+      warning: {
+        code: 'MISSING_CONTRACT',
+        severity: 'BLOCKING',
+        employeeId: String(employeeId),
+        message: `No active contract found applicable for period ${pStart.toISOString().slice(0, 10)} to ${pEnd.toISOString().slice(0, 10)}.`,
+      },
+    };
+  }
+
   // Find all ACTIVE contracts for the employee that overlap [periodStart, periodEnd]
   const overlappingContracts = await Contract.find({
     employeeId,
@@ -29,6 +42,7 @@ export async function resolveApplicableContract({ employeeId, periodStart, perio
     startDate: { $lte: pEnd },
     $or: [{ endDate: null }, { endDate: { $gte: pStart } }],
   }).populate('departmentId salaryStructureId');
+
 
   if (overlappingContracts.length === 0) {
     return {
