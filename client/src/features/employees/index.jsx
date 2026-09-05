@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 
 export default function EmployeesFeature() {
-  const { role } = useAuth();
+  const { user, role } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -197,7 +197,7 @@ export default function EmployeesFeature() {
       {/* Content Rendering */}
       {isLoading ? (
         <LoadingState message="Loading employee directory..." />
-      ) : employees.length === 0 ? (
+      ) : finalEmployeesList.length === 0 ? (
         <EmptyState
           title="No employees found"
           description="Try adjusting your search criteria or add a new employee profile."
@@ -219,7 +219,7 @@ export default function EmployeesFeature() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {employees.map((emp, idx) => (
+              {finalEmployeesList.map((emp, idx) => (
                 <TableRow key={emp.id || emp._id || idx} isSelected={selectedEmployeeId === (emp.id || emp._id)}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -261,7 +261,7 @@ export default function EmployeesFeature() {
       ) : (
         /* Kanban Card Grid View */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {employees.map((emp, idx) => (
+          {finalEmployeesList.map((emp, idx) => (
             <Card key={emp.id || emp._id || idx} className="hover:border-slate-300 transition-all hover:shadow-md">
 
               <CardContent className="p-5 space-y-4">
@@ -296,7 +296,7 @@ export default function EmployeesFeature() {
                   variant="subtle"
                   size="sm"
                   className="w-full mt-2"
-                  onClick={() => setSelectedEmployeeId(emp.id)}
+                  onClick={() => setSelectedEmployeeId(emp.id || emp._id)}
                 >
                   Open Employee Hub
                 </Button>
@@ -342,8 +342,9 @@ export default function EmployeesFeature() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
                     onClick={() => {
+                      const empId = detailData?.employee?.id || detailData?.employee?._id;
                       setSelectedEmployeeId(null);
-                      navigate(`/contracts?employeeId=${detailData.employee.id}`);
+                      navigate(`/contracts?employeeId=${empId}`);
                     }}
                     className="p-3.5 rounded-xl border border-slate-200 hover:border-emerald-500 bg-white hover:bg-emerald-50/40 text-left transition-all flex items-center justify-between"
                   >
@@ -353,7 +354,7 @@ export default function EmployeesFeature() {
                       </div>
                       <div>
                         <p className="text-xs font-semibold text-slate-900">Contracts</p>
-                        <p className="text-[11px] text-slate-500">{detailData.smartCounts.contracts} records found</p>
+                        <p className="text-[11px] text-slate-500">{detailData?.smartCounts?.contracts || 0} records found</p>
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -361,8 +362,9 @@ export default function EmployeesFeature() {
 
                   <button
                     onClick={() => {
+                      const empId = detailData?.employee?.id || detailData?.employee?._id;
                       setSelectedEmployeeId(null);
-                      navigate(`/attendance?employeeId=${detailData.employee.id}`);
+                      navigate(`/attendance?employeeId=${empId}`);
                     }}
                     className="p-3.5 rounded-xl border border-slate-200 hover:border-emerald-500 bg-white hover:bg-emerald-50/40 text-left transition-all flex items-center justify-between"
                   >
@@ -372,7 +374,7 @@ export default function EmployeesFeature() {
                       </div>
                       <div>
                         <p className="text-xs font-semibold text-slate-900">Attendance History</p>
-                        <p className="text-[11px] text-slate-500">{detailData.smartCounts.attendance} days recorded</p>
+                        <p className="text-[11px] text-slate-500">{detailData?.smartCounts?.attendance || 0} days recorded</p>
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -380,8 +382,9 @@ export default function EmployeesFeature() {
 
                   <button
                     onClick={() => {
+                      const empId = detailData?.employee?.id || detailData?.employee?._id;
                       setSelectedEmployeeId(null);
-                      navigate(`/time-off?employeeId=${detailData.employee.id}`);
+                      navigate(`/time-off?employeeId=${empId}`);
                     }}
                     className="p-3.5 rounded-xl border border-slate-200 hover:border-emerald-500 bg-white hover:bg-emerald-50/40 text-left transition-all flex items-center justify-between"
                   >
@@ -392,7 +395,7 @@ export default function EmployeesFeature() {
                       <div>
                         <p className="text-xs font-semibold text-slate-900">Time Off & Balances</p>
                         <p className="text-[11px] text-slate-500">
-                          {detailData.smartCounts.requests} requests ({detailData.smartCounts.allocations} allocations)
+                          {detailData?.smartCounts?.requests || 0} requests ({detailData?.smartCounts?.allocations || 0} allocations)
                         </p>
                       </div>
                     </div>
