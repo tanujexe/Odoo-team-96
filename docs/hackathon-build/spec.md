@@ -4,7 +4,7 @@
 
 PeoplePay360 is a desktop-first HR and payroll operations platform. It treats the employee as the central entity and links employment contracts, schedules, attendance, leave, salary configuration, payroll batches, payslips, and operational reporting.
 
-This spec implements the requirements in [PRD.md](../../PRD.md). It favors a conventional JavaScript/JSX web stack, a relational database, and a service-layer payroll engine so the demo is dependable and the financial rules remain testable.
+This spec implements the requirements in [PRD.md](../../PRD.md). It favors a conventional JavaScript/JSX web stack, MongoDB persistence, and a service-layer payroll engine so the demo is dependable and the financial rules remain testable.
 
 ### Scope and priorities
 
@@ -24,18 +24,18 @@ This spec implements the requirements in [PRD.md](../../PRD.md). It favors a con
 | Frontend | React, JSX, Vite, React Router | Fast local iteration and clear module boundaries without a TypeScript build step. |
 | UI/data | Tailwind CSS, TanStack Query, React Hook Form, Zod | Consistent responsive UI, cache-aware API reads, and shared form validation. |
 | Backend | Node.js, modern JavaScript, Express | Small, familiar REST API with explicit middleware and services. |
-| Database | PostgreSQL with Prisma ORM | Transactions, uniqueness constraints, date-range queries, and readable relations suit payroll integrity. |
+| Database | MongoDB with Mongoose ODM | Flexible document schemas, indexed references, and MongoDB transactions suit the connected HR/payroll model. |
 | Authentication | JWT access token + bcrypt password hashing | Simple hackathon-grade local authentication; roles are checked server-side. |
 | Documents | PDFKit | Server-side payslip PDFs without a browser renderer dependency. |
 | Email | Nodemailer with Ethereal/dev SMTP fallback | Delivery is isolated and can record sent/failed status. |
 | Charts | Recharts | Dashboard charts driven by API aggregates. |
 | Tests | Vitest + Supertest | Fast JavaScript service/API tests, especially for payroll and leave invariants. |
 
-Major documentation: [React](https://react.dev/), [Vite](https://vite.dev/guide/), [Express](https://expressjs.com/), [Prisma](https://www.prisma.io/docs), [PostgreSQL](https://www.postgresql.org/docs/), [Zod](https://zod.dev/), [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview), [PDFKit](https://pdfkit.org/), and [Nodemailer](https://nodemailer.com/).
+Major documentation: [React](https://react.dev/), [Vite](https://vite.dev/guide/), [Express](https://expressjs.com/), [MongoDB](https://www.mongodb.com/docs/), [Mongoose](https://mongoosejs.com/docs/), [Zod](https://zod.dev/), [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview), [PDFKit](https://pdfkit.org/), and [Nodemailer](https://nodemailer.com/).
 
 ### Environment
 
-`DATABASE_URL`, `JWT_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `APP_URL` live in server-side environment configuration. `.env.example` documents names only; secrets are never committed.
+`MONGODB_URI`, `JWT_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `APP_URL` live in server-side environment configuration. `.env.example` documents names only; secrets are never committed.
 
 ## Architecture
 
@@ -45,7 +45,7 @@ The React client has feature routes for Employees, Contracts, Attendance, Time O
 
 ### Backend API
 
-Express routes validate payloads with Zod, authenticate the request, then authorize both role and employee ownership before calling a domain service. Controllers contain HTTP translation only. Services own transactions and business decisions; repositories/Prisma handle persistence. Use JSDoc annotations where editor hints or runtime contracts need extra clarity; TypeScript is not required.
+Express routes validate payloads with Zod, authenticate the request, then authorize both role and employee ownership before calling a domain service. Controllers contain HTTP translation only. Services own transactions and business decisions; repositories/Mongoose models handle persistence. Use JSDoc annotations where editor hints or runtime contracts need extra clarity; TypeScript is not required.
 
 ### Domain services
 
@@ -74,7 +74,7 @@ Use the entities and relations defined in PRD section 8. Add the following integ
 - A payslip has a unique composite key `(employeeId, periodStart, periodEnd, payrunId)`; before validation, the service also rejects an overlapping finalized payslip for the same employee.
 - `SalaryRule` has a unique `(salaryStructureId, code)` and an ordered `sequence`.
 - `Attendance` is unique per `(employeeId, date)` for the MVP daily-record model.
-- All amounts use PostgreSQL `numeric(14,2)` / Prisma `Decimal`, never JavaScript floating point.
+- All amounts use MongoDB `Decimal128` (mapped by Mongoose), never JavaScript floating point.
 - Dates are stored as UTC instants; payroll/leave business dates are date-only values interpreted in the configured organization time zone.
 - `AuditLog` records actor, action, entity, before/after JSON snapshots, and timestamp.
 
@@ -111,13 +111,13 @@ PeoplePay/
       services/            # Business use cases and transactions (.js)
       payroll/             # Contract resolver, rule engine, warnings, calculator
       documents/           # PDF template and email delivery adapter
-      repositories/        # Prisma data access helpers
+      repositories/        # Mongoose model/data access helpers
       middleware/          # Auth, RBAC, ownership, validation, error handling
       validators/          # Zod request schemas
       dashboard/           # Aggregate query builders
       seed/                # Repeatable demo fixture generator
       tests/               # Unit, integration, RBAC, and workflow tests (.test.js)
-    prisma/schema.prisma   # Entities, indexes, migrations
+    models/                # Mongoose schemas, indexes, and model registration
   docs/
     DATA_MODEL.md          # ERD/relationship notes
     DEMO_SCRIPT.md         # Five-minute demonstration flow
@@ -227,11 +227,11 @@ The wizard creates scoped payruns only after confirmation. Run detail presents w
 
 Implements: `PRD.md > 4.12; BR-11`.
 
-Dashboard filters (`period`, `departmentId`, `employeeType`) are query parameters. KPIs and chart series come from SQL aggregates over real records; each mutation invalidates the dashboard query.
+Dashboard filters (`period`, `departmentId`, `employeeType`) are query parameters. KPIs and chart series come from MongoDB aggregation pipelines over real records; each mutation invalidates the dashboard query.
 
 ## External APIs And Dependencies
 
-No external HR or banking API is required for the MVP. PostgreSQL is the source of truth. SMTP is optional in local development: use an Ethereal test account or a log-only mail adapter, but always persist `SENT` or `FAILED` based on the adapter result. PDF files are stored locally under a configured server data directory for the demo; production storage is a future adapter boundary.
+No external HR or banking API is required for the MVP. MongoDB is the source of truth. Use MongoDB sessions/transactions for critical multi-document operations when running a replica set; otherwise enforce idempotency and compensating updates. SMTP is optional in local development: use an Ethereal test account or a log-only mail adapter, but always persist `SENT` or `FAILED` based on the adapter result. PDF files are stored locally under a configured server data directory for the demo; production storage is a future adapter boundary.
 
 ## AI Usage
 
@@ -249,7 +249,7 @@ AI is not required in the product runtime. Codex may assist with implementation,
 | Static dashboard | Aggregate queries only; seed data is ordinary records | Change a paid payslip/attendance/request and assert KPI refresh |
 | Email falsely reported delivered | Persist provider result per payslip | Mail adapter success and failure tests |
 
-Before demo, run migrations, seed the database, execute unit/integration tests, and manually rehearse the two PRD scenarios. A failed non-critical PDF/email adapter must leave the payroll state valid and visibly show failed delivery.
+Before demo, apply Mongoose indexes, seed the database, execute unit/integration tests, and manually rehearse the two PRD scenarios. A failed non-critical PDF/email adapter must leave the payroll state valid and visibly show failed delivery.
 
 ## Demo And Submission Flow
 
@@ -264,7 +264,7 @@ Before demo, run migrations, seed the database, execute unit/integration tests, 
 
 ## Build Sequence
 
-1. Foundation: monorepo, database, migrations, error envelope, seed command, and README.
+1. Foundation: monorepo, MongoDB connection/models, indexes, error envelope, seed command, and README.
 2. Auth/RBAC and role matrix tests.
 3. Employee, department, schedules, contracts, and contract resolver.
 4. Attendance and time off, including all balance/authorization tests.
