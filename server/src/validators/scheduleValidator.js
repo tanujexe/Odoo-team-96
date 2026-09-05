@@ -54,6 +54,13 @@ const statusEnum = z.preprocess(
   z.enum(['ACTIVE', 'INACTIVE']).optional()
 );
 
+const scheduleFieldsSchema = z.object({
+  name: z.string().min(1, 'Schedule name is required'),
+  type: z.enum(['FULL_TIME', 'PART_TIME', 'FLEXIBLE', 'CUSTOM']).optional(),
+  days: z.array(dayLineSchema).min(1, 'At least one working day must be specified'),
+  status: statusEnum,
+});
+
 export const createScheduleSchema = z.preprocess(
   (input) => {
     if (input && typeof input === 'object') {
@@ -65,12 +72,7 @@ export const createScheduleSchema = z.preprocess(
     }
     return input;
   },
-  z.object({
-    name: z.string().min(1, 'Schedule name is required'),
-    type: z.enum(['FULL_TIME', 'PART_TIME', 'FLEXIBLE', 'CUSTOM']).optional(),
-    days: z.array(dayLineSchema).min(1, 'At least one working day must be specified'),
-    status: statusEnum,
-  })
+  scheduleFieldsSchema
 );
 
 export const updateScheduleSchema = z.preprocess(
@@ -84,6 +86,6 @@ export const updateScheduleSchema = z.preprocess(
     }
     return input;
   },
-  createScheduleSchema.partial()
+  scheduleFieldsSchema.partial()
 );
 
