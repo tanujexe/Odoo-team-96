@@ -57,15 +57,16 @@ export async function fetchEmployeeById(id) {
   } catch (err) {
     const emp = mockEmployees.find((e) => e.id === id) || mockEmployees[0];
     const empContracts = mockContracts.filter(
-      (c) => c.employeeId === id || c.employeeCode === emp.employeeCode
+      (c) => c.employeeId === id || c.employeeCode === emp?.employeeCode
     );
     return {
       employee: emp,
       smartCounts: {
-        contracts: empContracts.length || 1,
+        contracts: empContracts.length,
         attendance: 22,
         allocations: 2,
         requests: 1,
+        timeOff: 1,
       },
     };
   }

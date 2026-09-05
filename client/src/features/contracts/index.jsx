@@ -268,17 +268,6 @@ export default function ContractsFeature() {
                 <LayoutList className="w-3.5 h-3.5" />
                 Contracts List
               </button>
-              <button
-                onClick={() => setContractSubView('form')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  contractSubView === 'form'
-                    ? 'bg-white text-emerald-800 shadow-sm border border-slate-200'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                Form View of One Contract
-              </button>
             </div>
 
             {contractSubView === 'list' && (
