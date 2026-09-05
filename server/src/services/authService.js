@@ -189,7 +189,15 @@ export async function updateUserAccount(userId, data) {
     throw err;
   }
 
-  if (data.role) user.role = data.role;
+  if (data.role && data.role !== user.role) {
+    if (user.email.toLowerCase() === 'admin@peoplepay.com' || user.role === 'SUPER_ADMIN') {
+      const err = new Error('The System Super Admin account role is protected and cannot be changed or demoted.');
+      err.code = 'SUPER_ADMIN_PROTECTED';
+      err.statusCode = 403;
+      throw err;
+    }
+    user.role = data.role;
+  }
   if (data.status) user.status = data.status;
 
   const targetCodeOrId = data.employeeCode !== undefined ? data.employeeCode : data.employeeId;
