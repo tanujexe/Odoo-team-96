@@ -466,7 +466,7 @@ export default function EmployeesFeature() {
                     <CalendarDays className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Time Off</span>
                     <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                      {detailData?.smartCounts?.requests ?? detailData?.smartCounts?.timeOff ?? 3}
+                      {detailData?.smartCounts?.requests ?? detailData?.smartCounts?.timeOff ?? detailData?.smartCounts?.allocations ?? 0}
                     </span>
                   </button>
 
@@ -482,7 +482,7 @@ export default function EmployeesFeature() {
                     <FileSignature className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Contracts</span>
                     <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                      {detailData?.smartCounts?.contracts ?? 2}
+                      {detailData?.smartCounts?.contracts ?? 0}
                     </span>
                   </button>
 
@@ -498,7 +498,7 @@ export default function EmployeesFeature() {
                     <Clock className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Attendance</span>
                     <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                      {detailData?.smartCounts?.attendance ?? 14}
+                      {detailData?.smartCounts?.attendance ?? 0}
                     </span>
                   </button>
                 </div>
