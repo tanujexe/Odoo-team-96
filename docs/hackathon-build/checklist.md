@@ -108,7 +108,7 @@
   - **Tests required:** Calculator fixtures; formula rejection tests; payrun scope test; warning/409 validation test; duplicate-finalized-payslip test; state-transition/idempotency tests.
   - **Verify:** `npm test --workspace server -- payroll` and an API-driven clean payrun plus a seeded warning scenario.
 
-- [ ] **PP-10 — Payroll configuration, payrun wizard, and payslip UI**
+- [x] **PP-10 — Payroll configuration, payrun wizard, and payslip UI**
   - **Developer:** Developer 2
   - **Files/modules to modify:** `client/src/features/payroll/`, `client/src/lib/api/{salaryStructures,salaryRules,payruns,payslips}.js`, `client/src/components/{PayrunWizard,WarningPanel}.jsx`, `client/src/tests/payroll/`.
   - **Spec ref:** `spec.md > API Contracts > Payrun create contract; Data Flow; Components And Responsibilities > Payroll operations`; `PRD.md > 4.6-4.10; 10.2`.
