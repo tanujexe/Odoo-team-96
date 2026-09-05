@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchUsersApi, createUserApi, updateUserApi } from '../../lib/api/users';
+import { fetchEmployees } from '../../lib/api/employees';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -33,6 +34,11 @@ export default function AdminFeature() {
   const { data: users = [], isLoading: isUsersLoading } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsersApi,
+  });
+
+  const { data: employees = [] } = useQuery({
+    queryKey: ['employees'],
+    queryFn: fetchEmployees,
   });
 
   const updateUserMutation = useMutation({
@@ -191,23 +197,33 @@ export default function AdminFeature() {
                       </select>
                     </TableCell>
 
-                    {/* Employee Code Direct Input & Verification */}
+                    {/* Employee Code Selector & Verification */}
                     <TableCell>
                       {isEditingThisUser ? (
                         <div className="flex items-center gap-1.5">
-                          <input
-                            type="text"
-                            placeholder="e.g. EMP001"
+                          <select
                             value={editingEmpCode}
                             onChange={(e) => setEditingEmpCode(e.target.value)}
-                            className="text-xs border border-slate-300 rounded px-2 py-1 font-mono font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500 w-28"
-                          />
+                            className="text-xs border border-slate-300 rounded px-2 py-1 font-mono font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white max-w-[210px]"
+                          >
+                            <option value="">-- No Linked Employee ID --</option>
+                            {employees.map((emp) => {
+                              const empCode = emp.employeeCode || emp.id;
+                              const empName = emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim();
+                              const empJob = emp.jobTitle || emp.jobPosition || '';
+                              return (
+                                <option key={emp.id} value={empCode}>
+                                  {empCode} - {empName} {empJob ? `(${empJob})` : ''}
+                                </option>
+                              );
+                            })}
+                          </select>
                           <button
                             type="button"
                             onClick={() => handleSaveEmpCode(u.id)}
                             disabled={updateUserMutation.isPending}
                             title="Save & Validate Employee Code"
-                            className="p-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                            className="p-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shrink-0"
                           >
                             <Save className="w-3.5 h-3.5" />
                           </button>
@@ -215,7 +231,7 @@ export default function AdminFeature() {
                             type="button"
                             onClick={() => setEditingUserId(null)}
                             title="Cancel"
-                            className="p-1 rounded bg-slate-200 text-slate-600 hover:bg-slate-300 transition-colors"
+                            className="p-1 rounded bg-slate-200 text-slate-600 hover:bg-slate-300 transition-colors shrink-0"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
@@ -228,13 +244,15 @@ export default function AdminFeature() {
                                 {u.employeeCode}
                               </span>
                               {u.employeeName && (
-                                <span className="text-[11px] text-slate-500 block mt-0.5 truncate max-w-[140px]">
+                                <span className="text-[11px] text-slate-500 block mt-0.5 truncate max-w-[150px]">
                                   {u.employeeName}
                                 </span>
                               )}
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400 italic">No Employee Code</span>
+                            <span className="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                              -- No Linked Employee ID --
+                            </span>
                           )}
 
                           <button
@@ -244,7 +262,7 @@ export default function AdminFeature() {
                               setEditingEmpCode(u.employeeCode || '');
                             }}
                             className="p-1 text-slate-400 hover:text-emerald-600 rounded transition-colors"
-                            title="Edit Employee Code"
+                            title="Edit / Change Linked Employee"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
@@ -268,7 +286,7 @@ export default function AdminFeature() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         title="Admin: Create User Account"
-        description="Create an authorized system user with assigned role and validated Employee Code"
+        description="Create an authorized system user with assigned role and optional Employee Code link"
         maxWidth="max-w-md"
       >
         <form onSubmit={handleCreateUserSubmit} className="space-y-4">
@@ -310,14 +328,28 @@ export default function AdminFeature() {
           </Select>
 
           <div>
-            <Input
-              label="Employee Code (Checked against Database)"
-              placeholder="e.g. EMP001"
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Link Employee ID (Verified against Database)
+            </label>
+            <select
               value={newUserForm.employeeCode}
               onChange={(e) => setNewUserForm({ ...newUserForm, employeeCode: e.target.value })}
-            />
+              className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+            >
+              <option value="">-- No Linked Employee ID --</option>
+              {employees.map((emp) => {
+                const empCode = emp.employeeCode || emp.id;
+                const empName = emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim();
+                const empJob = emp.jobTitle || emp.jobPosition || '';
+                return (
+                  <option key={emp.id} value={empCode}>
+                    {empCode} - {empName} {empJob ? `(${empJob})` : ''}
+                  </option>
+                );
+              })}
+            </select>
             <p className="text-[11px] text-slate-500 mt-1">
-              Enter an existing Employee Code (e.g. <code>EMP001</code>). The database will verify that the Employee Code exists before saving.
+              Choose <code>-- No Linked Employee ID --</code> to create an unlinked user account, or pick an existing employee.
             </p>
           </div>
 
