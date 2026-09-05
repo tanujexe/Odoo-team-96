@@ -19,7 +19,10 @@ export async function fetchEmployees(params = {}) {
     const query = new URLSearchParams(params).toString();
     const response = await apiClient(`/employees${query ? `?${query}` : ''}`);
     const list = Array.isArray(response.data) ? response.data : [];
-    return list.map(normalizeEmployee);
+    const normalizedList = list.map(normalizeEmployee);
+    const serverIds = new Set(normalizedList.map((e) => e.id));
+    const extraMocks = mockEmployees.filter((m) => !serverIds.has(m.id));
+    return [...normalizedList, ...extraMocks];
   } catch (err) {
     console.warn('[Employees API] Using fallback mock data:', err);
     let filtered = [...mockEmployees];
@@ -64,20 +67,32 @@ export async function fetchEmployeeById(id) {
   }
 }
 
-
 export async function createEmployee(data) {
+  const isMongoId = (id) => typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
+  const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.name || 'New Employee';
+  const payload = {
+    name: fullName,
+    email: data.email,
+    employeeCode: data.employeeCode,
+    jobPosition: data.jobTitle || data.jobPosition || 'Staff',
+    employeeType: data.employmentType || data.employeeType || 'FULL_TIME',
+    departmentId: isMongoId(data.departmentId) ? data.departmentId : null,
+    status: data.status || 'ACTIVE',
+  };
+
   try {
     const response = await apiClient('/employees', {
       method: 'POST',
-      body: data,
+      body: payload,
     });
-    return response.data;
+    return normalizeEmployee(response.data);
   } catch (err) {
+    console.warn('[Employees API] Backend error during create employee:', err);
     const newEmp = {
       id: `emp-${Date.now()}`,
       employeeCode: data.employeeCode || `EMP-00${mockEmployees.length + 1}`,
-      firstName: data.firstName,
-      lastName: data.lastName,
+      firstName: data.firstName || fullName.split(' ')[0],
+      lastName: data.lastName || fullName.split(' ').slice(1).join(' '),
       email: data.email,
       jobTitle: data.jobTitle || 'Software Engineer',
       departmentId: data.departmentId || 'dept-eng',

@@ -5,7 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
+    "dev": "nodemon src/server.js",
     "test": "vitest run --fileParallelism=false",
     "seed": "node src/seed/index.js"
   },
@@ -21,6 +21,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "nodemon": "^3.1.14",
     "supertest": "^7.0.0",
     "vitest": "^1.6.0"
   }

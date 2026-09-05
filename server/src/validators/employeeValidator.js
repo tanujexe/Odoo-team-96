@@ -10,6 +10,7 @@ export const createEmployeeSchema = z.object({
   jobPosition: z.string().optional(),
   employeeType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACTOR', 'INTERN']).optional(),
   scheduleId: z.string().nullable().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'TERMINATED']).optional(),
   bankDetails: z
     .object({
       accountNumber: z.string().optional(),

@@ -17,7 +17,7 @@ export function generateToken(user) {
     userId: user._id.toString(),
     email: user.email,
     role: user.role,
-    employeeId: user.employeeId ? user.employeeId.toString() : null,
+    employeeId: extractEmployeeId(user),
   };
 
   return jwt.sign(payload, config.jwtSecret, {
