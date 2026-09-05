@@ -1,14 +1,17 @@
 import { Router } from 'express';
-import { listRules, createRule, updateRule, deleteRule } from '../controllers/salaryRuleController.js';
+import { listRules, getRule, createRule, updateRule, deleteRule } from '../controllers/salaryRuleController.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { requireRole } from '../middleware/authorize.js';
 import { ROLES } from '../models/User.js';
 
 const router = Router();
 
+
 router.use(authenticate);
 
 router.get('/', listRules);
+router.get('/:id', getRule);
+
 
 router.post(
   '/',

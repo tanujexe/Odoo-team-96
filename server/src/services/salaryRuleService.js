@@ -43,6 +43,17 @@ export async function deleteSalaryRule(id) {
   return rule;
 }
 
+export async function getSalaryRuleById(id) {
+  const rule = await SalaryRule.findById(id).populate('salaryStructureId', 'name code');
+  if (!rule) {
+    const err = new Error('Salary Rule not found');
+    err.code = 'RULE_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
+  return rule;
+}
+
 export async function getSalaryRules(query = {}) {
   const filter = {};
   const structureId = query.salaryStructureId || query.structureId;
@@ -58,6 +69,9 @@ export async function getSalaryRules(query = {}) {
 
   if (query.category) filter.category = query.category;
 
-  return SalaryRule.find(filter).sort({ sequence: 1 });
+  return SalaryRule.find(filter)
+    .populate('salaryStructureId', 'name code')
+    .sort({ sequence: 1 });
 }
+
 

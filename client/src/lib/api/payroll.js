@@ -2,146 +2,355 @@ import { apiClient } from './client';
 
 export let mockSalaryStructures = [
   {
-    id: 'str-tech-1',
-    name: 'Standard Tech Structure',
-    code: 'STR_TECH',
-    ruleCount: 5,
+    id: 'str-reg-1',
+    _id: 'str-reg-1',
+    name: 'Regular Salary',
+    code: 'REG_SAL',
+    ruleCount: 12,
+    employeeCount: 42,
+    active: true,
   },
   {
-    id: 'str-exec-1',
-    name: 'Executive Leadership Structure',
-    code: 'STR_EXEC',
-    ruleCount: 4,
+    id: 'str-intern-1',
+    _id: 'str-intern-1',
+    name: 'Intern Salary',
+    code: 'INT_SAL',
+    ruleCount: 8,
+    employeeCount: 6,
+    active: true,
+  },
+  {
+    id: 'str-contractor-1',
+    _id: 'str-contractor-1',
+    name: 'Contractor',
+    code: 'CONTR',
+    ruleCount: 6,
+    employeeCount: 9,
+    active: true,
   },
 ];
 
 export let mockSalaryRules = [
+  // Regular Salary Structure Rules (12 sequenced rules from Image 2 & 3)
   {
-    id: 'rul-1',
-    salaryStructureId: 'str-tech-1',
+    id: 'rul-reg-1',
+    _id: 'rul-reg-1',
+    salaryStructureId: 'str-reg-1',
     code: 'BASIC',
-    name: 'Basic Wage',
+    name: 'Basic Salary',
     category: 'BASIC',
-    calculationType: 'FIXED',
+    computationType: 'PERCENTAGE',
+    calculationType: 'PERCENTAGE',
     sequence: 1,
-    amount: 1.0, // 100% of base contract wage
+    percentage: 50.0,
+    quantity: 1,
+    fixedAmount: 0,
+    amount: 0,
+    formula: '',
+    active: true,
   },
   {
-    id: 'rul-2',
-    salaryStructureId: 'str-tech-1',
+    id: 'rul-reg-2',
+    _id: 'rul-reg-2',
+    salaryStructureId: 'str-reg-1',
     code: 'HRA',
     name: 'House Rent Allowance',
-    category: 'ALLOWANCE',
+    category: 'ALW',
+    computationType: 'PERCENTAGE',
     calculationType: 'PERCENTAGE',
-    sequence: 2,
-    percentage: 15.0,
+    sequence: 10,
+    percentage: 20.0,
+    quantity: 1,
+    fixedAmount: 0,
+    amount: 0,
+    formula: '',
+    active: true,
   },
   {
-    id: 'rul-3',
-    salaryStructureId: 'str-tech-1',
-    code: 'CONV',
-    name: 'Conveyance Allowance',
-    category: 'ALLOWANCE',
+    id: 'rul-reg-3',
+    _id: 'rul-reg-3',
+    salaryStructureId: 'str-reg-1',
+    code: 'STI',
+    name: 'Standard Allowance',
+    category: 'ALW',
+    computationType: 'FIXED',
     calculationType: 'FIXED',
-    sequence: 3,
-    amount: 250,
+    sequence: 20,
+    percentage: 0,
+    quantity: 1,
+    fixedAmount: 200,
+    amount: 200,
+    formula: '',
+    active: true,
   },
   {
-    id: 'rul-4',
-    salaryStructureId: 'str-tech-1',
-    code: 'PF',
-    name: 'Provident Fund Deduction',
-    category: 'DEDUCTION',
-    calculationType: 'PERCENTAGE',
-    sequence: 4,
-    percentage: 12.0,
+    id: 'rul-reg-4',
+    _id: 'rul-reg-4',
+    salaryStructureId: 'str-reg-1',
+    code: 'BONUS',
+    name: 'Performance Bonus',
+    category: 'ALW',
+    computationType: 'FIXED',
+    calculationType: 'FIXED',
+    sequence: 30,
+    percentage: 0,
+    quantity: 1,
+    fixedAmount: 500,
+    amount: 500,
+    formula: '',
+    active: true,
   },
   {
-    id: 'rul-5',
-    salaryStructureId: 'str-tech-1',
-    code: 'TAX_ADJ',
-    name: 'Standard Withholding Tax',
-    category: 'DEDUCTION',
+    id: 'rul-reg-5',
+    _id: 'rul-reg-5',
+    salaryStructureId: 'str-reg-1',
+    code: 'LTA',
+    name: 'Leave Travel Allowance',
+    category: 'ALW',
+    computationType: 'FIXED',
+    calculationType: 'FIXED',
+    sequence: 40,
+    percentage: 0,
+    quantity: 1,
+    fixedAmount: 150,
+    amount: 150,
+    formula: '',
+    active: true,
+  },
+  {
+    id: 'rul-reg-6',
+    _id: 'rul-reg-6',
+    salaryStructureId: 'str-reg-1',
+    code: 'FIX',
+    name: 'Fixed Allowance',
+    category: 'ALW',
+    computationType: 'FIXED',
+    calculationType: 'FIXED',
+    sequence: 50,
+    percentage: 0,
+    quantity: 1,
+    fixedAmount: 100,
+    amount: 100,
+    formula: '',
+    active: true,
+  },
+  {
+    id: 'rul-reg-7',
+    _id: 'rul-reg-7',
+    salaryStructureId: 'str-reg-1',
+    code: 'GROSS',
+    name: 'Gross Salary',
+    category: 'GROSS',
+    computationType: 'FORMULA',
     calculationType: 'FORMULA',
-    sequence: 5,
-    formula: '(BASIC + HRA) * 0.10',
+    sequence: 60,
+    percentage: 0,
+    quantity: 1,
+    fixedAmount: 0,
+    amount: 0,
+    formula: 'BASIC + HRA + STI + BONUS + LTA + FIX',
+    active: true,
   },
-];
+  {
+    id: 'rul-reg-8',
+    _id: 'rul-reg-8',
+    salaryStructureId: 'str-reg-1',
+    code: 'LWF',
+    name: 'LWF fund',
+    category: 'DED',
+    computationType: 'FIXED',
+    calculationType: 'FIXED',
+    sequence: 70,
+    percentage: 0,
+    quantity: 1,
+    fixedAmount: 10,
+    amount: 10,
+    formula: '',
+    active: true,
+  },
+  {
+    id: 'rul-reg-9',
+    _id: 'rul-reg-9',
+    salaryStructureId: 'str-reg-1',
+    code: 'PF',
+    name: 'Provident Fund',
+    category: 'DED',
+    computationType: 'PERCENTAGE',
+    calculationType: 'PERCENTAGE',
+    sequence: 80,
+    percentage: 12.0,
+    quantity: 1,
+    fixedAmount: 0,
+    amount: 0,
+    formula: '',
+    active: true,
+  },
+  {
+    id: 'rul-reg-10',
+    _id: 'rul-reg-10',
+    salaryStructureId: 'str-reg-1',
+    code: 'ESIC',
+    name: 'ESIC',
+    category: 'DED',
+    computationType: 'PERCENTAGE',
+    calculationType: 'PERCENTAGE',
+    sequence: 90,
+    percentage: 0.75,
+    quantity: 1,
+    fixedAmount: 0,
+    amount: 0,
+    formula: '',
+    active: true,
+  },
+  {
+    id: 'rul-reg-11',
+    _id: 'rul-reg-11',
+    salaryStructureId: 'str-reg-1',
+    code: 'PT',
+    name: 'Professional Tax',
+    category: 'DED',
+    computationType: 'FIXED',
+    calculationType: 'FIXED',
+    sequence: 100,
+    percentage: 0,
+    quantity: 1,
+    fixedAmount: 200,
+    amount: 200,
+    formula: '',
+    active: true,
+  },
+  {
+    id: 'rul-reg-12',
+    _id: 'rul-reg-12',
+    salaryStructureId: 'str-reg-1',
+    code: 'NET',
+    name: 'Net Salary',
+    category: 'NET',
+    computationType: 'FORMULA',
+    calculationType: 'FORMULA',
+    sequence: 110,
+    percentage: 0,
+    quantity: 1,
+    fixedAmount: 0,
+    amount: 0,
+    formula: 'GROSS - LWF - PF - ESIC - PT',
+    active: true,
+  },
 
-export let mockPayruns = [
+  // Intern Salary Rules
   {
-    id: 'pr-2026-09',
-    name: 'September 2026 Regular Payrun',
-    salaryStructureId: 'str-tech-1',
-    salaryStructureName: 'Standard Tech Structure',
-    periodStart: '2026-09-01',
-    periodEnd: '2026-09-30',
-    status: 'COMPUTED', // 'DRAFT' | 'COMPUTED' | 'VALIDATED' | 'PAID'
-    employeeIds: ['emp-alex-1', 'emp-sarah-1'],
-    employeeCount: 2,
-    totals: {
-      totalGross: 18275,
-      totalDeductions: 3770,
-      totalNet: 14505,
-    },
-    warnings: [
-      {
-        code: 'MISSING_ATTENDANCE_CHECKOUT',
-        severity: 'WARNING',
-        employeeId: 'emp-marcus-1',
-        message: 'Marcus Vance has 1 uncorrected attendance exception in this period.',
-      },
-    ],
-    createdAt: '2026-09-02T10:00:00Z',
+    id: 'rul-int-1',
+    _id: 'rul-int-1',
+    salaryStructureId: 'str-intern-1',
+    code: 'STIPEND',
+    name: 'Intern Monthly Stipend',
+    category: 'BASIC',
+    computationType: 'PERCENTAGE',
+    calculationType: 'PERCENTAGE',
+    sequence: 1,
+    percentage: 100,
+    quantity: 1,
+    fixedAmount: 0,
+    formula: '',
+    active: true,
   },
-];
+  {
+    id: 'rul-int-2',
+    _id: 'rul-int-2',
+    salaryStructureId: 'str-intern-1',
+    code: 'INT_BOOK',
+    name: 'Learning Allowance',
+    category: 'ALW',
+    computationType: 'FIXED',
+    calculationType: 'FIXED',
+    sequence: 10,
+    percentage: 0,
+    quantity: 1,
+    fixedAmount: 150,
+    formula: '',
+    active: true,
+  },
+  {
+    id: 'rul-int-3',
+    _id: 'rul-int-3',
+    salaryStructureId: 'str-intern-1',
+    code: 'GROSS',
+    name: 'Gross Stipend',
+    category: 'GROSS',
+    computationType: 'FORMULA',
+    calculationType: 'FORMULA',
+    sequence: 20,
+    percentage: 0,
+    quantity: 1,
+    fixedAmount: 0,
+    formula: 'STIPEND + INT_BOOK',
+    active: true,
+  },
+  {
+    id: 'rul-int-4',
+    _id: 'rul-int-4',
+    salaryStructureId: 'str-intern-1',
+    code: 'NET',
+    name: 'Net Stipend',
+    category: 'NET',
+    computationType: 'FORMULA',
+    calculationType: 'FORMULA',
+    sequence: 30,
+    percentage: 0,
+    quantity: 1,
+    fixedAmount: 0,
+    formula: 'GROSS',
+    active: true,
+  },
 
-export let mockPayslips = [
+  // Contractor Rules
   {
-    id: 'ps-alex-1',
-    payrunId: 'pr-2026-09',
-    employeeId: 'emp-alex-1',
-    employeeName: 'Alex Rivera',
-    employeeCode: 'EMP-001',
-    department: 'Engineering',
-    periodStart: '2026-09-01',
-    periodEnd: '2026-09-30',
-    status: 'COMPUTED',
-    deliveryStatus: 'NOT_SENT',
-    baseWage: 8500,
-    gross: 10025,
-    deductions: 2070,
-    net: 7955,
-    ruleLines: [
-      { code: 'BASIC', name: 'Basic Wage', category: 'BASIC', calculationType: 'FIXED', rate: '100%', amount: 8500, total: 8500 },
-      { code: 'HRA', name: 'House Rent Allowance', category: 'ALLOWANCE', calculationType: 'PERCENTAGE', rate: '15%', amount: 1275, total: 1275 },
-      { code: 'CONV', name: 'Conveyance Allowance', category: 'ALLOWANCE', calculationType: 'FIXED', rate: 'Fixed', amount: 250, total: 250 },
-      { code: 'PF', name: 'Provident Fund Deduction', category: 'DEDUCTION', calculationType: 'PERCENTAGE', rate: '12%', amount: 1020, total: -1020 },
-      { code: 'TAX_ADJ', name: 'Standard Withholding Tax', category: 'DEDUCTION', calculationType: 'FORMULA', rate: '10%', amount: 1050, total: -1050 },
-    ],
+    id: 'rul-cnt-1',
+    _id: 'rul-cnt-1',
+    salaryStructureId: 'str-contractor-1',
+    code: 'CONSULT_FEE',
+    name: 'Consulting Base Fee',
+    category: 'BASIC',
+    computationType: 'PERCENTAGE',
+    calculationType: 'PERCENTAGE',
+    sequence: 1,
+    percentage: 100,
+    quantity: 1,
+    fixedAmount: 0,
+    formula: '',
+    active: true,
   },
   {
-    id: 'ps-sarah-1',
-    payrunId: 'pr-2026-09',
-    employeeId: 'emp-sarah-1',
-    employeeName: 'Sarah Connor',
-    employeeCode: 'EMP-002',
-    department: 'Finance & Payroll',
-    periodStart: '2026-09-01',
-    periodEnd: '2026-09-30',
-    status: 'COMPUTED',
-    deliveryStatus: 'NOT_SENT',
-    baseWage: 7200,
-    gross: 8250,
-    deductions: 1700,
-    net: 6550,
-    ruleLines: [
-      { code: 'BASIC', name: 'Basic Wage', category: 'BASIC', calculationType: 'FIXED', rate: '100%', amount: 7200, total: 7200 },
-      { code: 'HRA', name: 'House Rent Allowance', category: 'ALLOWANCE', calculationType: 'PERCENTAGE', rate: '15%', amount: 1080, total: 1080 },
-      { code: 'CONV', name: 'Conveyance Allowance', category: 'ALLOWANCE', calculationType: 'FIXED', rate: 'Fixed', amount: 250, total: 250 },
-      { code: 'PF', name: 'Provident Fund Deduction', category: 'DEDUCTION', calculationType: 'PERCENTAGE', rate: '12%', amount: 864, total: -864 },
-      { code: 'TAX_ADJ', name: 'Standard Withholding Tax', category: 'DEDUCTION', calculationType: 'FORMULA', rate: '10%', amount: 836, total: -836 },
-    ],
+    id: 'rul-cnt-2',
+    _id: 'rul-cnt-2',
+    salaryStructureId: 'str-contractor-1',
+    code: 'TDS_194J',
+    name: 'TDS Withholding',
+    category: 'DED',
+    computationType: 'PERCENTAGE',
+    calculationType: 'PERCENTAGE',
+    sequence: 10,
+    percentage: 10,
+    quantity: 1,
+    fixedAmount: 0,
+    formula: '',
+    active: true,
+  },
+  {
+    id: 'rul-cnt-3',
+    _id: 'rul-cnt-3',
+    salaryStructureId: 'str-contractor-1',
+    code: 'NET_PAY',
+    name: 'Net Payable to Contractor',
+    category: 'NET',
+    computationType: 'FORMULA',
+    calculationType: 'FORMULA',
+    sequence: 20,
+    percentage: 0,
+    quantity: 1,
+    fixedAmount: 0,
+    formula: 'CONSULT_FEE - TDS_194J',
+    active: true,
   },
 ];
 
@@ -151,6 +360,67 @@ export async function fetchSalaryStructures() {
     return response.data;
   } catch (err) {
     return mockSalaryStructures;
+  }
+}
+
+export async function fetchSalaryStructureById(id) {
+  try {
+    const response = await apiClient(`/salary-structures/${id}`);
+    return response.data;
+  } catch (err) {
+    return mockSalaryStructures.find((s) => s.id === id || s._id === id) || mockSalaryStructures[0];
+  }
+}
+
+export async function createSalaryStructure(data) {
+  try {
+    const response = await apiClient('/salary-structures', {
+      method: 'POST',
+      body: data,
+    });
+    return response.data;
+  } catch (err) {
+    const newStructure = {
+      id: `str-${Date.now()}`,
+      _id: `str-${Date.now()}`,
+      name: data.name,
+      code: data.code || data.name.toUpperCase().replace(/\s+/g, '_').slice(0, 10),
+      active: data.active !== false,
+      ruleCount: 0,
+      employeeCount: 0,
+    };
+    mockSalaryStructures.push(newStructure);
+    return newStructure;
+  }
+}
+
+export async function updateSalaryStructure(id, data) {
+  try {
+    const response = await apiClient(`/salary-structures/${id}`, {
+      method: 'PATCH',
+      body: data,
+    });
+    return response.data;
+  } catch (err) {
+    const idx = mockSalaryStructures.findIndex((s) => s.id === id || s._id === id);
+    if (idx !== -1) {
+      mockSalaryStructures[idx] = { ...mockSalaryStructures[idx], ...data };
+      return mockSalaryStructures[idx];
+    }
+    return data;
+  }
+}
+
+export async function deleteSalaryStructure(id) {
+  try {
+    const response = await apiClient(`/salary-structures/${id}`, {
+      method: 'DELETE',
+    });
+    return response.data;
+  } catch (err) {
+    mockSalaryStructures = mockSalaryStructures.filter((s) => s.id !== id && s._id !== id);
+    mockSalaryRules = mockSalaryRules.filter((r) => r.salaryStructureId !== id);
+    return { success: true };
   }
 }
 
@@ -164,6 +434,15 @@ export async function fetchSalaryRules(structureId) {
   }
 }
 
+export async function fetchSalaryRuleById(id) {
+  try {
+    const response = await apiClient(`/salary-rules/${id}`);
+    return response.data;
+  } catch (err) {
+    return mockSalaryRules.find((r) => r.id === id || r._id === id) || mockSalaryRules[0];
+  }
+}
+
 export async function createSalaryRule(data) {
   const category =
     data.category === 'ALLOWANCE' ? 'ALW' : data.category === 'DEDUCTION' ? 'DED' : data.category || 'ALW';
@@ -174,10 +453,12 @@ export async function createSalaryRule(data) {
     name: data.name ? data.name.trim() : '',
     category,
     sequence: Number(data.sequence) || 1,
+    quantity: Number(data.quantity) || 1,
     computationType,
     fixedAmount: Number(data.fixedAmount ?? data.amount ?? 0),
     percentage: Number(data.percentage || 0),
     formula: data.formula || '',
+    active: data.active !== false,
   };
 
   try {
@@ -190,22 +471,54 @@ export async function createSalaryRule(data) {
     const newRule = {
       id: `rul-${Date.now()}`,
       _id: `rul-${Date.now()}`,
-      salaryStructureId: payload.salaryStructureId || 'str-tech-1',
+      salaryStructureId: payload.salaryStructureId || 'str-reg-1',
       code: payload.code,
       name: payload.name,
       category: payload.category,
       computationType: payload.computationType,
       calculationType: payload.computationType,
       sequence: payload.sequence || mockSalaryRules.length + 1,
+      quantity: payload.quantity,
       fixedAmount: payload.fixedAmount,
       amount: payload.fixedAmount,
       percentage: payload.percentage,
       formula: payload.formula,
+      active: payload.active,
     };
     mockSalaryRules.push(newRule);
     return newRule;
   }
 }
+
+export async function updateSalaryRule(id, data) {
+  try {
+    const response = await apiClient(`/salary-rules/${id}`, {
+      method: 'PATCH',
+      body: data,
+    });
+    return response.data;
+  } catch (err) {
+    const idx = mockSalaryRules.findIndex((r) => r.id === id || r._id === id);
+    if (idx !== -1) {
+      mockSalaryRules[idx] = { ...mockSalaryRules[idx], ...data };
+      return mockSalaryRules[idx];
+    }
+    return data;
+  }
+}
+
+export async function deleteSalaryRule(id) {
+  try {
+    const response = await apiClient(`/salary-rules/${id}`, {
+      method: 'DELETE',
+    });
+    return response.data;
+  } catch (err) {
+    mockSalaryRules = mockSalaryRules.filter((r) => r.id !== id && r._id !== id);
+    return { success: true };
+  }
+}
+
 
 
 export async function fetchPayruns() {

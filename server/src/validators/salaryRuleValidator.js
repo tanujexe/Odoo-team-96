@@ -23,6 +23,7 @@ export const createSalaryRuleSchema = z
       .optional(),
     fixedAmount: z.coerce.number().min(0).optional(),
     amount: z.coerce.number().min(0).optional(),
+    quantity: z.coerce.number().min(0).optional().default(1),
     percentage: z.coerce.number().min(0).optional().default(0),
     formula: z.string().optional().default(''),
     active: z.boolean().optional().default(true),
@@ -44,9 +45,34 @@ export const createSalaryRuleSchema = z
       sequence: data.sequence,
       computationType,
       fixedAmount,
+      quantity: data.quantity ?? 1,
       percentage: data.percentage,
       formula: data.formula || '',
       active: data.active ?? true,
     };
   });
+
+export const updateSalaryRuleSchema = z.object({
+  name: z.string().min(1).optional(),
+  code: z.string().min(1).optional(),
+  salaryStructureId: z.string().optional(),
+  category: z.preprocess((val) => {
+    if (typeof val === 'string') {
+      const upper = val.toUpperCase();
+      if (upper === 'ALLOWANCE') return 'ALW';
+      if (upper === 'DEDUCTION') return 'DED';
+      return upper;
+    }
+    return val;
+  }, z.enum(['BASIC', 'ALW', 'GROSS', 'DED', 'NET']).optional()),
+  sequence: z.coerce.number().min(1).optional(),
+  computationType: z.enum(['FIXED', 'PERCENTAGE', 'FORMULA']).optional(),
+  calculationType: z.enum(['FIXED', 'PERCENTAGE', 'FORMULA']).optional(),
+  fixedAmount: z.coerce.number().min(0).optional(),
+  amount: z.coerce.number().min(0).optional(),
+  quantity: z.coerce.number().min(0).optional(),
+  percentage: z.coerce.number().min(0).optional(),
+  formula: z.string().optional(),
+  active: z.boolean().optional(),
+});
 
