@@ -88,7 +88,7 @@
   - **Tests required:** Check-in/out and correction authorization tests; allocation validity/insufficient-balance tests; approve/retry/refuse/cancel idempotency tests.
   - **Verify:** Server attendance/time-off suite using a MongoDB replica-set test environment for transaction paths.
 
-- [ ] **PP-08 — Attendance and time-off client workflow**
+- [x] **PP-08 — Attendance and time-off client workflow**
   - **Developer:** Developer 2
   - **Files/modules to modify:** `client/src/features/{attendance,time-off}/`, `client/src/lib/api/{attendance,timeOff}.js`, `client/src/tests/{attendance,timeOff}/`.
   - **Spec ref:** `spec.md > Components And Responsibilities > Attendance; Time off`; `PRD.md > 4.4-4.5; 10.2-10.3`.
@@ -108,7 +108,7 @@
   - **Tests required:** Calculator fixtures; formula rejection tests; payrun scope test; warning/409 validation test; duplicate-finalized-payslip test; state-transition/idempotency tests.
   - **Verify:** `npm test --workspace server -- payroll` and an API-driven clean payrun plus a seeded warning scenario.
 
-- [ ] **PP-10 — Payroll configuration, payrun wizard, and payslip UI**
+- [x] **PP-10 — Payroll configuration, payrun wizard, and payslip UI**
   - **Developer:** Developer 2
   - **Files/modules to modify:** `client/src/features/payroll/`, `client/src/lib/api/{salaryStructures,salaryRules,payruns,payslips}.js`, `client/src/components/{PayrunWizard,WarningPanel}.jsx`, `client/src/tests/payroll/`.
   - **Spec ref:** `spec.md > API Contracts > Payrun create contract; Data Flow; Components And Responsibilities > Payroll operations`; `PRD.md > 4.6-4.10; 10.2`.
