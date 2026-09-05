@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { fetchEmployees, createEmployee, fetchEmployeeById } from '../../lib/api/employees';
+import { createUserApi } from '../../lib/api/users';
 import { mockDepartments } from '../../lib/api/mockData';
 import { useAuth, ROLES } from '../../app/auth/AuthContext';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
@@ -23,7 +24,25 @@ import {
   CalendarDays,
   ChevronRight,
   UserCheck,
+  Sparkles,
 } from 'lucide-react';
+
+// Helper function to calculate next Employee ID from list of employees
+const getNextEmployeeCode = (employeeList = []) => {
+  let maxNum = 0;
+  employeeList.forEach((emp) => {
+    const code = emp.employeeCode || emp.id || '';
+    const match = code.match(/EMP[^\d]*(\d+)/i);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (!isNaN(num) && num > maxNum) {
+        maxNum = num;
+      }
+    }
+  });
+  const nextNum = maxNum + 1;
+  return `EMP-${String(nextNum).padStart(3, '0')}`;
+};
 
 export default function EmployeesFeature() {
   const { user, role } = useAuth();
@@ -47,6 +66,7 @@ export default function EmployeesFeature() {
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
     employeeCode: '',
     jobTitle: '',
     department: 'Engineering',
@@ -96,15 +116,49 @@ export default function EmployeesFeature() {
     enabled: !!selectedEmployeeId,
   });
 
+  const handleOpenCreateModal = () => {
+    const nextCode = getNextEmployeeCode(employees);
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      employeeCode: nextCode,
+      jobTitle: 'Software Engineer',
+      department: mockDepartments[0]?.name || 'Engineering',
+      departmentId: mockDepartments[0]?.id || 'dept-eng',
+      employmentType: 'FULL_TIME',
+      status: 'ACTIVE',
+    });
+    setIsCreateModalOpen(true);
+  };
+
   const createMutation = useMutation({
-    mutationFn: createEmployee,
+    mutationFn: async (data) => {
+      try {
+        await createUserApi({
+          name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'New Employee',
+          email: data.email,
+          password: data.password,
+          role: ROLES.EMPLOYEE,
+          employeeCode: data.employeeCode,
+          jobPosition: data.jobTitle,
+          departmentId: data.departmentId,
+        });
+      } catch (err) {
+        console.warn('[Employees] createUserApi fallback:', err);
+      }
+      return createEmployee(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['employees']);
+      queryClient.invalidateQueries(['users']);
       setIsCreateModalOpen(false);
       setFormData({
         firstName: '',
         lastName: '',
         email: '',
+        password: '',
         employeeCode: '',
         jobTitle: '',
         department: 'Engineering',
@@ -152,7 +206,7 @@ export default function EmployeesFeature() {
             </button>
           </div>
           {canManageEmployees && (
-            <Button variant="primary" size="sm" icon={UserPlus} onClick={() => setIsCreateModalOpen(true)}>
+            <Button variant="primary" size="sm" icon={UserPlus} onClick={handleOpenCreateModal}>
               Add Employee
             </Button>
           )}
@@ -204,7 +258,7 @@ export default function EmployeesFeature() {
           title="No employees found"
           description="Try adjusting your search criteria or add a new employee profile."
           actionLabel="Add Employee"
-          onAction={() => setIsCreateModalOpen(true)}
+          onAction={handleOpenCreateModal}
         />
       ) : viewMode === 'list' ? (
         <Card>
@@ -569,89 +623,136 @@ export default function EmployeesFeature() {
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        title="Add New Employee"
-        description="Create an employee master record linked to organizational units"
+        title="Add New Employee Account"
+        description="Create an employee profile and user login account with password"
         maxWidth="max-w-xl"
       >
         <form onSubmit={handleCreateSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="First Name"
+              placeholder="e.g. Marcus"
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               required
             />
             <Input
               label="Last Name"
+              placeholder="e.g. Vance"
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               required
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
-              label="Work Email"
+              label="Corporate Email"
               type="email"
+              placeholder="marcus@company.com"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
             />
+
             <Input
-              label="Employee Code"
-              placeholder="e.g. EMP-009"
-              value={formData.employeeCode}
-              onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
+              label="Password"
+              type="password"
+              placeholder="Enter password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Job Title"
-              placeholder="e.g. Senior Software Engineer"
-              value={formData.jobTitle}
-              onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-              required
-            />
-            <Select
-              label="Department"
-              value={formData.departmentId}
-              onChange={(e) => {
-                const d = mockDepartments.find((x) => x.id === e.target.value);
-                setFormData({
-                  ...formData,
-                  departmentId: e.target.value,
-                  department: d ? d.name : 'Engineering',
-                });
-              }}
-            >
-              {mockDepartments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </Select>
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-slate-700">Assign Role</label>
+            <div className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-slate-100 font-semibold text-slate-700 flex items-center justify-between">
+              <span>EMPLOYEE</span>
+              <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Locked</span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Select
-              label="Employment Type"
-              value={formData.employmentType}
-              onChange={(e) => setFormData({ ...formData, employmentType: e.target.value })}
-            >
-              <option value="FULL_TIME">FULL_TIME</option>
-              <option value="PART_TIME">PART_TIME</option>
-              <option value="CONTRACTOR">CONTRACTOR</option>
-            </Select>
-            <Select
-              label="Status"
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-            >
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-            </Select>
+          {/* Employee ID Assignment */}
+          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                Employee Profile & ID Assignment
+              </label>
+              <div className="space-y-3 pt-1">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    Employee ID / Code
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={formData.employeeCode}
+                      onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
+                      placeholder="e.g. EMP-005"
+                      className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          employeeCode: getNextEmployeeCode(employees),
+                        }))
+                      }
+                      title="Auto-generate sequential next ID"
+                      className="px-3 py-2 text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                      Auto-Generate
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-emerald-700 font-medium mt-1.5 flex items-center gap-1">
+                    <span>✓</span> An employee profile with ID <code className="font-bold">{formData.employeeCode || 'EMP-xxx'}</code> will be automatically created in the Employee Directory.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Job Position (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Software Engineer"
+                      value={formData.jobTitle}
+                      onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+                      className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Department (Optional)
+                    </label>
+                    <select
+                      value={formData.departmentId}
+                      onChange={(e) => {
+                        const d = mockDepartments.find((x) => x.id === e.target.value);
+                        setFormData({
+                          ...formData,
+                          departmentId: e.target.value,
+                          department: d ? d.name : 'Engineering',
+                        });
+                      }}
+                      className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    >
+                      <option value="">-- Select Department --</option>
+                      {mockDepartments.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
@@ -664,7 +765,7 @@ export default function EmployeesFeature() {
               size="sm"
               isLoading={createMutation.isPending}
             >
-              Create Employee
+              Create Employee & Account
             </Button>
           </div>
         </form>
