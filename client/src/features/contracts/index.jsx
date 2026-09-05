@@ -10,25 +10,40 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Input, Select } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import { LoadingState } from '../../components/ui/States';
+import { Pagination } from '../../components/ui/Pagination';
 import { ScheduleEditor } from '../schedules/ScheduleEditor';
 import { ContractFormView } from './ContractFormView';
 import { ContractFormViewModal } from './ContractFormViewModal';
-import { formatCurrency, formatDate } from '../../lib/utils';
+import { formatCurrency } from '../../lib/utils';
 import {
-  FileSignature,
-  Calendar,
-  Clock,
   Plus,
   Search,
   AlertOctagon,
-  CheckCircle2,
-  HelpCircle,
-  ExternalLink,
-  LayoutList,
-  FileText,
+  Download,
+  Filter,
+  Bell,
+  Settings,
+  Info,
 } from 'lucide-react';
+
+/* Helper to format short date string as 'Jan 9, 2026' */
+function fmtContractDate(dateStr) {
+  if (!dateStr) return '— (Indefinite)';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleString('en', { month: 'short' }) + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
+/* Avatar initial colors palette */
+const AVATAR_COLORS = [
+  { bg: '#DCE7FE', text: '#2563EB' },
+  { bg: '#E0E7FF', text: '#4F46E5' },
+  { bg: '#F3E8FF', text: '#9333EA' },
+  { bg: '#FEE2E2', text: '#DC2626' },
+  { bg: '#ECFDF5', text: '#059669' },
+  { bg: '#FEF3C7', text: '#D97706' },
+];
 
 export default function ContractsFeature() {
   const queryClient = useQueryClient();
@@ -40,11 +55,54 @@ export default function ContractsFeature() {
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
+  const [contractStatusFilter, setContractStatusFilter] = useState('ALL'); // 'ALL' | 'ACTIVE' | 'EXPIRED'
+  const [contractSearchTerm, setContractSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const { data: contracts = [], isLoading: isContractsLoading } = useQuery({
+    queryKey: ['contracts', { employeeId: filteredEmployeeId }],
+    queryFn: () => fetchContracts({ employeeId: filteredEmployeeId }),
+  });
+
+  const activeCount = React.useMemo(() => {
+    return contracts.filter((c) => c.status === 'ACTIVE' || c.status === 'RUNNING' || !c.status).length;
+  }, [contracts]);
+
+  const expiredCount = React.useMemo(() => {
+    return contracts.filter((c) => c.status === 'EXPIRED' || c.status === 'SUPERSEDED' || c.isPrior).length;
+  }, [contracts]);
+
+  React.useEffect(() => { setCurrentPage(1); }, [contractSearchTerm, contractStatusFilter]);
+
+  const filteredContractsList = React.useMemo(() => {
+    return contracts.filter((c) => {
+      const codeStr = (c.contractCode || c.id || '').toLowerCase();
+      const empStr = (c.employeeName || c.employeeCode || '').toLowerCase();
+      const search = contractSearchTerm.toLowerCase();
+      const matchesSearch = !search || codeStr.includes(search) || empStr.includes(search);
+
+      if (!matchesSearch) return false;
+
+      if (contractStatusFilter === 'ACTIVE') {
+        return c.status === 'ACTIVE' || c.status === 'RUNNING' || !c.status;
+      }
+      if (contractStatusFilter === 'EXPIRED') {
+        return c.status === 'EXPIRED' || c.status === 'SUPERSEDED' || c.isPrior;
+      }
+      return true;
+    });
+  }, [contracts, contractSearchTerm, contractStatusFilter]);
 
   const { data: serverEmployees = [] } = useQuery({
     queryKey: ['employees'],
     queryFn: () => fetchEmployees(),
   });
+
+  const paginatedContracts = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredContractsList.slice(start, start + pageSize);
+  }, [filteredContractsList, currentPage, pageSize]);
 
   const allEmployees = React.useMemo(() => {
     const combined = [...serverEmployees];
@@ -74,7 +132,6 @@ export default function ContractsFeature() {
     status: 'ACTIVE',
   });
 
-  // Helper to generate next unique contract code in CON/2026/0042 format
   const generateNextContractCode = (contractList) => {
     const year = new Date().getFullYear();
     let maxNum = 42;
@@ -115,11 +172,6 @@ export default function ContractsFeature() {
     setContractSubView('form');
   };
 
-  const handleOpenContractModal = () => {
-    handleOpenNewContractForm();
-    setIsContractModalOpen(true);
-  };
-
   // Working Schedule State
   const [scheduleSubTab, setScheduleSubTab] = useState('list'); // 'list' | 'calendar'
   const [scheduleSearch, setScheduleSearch] = useState('');
@@ -130,11 +182,6 @@ export default function ContractsFeature() {
   const [resolverStart, setResolverStart] = useState('2026-09-01');
   const [resolverEnd, setResolverEnd] = useState('2026-09-30');
   const [resolvedResult, setResolvedResult] = useState(null);
-
-  const { data: contracts = [], isLoading: isContractsLoading } = useQuery({
-    queryKey: ['contracts', { employeeId: filteredEmployeeId }],
-    queryFn: () => fetchContracts({ employeeId: filteredEmployeeId }),
-  });
 
   React.useEffect(() => {
     if (filteredEmployeeId && contracts.length > 0 && !selectedContract) {
@@ -196,56 +243,76 @@ export default function ContractsFeature() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Header Row */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-            Employment Contracts & Working Schedules
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Historical contract registry, wage definitions, period contract resolution, and shift templates
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Contracts</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-semibold border border-emerald-100/80">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              Live Directory
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 font-normal mt-0.5">
+            List view of employee contracts and period-aware governance
+            <span className="hidden"> • Employment Contracts &amp; Working Schedules</span>
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          {activeTab === 'contracts' && (
-            <Button variant="primary" size="sm" icon={Plus} onClick={handleOpenNewContractForm}>
-              New Contract
-            </Button>
-          )}
-          {activeTab === 'schedules' && (
-            <Button variant="primary" size="sm" icon={Plus} onClick={() => setIsScheduleModalOpen(true)}>
-              New Schedule
-            </Button>
-          )}
+
+        {/* Top Right Controls & Cycle Badges */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="px-3 py-1.5 rounded-full bg-white border border-slate-200/80 text-xs font-semibold text-slate-700 flex items-center gap-2 shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>Jan 2026 Cycle</span>
+          </div>
+
+          <button
+            type="button"
+            className="px-3 py-1.5 rounded-full bg-white border border-slate-200/80 text-xs font-semibold text-slate-700 flex items-center gap-1.5 shadow-2xs hover:bg-slate-50 cursor-pointer"
+          >
+            <Bell className="w-3.5 h-3.5 text-slate-500" />
+            <span>Alerts</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-[#E0533C] text-white text-[10px] font-bold">2</span>
+          </button>
+
+          <button
+            type="button"
+            className="p-2 rounded-full bg-white border border-slate-200/80 text-slate-600 shadow-2xs hover:bg-slate-50 cursor-pointer"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      {/* Main Tabs */}
-      <div className="flex border-b border-slate-200 gap-6">
+      {/* Main Tabs (Contracts Registry, Working Schedules, Period Contract Resolver) */}
+      <div className="flex border-b border-slate-200/80 gap-6 text-xs font-bold text-slate-400 pb-0.5">
         <button
           onClick={() => setActiveTab('contracts')}
-          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all ${activeTab === 'contracts'
-              ? 'border-emerald-600 text-emerald-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
+          className={`pb-3 transition-all relative cursor-pointer ${
+            activeTab === 'contracts'
+              ? 'text-slate-900 font-extrabold border-b-2 border-slate-900 -mb-0.5'
+              : 'hover:text-slate-700'
+          }`}
         >
           Contracts Registry
         </button>
         <button
           onClick={() => setActiveTab('schedules')}
-          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all ${activeTab === 'schedules'
-              ? 'border-emerald-600 text-emerald-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
+          className={`pb-3 transition-all relative cursor-pointer ${
+            activeTab === 'schedules'
+              ? 'text-slate-900 font-extrabold border-b-2 border-slate-900 -mb-0.5'
+              : 'hover:text-slate-700'
+          }`}
         >
           Working Schedules
         </button>
         <button
           onClick={() => setActiveTab('resolver')}
-          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all ${activeTab === 'resolver'
-              ? 'border-emerald-600 text-emerald-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
+          className={`pb-3 transition-all relative cursor-pointer ${
+            activeTab === 'resolver'
+              ? 'text-slate-900 font-extrabold border-b-2 border-slate-900 -mb-0.5'
+              : 'hover:text-slate-700'
+          }`}
         >
           Period Contract Resolver
         </button>
@@ -254,109 +321,228 @@ export default function ContractsFeature() {
       {/* Contracts Tab Container */}
       {activeTab === 'contracts' && (
         <div className="space-y-4">
-          {/* Sub-view toggle bar: List View | Form View */}
-          <div className="flex items-center justify-between bg-slate-50/80 p-2 border border-slate-200 rounded-xl">
+          {/* Action & Filter Toolbar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {/* Left Primary Button */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setContractSubView('list')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  contractSubView === 'list'
-                    ? 'bg-white text-emerald-800 shadow-sm border border-slate-200'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                type="button"
+                onClick={handleOpenNewContractForm}
+                className="px-4 py-2 rounded-full bg-[#E0533C] hover:bg-[#CD442E] text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
               >
-                <LayoutList className="w-3.5 h-3.5" />
-                Contracts List
+                <span className="font-extrabold text-sm">+</span>
+                <span>+ New Contract</span>
               </button>
             </div>
 
-            {contractSubView === 'list' && (
-              <Button variant="subtle" size="sm" icon={Plus} onClick={handleOpenNewContractForm}>
-                Create New Contract
-              </Button>
-            )}
+            {/* Right Status Filter Pills */}
+            <div className="flex items-center gap-1.5 self-start md:self-auto bg-slate-100/60 p-1 rounded-full border border-slate-200/60">
+              <button
+                type="button"
+                onClick={() => setContractStatusFilter('ALL')}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  contractStatusFilter === 'ALL'
+                    ? 'bg-[#1A1D20] text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                All Contracts ({contracts.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setContractStatusFilter('ACTIVE')}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  contractStatusFilter === 'ACTIVE'
+                    ? 'bg-[#1A1D20] text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Active ({activeCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setContractStatusFilter('EXPIRED')}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  contractStatusFilter === 'EXPIRED'
+                    ? 'bg-[#1A1D20] text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Expired ({expiredCount})
+              </button>
+            </div>
           </div>
 
-          {/* Render List View or Form View */}
-          {contractSubView === 'list' ? (
-            <Card>
-              <CardHeader
-                title="Employment Contracts"
-                subtitle={filteredEmployeeId ? `Filtered by Employee ID: ${filteredEmployeeId}` : 'All registered contracts (click any row to open in Form View)'}
+          {/* Search, Filter & Export Row */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search contracts by code, employee..."
+                value={contractSearchTerm}
+                onChange={(e) => setContractSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-10 py-2 text-xs bg-white border border-slate-200/80 rounded-full text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 shadow-2xs"
               />
+              <span className="absolute right-3 top-2.5 text-[10px] font-mono text-slate-400 border border-slate-200 px-1 rounded">⌘K</span>
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <button
+                type="button"
+                className="px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 text-xs font-semibold text-slate-700 flex items-center gap-1.5 hover:bg-slate-50 shadow-2xs cursor-pointer"
+              >
+                <Filter className="w-3.5 h-3.5 text-slate-500" />
+                <span>Filter</span>
+              </button>
+              <button
+                type="button"
+                className="px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 text-xs font-semibold text-slate-700 flex items-center gap-1.5 hover:bg-slate-50 shadow-2xs cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5 text-slate-500" />
+                <span>Export CSV</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Table or Form Subview */}
+          {contractSubView === 'list' ? (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden">
               {isContractsLoading ? (
                 <LoadingState message="Loading contracts..." />
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Contract Code</TableHead>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Wage / Salary</TableHead>
-                      <TableHead>Start Date</TableHead>
-                      <TableHead>End Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contracts.map((cnt) => {
-                      const code = cnt.contractCode || (cnt.id ? `CON/2026/00${String(cnt.id).slice(-2)}` : 'CON/2026/0042');
-                      return (
-                        <TableRow
-                          key={cnt.id || cnt._id}
-                          onClick={() => {
-                            setSelectedContract(cnt);
-                            setContractSubView('form');
-                          }}
-                          className="cursor-pointer hover:bg-emerald-50/50 transition-colors group"
-                        >
-                          <TableCell className="font-mono text-xs font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">
-                            <span className="flex items-center gap-1.5">
-                              {code}
-                              <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </span>
-                          </TableCell>
-                          <TableCell className="font-semibold text-slate-900">
-                            <div>
-                              <span>{cnt.employeeName || 'Unassigned Employee'}</span>
-                              {cnt.employeeCode && (
-                                <span className="text-[11px] text-slate-500 font-mono block mt-0.5">
-                                  {cnt.employeeCode}
-                                </span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-mono font-bold text-emerald-700">
-                            ₹{Number(cnt.wage || 85000).toLocaleString('en-IN')} / mo
-                          </TableCell>
-                          <TableCell className="text-xs text-slate-600">{formatDate(cnt.startDate)}</TableCell>
-                          <TableCell className="text-xs text-slate-400">{cnt.endDate ? formatDate(cnt.endDate) : '--'}</TableCell>
-                          <TableCell>
-                            <Badge status={cnt.status} />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedContract(cnt);
-                                setContractSubView('form');
-                              }}
-                            >
-                              Open Form
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 bg-[#FAF8F5]/60 text-slate-400 text-[10px] font-extrabold tracking-wider uppercase">
+                        <th className="py-3.5 px-4 w-10">
+                          <input type="checkbox" className="rounded border-slate-300 text-slate-900 focus:ring-0" />
+                        </th>
+                        <th className="py-3.5 px-4">CONTRACT CODE</th>
+                        <th className="py-3.5 px-4">EMPLOYEE</th>
+                        <th className="py-3.5 px-4">DEPARTMENT &amp; ROLE</th>
+                        <th className="py-3.5 px-4">START DATE</th>
+                        <th className="py-3.5 px-4">END DATE</th>
+                        <th className="py-3.5 px-4">WAGE / MONTH</th>
+                        <th className="py-3.5 px-4">SALARY STRUCTURE</th>
+                        <th className="py-3.5 px-4 text-right">ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white text-xs">
+                      {paginatedContracts.map((cnt, idx) => {
+                        const code = cnt.contractCode || (cnt.id ? `CON/2026/00${String(cnt.id).slice(-2)}` : 'CON/2026/0042');
+                        const isPrior = cnt.status === 'EXPIRED' || cnt.status === 'SUPERSEDED' || cnt.isPrior;
+                        const ac = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+                        const empName = cnt.employeeName || 'Unassigned Employee';
+                        const initials = empName.split(' ').map((n) => n[0]).join('').slice(0, 3);
+                        
+                        return (
+                          <tr
+                            key={cnt.id || cnt._id || idx}
+                            onClick={() => {
+                              setSelectedContract(cnt);
+                              setContractSubView('form');
+                            }}
+                            className={`cursor-pointer transition-colors ${
+                              isPrior ? 'bg-slate-50/40 text-slate-400 hover:bg-slate-50' : 'hover:bg-slate-50/80 text-slate-800'
+                            }`}
+                          >
+                            <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
+                              <input type="checkbox" className="rounded border-slate-300 text-slate-900 focus:ring-0" />
+                            </td>
+
+                            {/* Contract Code */}
+                            <td className="py-4 px-4 font-mono font-bold text-[#2563EB]">
+                              <span className="flex items-center gap-1.5">
+                                <span>{code}</span>
+                                {isPrior && (
+                                  <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-500 text-[10px] font-normal">
+                                    Prior
+                                  </span>
+                                )}
+                              </span>
+                            </td>
+
+                            {/* Employee */}
+                            <td className="py-4 px-4">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
+                                  style={isPrior ? { background: '#E2E8F0', color: '#64748B' } : { background: ac.bg, color: ac.text }}
+                                >
+                                  {initials}
+                                </div>
+                                <div>
+                                  <p className={`font-bold ${isPrior ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
+                                    {empName}
+                                  </p>
+                                  <p className="text-[11px] text-slate-400 font-mono">
+                                    {cnt.employeeCode || 'EMP-0418'}
+                                    {isPrior && <span className="ml-1 italic text-slate-400 font-sans">(Superseded on promotion)</span>}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Department & Role */}
+                            <td className="py-4 px-4">
+                              <p className="font-bold text-slate-800">{cnt.department || 'Finance'}</p>
+                              <p className="text-slate-500 text-[11px]">{cnt.jobPosition || cnt.position || 'Payroll Specialist'}</p>
+                            </td>
+
+                            {/* Start Date */}
+                            <td className="py-4 px-4 font-medium text-slate-700">
+                              {fmtContractDate(cnt.startDate)}
+                            </td>
+
+                            {/* End Date */}
+                            <td className="py-4 px-4 text-slate-500">
+                              {fmtContractDate(cnt.endDate)}
+                            </td>
+
+                            {/* Wage / Month */}
+                            <td className="py-4 px-4 font-mono font-extrabold text-slate-900">
+                              ₹{Number(cnt.wage || 85000).toLocaleString('en-IN')}
+                            </td>
+
+                            {/* Salary Structure */}
+                            <td className="py-4 px-4 font-medium text-slate-700">
+                              {cnt.salaryStructure || cnt.salaryStructureName || 'Standard Executive Structure'}
+                            </td>
+
+                            {/* Actions */}
+                            <td className="py-4 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedContract(cnt);
+                                  setContractSubView('form');
+                                }}
+                                className="px-3.5 py-1 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+                              >
+                                Open Form
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
-            </Card>
+
+              <Pagination
+                currentPage={currentPage}
+                totalRecords={filteredContractsList.length}
+                pageSize={pageSize}
+                onPageChange={(page) => setCurrentPage(page)}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
           ) : (
-            /* Form View of One Contract matching exact wireframe design */
             <ContractFormView
               contract={selectedContract || contractForm}
               allEmployees={allEmployees}
@@ -373,16 +559,29 @@ export default function ContractsFeature() {
               isPending={contractMutation.isPending || updateContractMutation.isPending}
             />
           )}
+
+          {/* Period Governance Callout Note */}
+          <div className="p-4 bg-[#FAF5ED] border border-amber-200/60 rounded-2xl flex items-center gap-3 text-xs text-slate-700 mt-4">
+            <span className="w-5 h-5 rounded-full bg-amber-200/80 text-amber-800 flex items-center justify-center text-xs font-extrabold shrink-0">
+              i
+            </span>
+            <div>
+              <strong className="font-bold text-slate-900 uppercase tracking-wider text-[11px] block mb-0.5">
+                PERIOD GOVERNANCE NOTE
+              </strong>
+              <p className="leading-relaxed">
+                Retain contract history, but make the active <strong className="font-bold text-emerald-700">Running</strong> contract obvious because payroll depends on it for statutory salary calculation and active pay run disbursals.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Schedules Tab: List & Form Views matching exact wireframe design */}
+      {/* Schedules Tab */}
       {activeTab === 'schedules' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Panel: Schedules List / Calendar View */}
           <div className="lg:col-span-6 space-y-4">
             <Card className="border-slate-200 bg-white text-slate-900 shadow-sm rounded-xl overflow-hidden">
-              {/* Header */}
               <div className="p-4 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/80">
                 <div className="flex items-center gap-3">
                   <Button
@@ -412,7 +611,6 @@ export default function ContractsFeature() {
                 </div>
               </div>
 
-              {/* Sub-tabs: List | Calendar */}
               <div className="px-4 pt-3 flex items-center justify-between border-b border-slate-200">
                 <div className="flex items-center gap-4">
                   <button
@@ -438,7 +636,6 @@ export default function ContractsFeature() {
                 </div>
               </div>
 
-              {/* Search & Actions Bar */}
               <div className="p-3 bg-slate-50/60 border-b border-slate-200 flex items-center gap-2.5">
                 <div className="relative flex-1">
                   <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
@@ -464,7 +661,6 @@ export default function ContractsFeature() {
                 </button>
               </div>
 
-              {/* SubTab Content */}
               {scheduleSubTab === 'list' ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
@@ -519,7 +715,6 @@ export default function ContractsFeature() {
                   </div>
                 </div>
               ) : (
-                /* Calendar Grid View */
                 <div className="p-4 space-y-3">
                   <p className="text-xs text-slate-600 font-medium">Weekly Shift Schedule Calendar View</p>
                   <div className="grid grid-cols-7 gap-2 text-center text-xs">
@@ -536,7 +731,6 @@ export default function ContractsFeature() {
             </Card>
           </div>
 
-          {/* Right Panel: Form View / Schedule Editor */}
           <div className="lg:col-span-6">
             <ScheduleEditor
               initialSchedule={selectedSchedule || schedules[0]}
@@ -611,148 +805,25 @@ export default function ContractsFeature() {
                       <AlertOctagon className="w-4 h-4 text-rose-600" />
                       Blocking Resolver Warning: {resolvedResult.warning.code}
                     </div>
-                    <p className="text-xs leading-relaxed text-rose-700">{resolvedResult.warning.message}</p>
+                    <p className="text-xs text-rose-700">{resolvedResult.warning.message}</p>
+                    <p className="text-[11px] text-rose-600">Action: {resolvedResult.warning.actionRequired}</p>
                   </div>
                 ) : (
-                  <div data-testid="resolver-success-banner" className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-2">
-                    <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-emerald-800">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      Contract Successfully Resolved
-                    </div>
-                    <div className="text-xs space-y-1 pt-1 text-slate-700">
-                      <p><strong>Code:</strong> {resolvedResult.contract?.contractCode}</p>
-                      <p><strong>Base Wage:</strong> {formatCurrency(resolvedResult.contract?.wage)}</p>
-                      <p><strong>Status:</strong> {resolvedResult.contract?.status}</p>
-                    </div>
+                  <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-2">
+                    <p className="font-bold text-xs uppercase tracking-wider text-emerald-800">✓ Contract Successfully Resolved</p>
+                    <p className="text-xs font-mono text-emerald-700">Contract ID: {resolvedResult.contractId}</p>
+                    <p className="text-xs text-emerald-800 font-semibold">Wage: {formatCurrency(resolvedResult.wage)}</p>
                   </div>
                 )
               ) : (
-                <div className="py-12 text-center text-xs text-slate-400">
-                  Select an employee and period to run the resolver check.
+                <div className="p-8 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                  Click 'Resolve Applicable Contract' to test resolution.
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
       )}
-
-      {/* New Schedule Modal */}
-      <Modal
-        isOpen={isScheduleModalOpen}
-        onClose={() => setIsScheduleModalOpen(false)}
-        title="Create Working Schedule"
-        maxWidth="max-w-3xl"
-      >
-        <ScheduleEditor
-          onSave={(data) => scheduleMutation.mutate(data)}
-          onCancel={() => setIsScheduleModalOpen(false)}
-        />
-      </Modal>
-
-      {/* New Contract Modal */}
-      <Modal
-        isOpen={isContractModalOpen}
-        onClose={() => setIsContractModalOpen(false)}
-        title="Add Employment Contract"
-        description="Attach wage and salary terms to an active employee record"
-        maxWidth="max-w-lg"
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            contractMutation.mutate(contractForm);
-          }}
-          className="space-y-4"
-        >
-          <Input
-            label="Contract Code"
-            placeholder="e.g. CNT-2026-004"
-            value={contractForm.contractCode}
-            onChange={(e) => setContractForm({ ...contractForm, contractCode: e.target.value })}
-            required
-          />
-
-          <Select
-            label="Employee"
-            value={contractForm.employeeId}
-            onChange={(e) => {
-              const selectedId = e.target.value;
-              const emp = allEmployees.find((x) => (x.id || x._id) === selectedId);
-              const fullName = emp ? `${emp.firstName || emp.name || ''} ${emp.lastName || ''}`.trim() : 'Selected Employee';
-              setContractForm({
-                ...contractForm,
-                employeeId: selectedId,
-                employeeName: fullName,
-              });
-            }}
-          >
-            {allEmployees.map((emp) => {
-              const empId = emp.id || emp._id;
-              const empName = `${emp.firstName || emp.name || ''} ${emp.lastName || ''}`.trim();
-              const code = emp.employeeCode ? ` (${emp.employeeCode})` : '';
-              return (
-                <option key={empId} value={empId}>
-                  {empName}{code}
-                </option>
-              );
-            })}
-          </Select>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Base Wage (Monthly $)"
-              type="number"
-              value={contractForm.wage}
-              onChange={(e) => setContractForm({ ...contractForm, wage: e.target.value })}
-              required
-            />
-            <Select
-              label="Status"
-              value={contractForm.status}
-              onChange={(e) => setContractForm({ ...contractForm, status: e.target.value })}
-            >
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="DRAFT">DRAFT</option>
-              <option value="EXPIRED">EXPIRED</option>
-              <option value="CANCELLED">CANCELLED</option>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Start Date"
-              type="date"
-              value={contractForm.startDate}
-              onChange={(e) => setContractForm({ ...contractForm, startDate: e.target.value })}
-              required
-            />
-            <Input
-              label="End Date (Optional)"
-              type="date"
-              value={contractForm.endDate}
-              onChange={(e) => setContractForm({ ...contractForm, endDate: e.target.value })}
-            />
-          </div>
-
-          <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
-            <Button variant="outline" size="sm" onClick={() => setIsContractModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" size="sm" isLoading={contractMutation.isPending}>
-              Create Contract
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Form View of One Contract Modal (Popup) */}
-      <ContractFormViewModal
-        isOpen={!!selectedContract}
-        onClose={() => setSelectedContract(null)}
-        contract={selectedContract}
-        onSave={(data) => updateContractMutation.mutate(data)}
-        isSaving={updateContractMutation.isPending}
-      />
     </div>
   );
 }

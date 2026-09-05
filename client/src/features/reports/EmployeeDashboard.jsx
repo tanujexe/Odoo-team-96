@@ -158,40 +158,16 @@ export default function EmployeeDashboard() {
           </p>
         </div>
 
-        {/* Upper Right Corner Attendance Terminal Controls */}
-        <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-100">
-            <span
-              className={`w-2.5 h-2.5 rounded-full ${
-                isCheckedIn ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
-              }`}
-            />
-            <span className="text-xs font-semibold text-slate-700">
-              {isCheckedIn ? 'Checked In' : 'Checked Out'}
-            </span>
-          </div>
-
-          <Button
-            variant="primary"
-            size="sm"
-            icon={LogIn}
-            disabled={isCheckedIn}
-            isLoading={checkInMutation.isPending}
-            onClick={() => checkInMutation.mutate()}
-          >
-            Check In
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            icon={LogOut}
-            disabled={!isCheckedIn}
-            isLoading={checkOutMutation.isPending}
-            onClick={() => checkOutMutation.mutate()}
-          >
-            Check Out
-          </Button>
+        {/* Upper Right Corner Status Indicator */}
+        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-2xs">
+          <span
+            className={`w-2.5 h-2.5 rounded-full ${
+              isCheckedIn ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+            }`}
+          />
+          <span className="text-xs font-semibold text-slate-700">
+            {isCheckedIn ? 'Checked In' : 'Checked Out'}
+          </span>
         </div>
       </div>
 
@@ -477,11 +453,21 @@ export default function EmployeeDashboard() {
 
       {/* 3. TIME OFF & LEAVE BALANCES */}
       <div className="space-y-4">
-        <div>
-          <h3 className="text-base font-bold text-slate-900 tracking-tight">Time Off & Leave Balances</h3>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Real-time balance breakdown across leave categories and recent request tracking
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">Time Off & Leave Balances</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Real-time balance breakdown across leave categories and recent request tracking
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            icon={Plus}
+            onClick={() => setIsTimeOffModalOpen(true)}
+          >
+            Request Time Off
+          </Button>
         </div>
 
         {/* Leave Balances Grid */}

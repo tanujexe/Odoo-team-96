@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply min-h-screen text-slate-800 bg-slate-50 font-sans;
+    @apply min-h-screen text-slate-800 bg-[#F3EFE9] font-sans antialiased;
   }
 }
 
