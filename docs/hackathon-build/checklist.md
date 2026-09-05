@@ -28,7 +28,7 @@
   - **Tests required:** Supertest health/error-envelope tests; Mongoose connection failure test using a bad test URI.
   - **Verify:** `npm test --workspace server` and `npm run dev --workspace server`.
 
-- [ ] **PP-02 — Frontend foundation, design system, and route shell**
+- [x] **PP-02 — Frontend foundation, design system, and route shell**
   - **Developer:** Developer 2
   - **Files/modules to modify:** `client/package.json`, `client/src/main.jsx`, `client/src/app/`, `client/src/components/`, `client/src/lib/api/`, `client/src/styles/`, `client/src/features/*/index.jsx` route placeholders.
   - **Spec ref:** `spec.md > Stack; Architecture > Frontend; File Structure`.
