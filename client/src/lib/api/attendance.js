@@ -1,78 +1,108 @@
 import { apiClient } from './client';
 
+export function normalizeAttendanceLog(log) {
+  if (!log) return log;
+  const empObj = typeof log.employeeId === 'object' && log.employeeId !== null ? log.employeeId : null;
+  const empName =
+    log.employeeName ||
+    empObj?.name ||
+    (empObj?.firstName ? `${empObj.firstName} ${empObj.lastName || ''}`.trim() : null) ||
+    'Aarav Mehta';
+  const empCode = log.employeeCode || empObj?.employeeCode || (typeof log.employeeId === 'string' ? log.employeeId : 'EMP-001');
+  const dept = log.department || empObj?.department || 'Finance';
+  const manager = log.manager || empObj?.manager || 'Sara Khan';
+
+  let workedHours = log.workedHours;
+  let overtime = log.overtime ?? 0;
+
+  if (workedHours === undefined || workedHours === null) {
+    if (log.checkIn && log.checkOut) {
+      const durationMs = new Date(log.checkOut).getTime() - new Date(log.checkIn).getTime();
+      workedHours = Math.max(0, Number((durationMs / (1000 * 60 * 60)).toFixed(2)));
+    } else {
+      workedHours = 0;
+    }
+  }
+
+  if (workedHours > 8 && overtime === 0) {
+    overtime = Number((workedHours - 8).toFixed(2));
+  }
+
+  return {
+    ...log,
+    id: log._id || log.id,
+    employeeId: empObj ? empObj._id || empObj.id : log.employeeId,
+    employeeName: empName,
+    employeeCode: empCode,
+    department: dept,
+    manager: manager,
+    workedHours,
+    overtime,
+    status: log.status || (log.checkIn ? 'PRESENT' : 'ABSENT'),
+    notes: log.notes || log.correctionReason || 'System recorded or manually corrected by an authorized user.',
+  };
+}
+
 export let mockAttendanceLogs = [
   {
-    id: 'att-john-today',
-    employeeId: 'emp-john-1',
-    employeeName: 'John Developer',
+    id: 'att-aarav-1',
+    employeeId: 'emp-aarav-1',
+    employeeName: 'Aarav Mehta',
     employeeCode: 'EMP-001',
-    date: '2026-09-05',
-    checkIn: '2026-09-05T09:00:00.000Z',
-    checkOut: null,
-    workedHours: null,
+    department: 'Finance',
+    manager: 'Sara Khan',
+    date: '2026-09-02',
+    checkIn: '2026-09-02T09:01:00.000Z',
+    checkOut: '2026-09-02T18:10:00.000Z',
+    workedHours: 9.08,
+    overtime: 0.5,
     status: 'PRESENT',
-    isCorrected: false,
+    notes: 'System recorded or manually corrected by an authorized user.',
   },
   {
-    id: 'att-john-yesterday',
-    employeeId: 'emp-john-1',
-    employeeName: 'John Developer',
-    employeeCode: 'EMP-001',
-    date: '2026-09-04',
-    checkIn: '2026-09-04T08:55:00.000Z',
-    checkOut: '2026-09-04T17:30:00.000Z',
-    workedHours: 8.0,
-    status: 'PRESENT',
-    isCorrected: false,
-  },
-  {
-    id: 'att-john-prev',
-    employeeId: 'emp-john-1',
-    employeeName: 'John Developer',
-    employeeCode: 'EMP-001',
-    date: '2026-09-03',
-    checkIn: '2026-09-03T09:02:00.000Z',
-    checkOut: '2026-09-03T17:35:00.000Z',
-    workedHours: 8.0,
-    status: 'PRESENT',
-    isCorrected: false,
-  },
-  {
-    id: 'att-1',
-    employeeId: 'emp-alex-1',
-    employeeName: 'Alex Rivera',
+    id: 'att-sara-1',
+    employeeId: 'emp-sara-1',
+    employeeName: 'Sara Khan',
     employeeCode: 'EMP-002',
-    date: '2026-09-05',
-    checkIn: '2026-09-05T08:58:00.000Z',
-    checkOut: null,
-    workedHours: null,
+    department: 'Human Resources',
+    manager: 'System Admin',
+    date: '2026-09-02',
+    checkIn: '2026-09-02T09:15:00.000Z',
+    checkOut: '2026-09-02T18:02:00.000Z',
+    workedHours: 8.78,
+    overtime: 0.0,
     status: 'PRESENT',
-    isCorrected: false,
+    notes: 'On schedule shift completed.',
   },
   {
-    id: 'att-2',
-    employeeId: 'emp-sarah-1',
-    employeeName: 'Sarah Connor',
+    id: 'att-john-1',
+    employeeId: 'emp-john-1',
+    employeeName: 'John Dsouza',
     employeeCode: 'EMP-003',
-    date: '2026-09-04',
-    checkIn: '2026-09-04T09:02:00.000Z',
-    checkOut: '2026-09-04T17:31:00.000Z',
-    workedHours: 8.0,
+    department: 'Engineering',
+    manager: 'Sara Khan',
+    date: '2026-09-02',
+    checkIn: '2026-09-02T09:22:00.000Z',
+    checkOut: '2026-09-02T17:58:00.000Z',
+    workedHours: 8.43,
+    overtime: 0.0,
     status: 'PRESENT',
-    isCorrected: false,
+    notes: 'Standard shift punch.',
   },
   {
-    id: 'att-3',
-    employeeId: 'emp-marcus-1',
-    employeeName: 'Marcus Vance',
+    id: 'att-neha-1',
+    employeeId: 'emp-neha-1',
+    employeeName: 'Neha Patel',
     employeeCode: 'EMP-004',
-    date: '2026-09-04',
-    checkIn: '2026-09-04T09:05:00.000Z',
+    department: 'Marketing',
+    manager: 'Sara Khan',
+    date: '2026-09-02',
+    checkIn: null,
     checkOut: null,
-    workedHours: null,
-    status: 'EXCEPTION',
-    isCorrected: false,
-    exceptionReason: 'Missing check-out timestamp',
+    workedHours: 0.0,
+    overtime: 0.0,
+    status: 'ABSENT',
+    notes: 'Unplanned absence recorded.',
   },
 ];
 
@@ -80,9 +110,13 @@ export async function fetchAttendance(params = {}) {
   try {
     const query = new URLSearchParams(params).toString();
     const response = await apiClient(`/attendance${query ? `?${query}` : ''}`);
-    return response.data;
+    const list = Array.isArray(response.data) ? response.data : [];
+    const normalized = list.map(normalizeAttendanceLog);
+    const serverIds = new Set(normalized.map((a) => a.id));
+    const extraMocks = mockAttendanceLogs.filter((m) => !serverIds.has(m.id)).map(normalizeAttendanceLog);
+    return [...normalized, ...extraMocks];
   } catch (err) {
-    let filtered = [...mockAttendanceLogs];
+    let filtered = mockAttendanceLogs.map(normalizeAttendanceLog);
     if (params.employeeId) {
       filtered = filtered.filter((a) => a.employeeId === params.employeeId);
     }
@@ -93,28 +127,32 @@ export async function fetchAttendance(params = {}) {
   }
 }
 
-export async function checkInApi(employeeId = 'emp-alex-1') {
+export async function checkInApi(employeeId = 'emp-aarav-1') {
   try {
     const response = await apiClient('/attendance/check-in', {
       method: 'POST',
       body: { employeeId },
     });
-    return response.data;
+    return normalizeAttendanceLog(response.data);
   } catch (err) {
+    const todayStr = new Date().toISOString().split('T')[0];
     const newEntry = {
       id: `att-${Date.now()}`,
       employeeId,
-      employeeName: 'Alex Rivera',
+      employeeName: 'Aarav Mehta',
       employeeCode: 'EMP-001',
-      date: new Date().toISOString().split('T')[0],
+      department: 'Finance',
+      manager: 'Sara Khan',
+      date: todayStr,
       checkIn: new Date().toISOString(),
       checkOut: null,
       workedHours: null,
+      overtime: 0,
       status: 'PRESENT',
-      isCorrected: false,
+      notes: 'Self-service terminal check in.',
     };
     mockAttendanceLogs.unshift(newEntry);
-    return newEntry;
+    return normalizeAttendanceLog(newEntry);
   }
 }
 
@@ -124,40 +162,37 @@ export async function checkOutApi(id) {
       method: 'POST',
       body: { id },
     });
-    return response.data;
+    return normalizeAttendanceLog(response.data);
   } catch (err) {
     const entry = mockAttendanceLogs.find((a) => a.id === id) || mockAttendanceLogs[0];
     if (entry) {
       entry.checkOut = new Date().toISOString();
-      const checkInTime = new Date(entry.checkIn).getTime();
+      const checkInTime = new Date(entry.checkIn || new Date()).getTime();
       const checkOutTime = new Date(entry.checkOut).getTime();
-      entry.workedHours = Math.max(0.5, Number(((checkOutTime - checkInTime) / (1000 * 60 * 60) - 0.5).toFixed(1)));
+      const hours = Math.max(0, Number(((checkOutTime - checkInTime) / (1000 * 60 * 60)).toFixed(2)));
+      entry.workedHours = hours;
+      entry.overtime = hours > 8 ? Number((hours - 8).toFixed(2)) : 0;
       entry.status = 'PRESENT';
     }
-    return entry;
+    return normalizeAttendanceLog(entry);
   }
 }
 
-export async function correctAttendanceApi(id, { checkIn, checkOut, reason }) {
+export async function correctAttendanceApi(id, data) {
   try {
     const response = await apiClient(`/attendance/${id}/correction`, {
       method: 'PATCH',
-      body: { checkIn, checkOut, reason },
+      body: data,
     });
-    return response.data;
+    return normalizeAttendanceLog(response.data);
   } catch (err) {
-    const entry = mockAttendanceLogs.find((a) => a.id === id);
-    if (entry) {
-      entry.checkIn = checkIn;
-      entry.checkOut = checkOut;
-      entry.isCorrected = true;
-      entry.correctionReason = reason;
-      entry.status = 'CORRECTED';
-      if (checkIn && checkOut) {
-        const diffH = (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60) - 0.5;
-        entry.workedHours = Math.max(0, Number(diffH.toFixed(1)));
-      }
+    let entry = mockAttendanceLogs.find((a) => a.id === id);
+    if (!entry) {
+      entry = { id: id || `att-${Date.now()}`, ...data };
+      mockAttendanceLogs.unshift(entry);
+    } else {
+      Object.assign(entry, data);
     }
-    return entry;
+    return normalizeAttendanceLog(entry);
   }
 }

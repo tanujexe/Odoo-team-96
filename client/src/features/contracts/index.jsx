@@ -210,9 +210,9 @@ export default function ContractsFeature() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Panel: Schedules List / Calendar View */}
           <div className="lg:col-span-6 space-y-4">
-            <Card className="border-slate-800 bg-slate-900 text-slate-100 shadow-xl overflow-hidden">
+            <Card className="border-slate-200 bg-white text-slate-900 shadow-sm rounded-xl overflow-hidden">
               {/* Header */}
-              <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <div className="p-4 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/80">
                 <div className="flex items-center gap-3">
                   <Button
                     variant="primary"
@@ -235,22 +235,22 @@ export default function ContractsFeature() {
                       })
                     }
                   >
-                    + New Schedule
+                    New Schedule
                   </Button>
-                  <h3 className="text-base font-bold text-white tracking-tight">Working Schedules</h3>
+                  <h3 className="text-base font-bold text-slate-900 tracking-tight">Working Schedules</h3>
                 </div>
               </div>
 
               {/* Sub-tabs: List | Calendar */}
-              <div className="px-4 pt-3 flex items-center justify-between border-b border-slate-800">
+              <div className="px-4 pt-3 flex items-center justify-between border-b border-slate-200">
                 <div className="flex items-center gap-4">
                   <button
                     type="button"
                     onClick={() => setScheduleSubTab('list')}
                     className={`pb-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors ${
                       scheduleSubTab === 'list'
-                        ? 'border-emerald-400 text-emerald-400'
-                        : 'border-transparent text-slate-400 hover:text-slate-200'
+                        ? 'border-emerald-600 text-emerald-700'
+                        : 'border-transparent text-slate-500 hover:text-slate-900'
                     }`}
                   >
                     List
@@ -260,8 +260,8 @@ export default function ContractsFeature() {
                     onClick={() => setScheduleSubTab('calendar')}
                     className={`pb-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors ${
                       scheduleSubTab === 'calendar'
-                        ? 'border-emerald-400 text-emerald-400'
-                        : 'border-transparent text-slate-400 hover:text-slate-200'
+                        ? 'border-emerald-600 text-emerald-700'
+                        : 'border-transparent text-slate-500 hover:text-slate-900'
                     }`}
                   >
                     Calendar
@@ -270,26 +270,26 @@ export default function ContractsFeature() {
               </div>
 
               {/* Search & Actions Bar */}
-              <div className="p-4 bg-slate-950/60 border-b border-slate-800 flex items-center gap-3">
+              <div className="p-3 bg-slate-50/60 border-b border-slate-200 flex items-center gap-2.5">
                 <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
+                  <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                   <input
                     type="text"
                     placeholder="Search schedules..."
                     value={scheduleSearch}
                     onChange={(e) => setScheduleSearch(e.target.value)}
-                    className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
                 <button
                   type="button"
-                  className="px-3 py-1.5 text-xs font-medium bg-slate-800 border border-slate-700 rounded-lg text-slate-300 hover:bg-slate-700"
+                  className="px-3 py-1.5 text-xs font-semibold bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm"
                 >
                   Filter
                 </button>
                 <button
                   type="button"
-                  className="px-3 py-1.5 text-xs font-medium bg-slate-800 border border-slate-700 rounded-lg text-slate-300 hover:bg-slate-700"
+                  className="px-3 py-1.5 text-xs font-semibold bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 shadow-sm"
                 >
                   Columns
                 </button>
@@ -299,7 +299,7 @@ export default function ContractsFeature() {
               {scheduleSubTab === 'list' ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-950 text-slate-400 uppercase text-[11px] font-semibold tracking-wider border-b border-slate-800">
+                    <thead className="bg-slate-50 text-slate-600 uppercase text-[11px] font-semibold tracking-wider border-b border-slate-200">
                       <tr>
                         <th className="py-3 px-4">Schedule Name</th>
                         <th className="py-3 px-3">Days / Week</th>
@@ -308,7 +308,7 @@ export default function ContractsFeature() {
                         <th className="py-3 px-4 text-right">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
+                    <tbody className="divide-y divide-slate-100 bg-white">
                       {schedules
                         .filter((s) => (s.name || '').toLowerCase().includes(scheduleSearch.toLowerCase()))
                         .map((sch) => {
@@ -323,20 +323,20 @@ export default function ContractsFeature() {
                               onClick={() => setSelectedSchedule(sch)}
                               className={`cursor-pointer transition-colors ${
                                 isSelected
-                                  ? 'bg-emerald-950/50 border-l-4 border-emerald-400 text-white font-bold'
-                                  : 'hover:bg-slate-800/50 text-slate-300'
+                                  ? 'bg-emerald-50/80 border-l-4 border-emerald-600 text-emerald-950 font-bold'
+                                  : 'hover:bg-slate-50/80 text-slate-800'
                               }`}
                             >
-                              <td className="py-3.5 px-4 font-semibold text-emerald-300">{sch.name}</td>
+                              <td className="py-3.5 px-4 font-semibold text-slate-900">{sch.name}</td>
                               <td className="py-3.5 px-3 font-mono">{daysCount}</td>
-                              <td className="py-3.5 px-3 font-mono text-emerald-400 font-bold">{hoursText}</td>
-                              <td className="py-3.5 px-3 text-slate-400">{sch.company || 'My Company'}</td>
+                              <td className="py-3.5 px-3 font-mono text-emerald-700 font-bold">{hoursText}</td>
+                              <td className="py-3.5 px-3 text-slate-500">{sch.company || 'My Company'}</td>
                               <td className="py-3.5 px-4 text-right">
                                 <span
                                   className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
                                     statusStr === 'Active'
-                                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                      : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                      : 'bg-slate-100 text-slate-600 border border-slate-200'
                                   }`}
                                 >
                                   {statusStr}
@@ -347,20 +347,20 @@ export default function ContractsFeature() {
                         })}
                     </tbody>
                   </table>
-                  <div className="p-3 bg-slate-950/40 text-[11px] text-slate-500 italic border-t border-slate-800">
+                  <div className="p-3 bg-slate-50/60 text-[11px] text-slate-500 italic border-t border-slate-200">
                     Select a schedule to open to Form view
                   </div>
                 </div>
               ) : (
                 /* Calendar Grid View */
                 <div className="p-4 space-y-3">
-                  <p className="text-xs text-slate-400 font-medium">Weekly Shift Schedule Calendar View</p>
+                  <p className="text-xs text-slate-600 font-medium">Weekly Shift Schedule Calendar View</p>
                   <div className="grid grid-cols-7 gap-2 text-center text-xs">
                     {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                      <div key={day} className="bg-slate-800 p-2.5 rounded-lg border border-slate-700">
-                        <span className="font-bold text-emerald-400 block uppercase text-[10px]">{day}</span>
-                        <span className="text-[11px] text-slate-300 font-mono mt-1 block">09:00 - 18:00</span>
-                        <span className="text-[10px] text-slate-400 block mt-0.5">8h work</span>
+                      <div key={day} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                        <span className="font-bold text-emerald-700 block uppercase text-[10px]">{day}</span>
+                        <span className="text-[11px] text-slate-800 font-mono mt-1 block">09:00 - 18:00</span>
+                        <span className="text-[10px] text-slate-500 block mt-0.5">8h work</span>
                       </div>
                     ))}
                   </div>
