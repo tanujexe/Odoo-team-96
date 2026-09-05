@@ -28,8 +28,6 @@ export function notFoundHandler(req, res) {
 }
 
 export function errorHandler(err, req, res, next) {
-  console.error(`[Unhandled Error] ${req.method} ${req.path}:`, err);
-
   // Handle malformed JSON body from Express body-parser
   if ((err instanceof SyntaxError || err?.type === 'entity.parse.failed') && err?.status === 400 && 'body' in err) {
     return res.fail('INVALID_JSON', 'Malformed JSON payload provided', 400);
@@ -51,5 +49,7 @@ export function errorHandler(err, req, res, next) {
   }
 
   // Generic server error
+  console.error(`[Unhandled Error] ${req.method} ${req.path}:`, err);
   return res.fail('INTERNAL_SERVER_ERROR', 'An unexpected error occurred on the server', 500);
 }
+
