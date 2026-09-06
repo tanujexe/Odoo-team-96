@@ -97,12 +97,16 @@ export function AppLayout() {
         return 'HR Manager';
       case ROLES.EMPLOYEE:
         return 'Staff Member';
+    }
+  };
       default:
         return 'HR Payroll Lead';
     }
   };
 
   const SidebarContent = () => (
+    <div className="flex flex-col justify-between h-full p-4 overflow-y-auto no-scrollbar">
+      <div>
     <div className="flex flex-col h-full bg-[#F8F6F1]">
       {/* Top Scrollable Area */}
       <div className="flex-1 p-5 overflow-y-auto no-scrollbar">
@@ -173,6 +177,7 @@ export function AppLayout() {
             );
           })}
         </nav>
+      </div>
       </div>
 
       {/* Pinned Sticky Bottom Section: Role Switcher & Light Red Logout Button */}

@@ -414,6 +414,7 @@ export default function ContractsFeature() {
               />
               <span className="absolute right-3 top-2.5 text-[10px] font-mono text-slate-400 border border-slate-200 px-1 rounded">⌘K</span>
             </div>
+<<<<<<< HEAD
 
             <div className="flex items-center gap-2 self-end sm:self-auto relative">
               <div className="relative">
@@ -467,6 +468,8 @@ export default function ContractsFeature() {
                 <span>Export CSV</span>
               </button>
             </div>
+=======
+>>>>>>> 31e5483460137586c7d4786cc76f06c6075d36e9
           </div>
 
 

@@ -479,15 +479,7 @@ export default function EmployeesFeature() {
           </div>
           <p className="text-xs text-slate-500 font-normal mt-1">List view for sort, filter and bulk scanning • Employee Directory & Workspace</p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <button type="button" className="p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs hover:bg-stone-50 text-slate-600 hover:text-slate-900 transition-all cursor-pointer relative">
-            <Bell className="w-4 h-4 text-slate-500" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
-          </button>
-          <button type="button" title="Settings" className="p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs hover:bg-stone-50 text-slate-600 hover:text-slate-900 transition-all cursor-pointer">
-            <Settings className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Header buttons removed as requested */}
       </div>
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
