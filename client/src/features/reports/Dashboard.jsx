@@ -15,7 +15,6 @@ import {
   CalendarCheck,
   CheckCircle2,
   Calendar,
-  Building2,
   ShieldCheck,
   ChevronRight,
   ArrowUpRight,
@@ -188,28 +187,6 @@ export function ExecutiveDashboard() {
             <span>{periodCycleLabel}</span>
           </div>
 
-          <button
-            type="button"
-            className="relative p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors shadow-xs"
-            title="Operational Alerts"
-            onClick={() => navigate('/payroll')}
-          >
-            <Clock className="w-4 h-4" />
-            {alerts.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                {alerts.length}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors shadow-xs"
-            title="Organization Directory"
-            onClick={() => navigate('/employees')}
-          >
-            <Building2 className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
