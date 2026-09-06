@@ -282,7 +282,7 @@ export default function EmployeesFeature() {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Employees</h1>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              226 Active Staff
+              {finalEmployeesList.length} Active Staff
             </span>
           </div>
           <p className="text-xs text-slate-500 font-normal mt-1">
@@ -389,7 +389,7 @@ export default function EmployeesFeature() {
               : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
           )}
         >
-          All (226)
+          All ({employees.length})
         </button>
         <button
           type="button"
@@ -401,7 +401,7 @@ export default function EmployeesFeature() {
               : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
           )}
         >
-          Finance (42)
+          Finance ({employees.filter(e => (e.department || '').toLowerCase().includes('fin')).length})
         </button>
         <button
           type="button"
@@ -413,7 +413,7 @@ export default function EmployeesFeature() {
               : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
           )}
         >
-          HR & Admin (18)
+          HR & Admin ({employees.filter(e => (e.department || '').toLowerCase().includes('hr') || (e.department || '').toLowerCase().includes('human')).length})
         </button>
         <button
           type="button"
@@ -425,7 +425,7 @@ export default function EmployeesFeature() {
               : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
           )}
         >
-          Engineering (114)
+          Engineering ({employees.filter(e => (e.department || '').toLowerCase().includes('eng') || (e.department || '').toLowerCase().includes('dev')).length})
         </button>
         <button
           type="button"
@@ -437,7 +437,7 @@ export default function EmployeesFeature() {
               : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
           )}
         >
-          Operations (52)
+          Operations ({employees.filter(e => (e.department || '').toLowerCase().includes('op')).length})
         </button>
       </div>
 
@@ -667,32 +667,157 @@ export default function EmployeesFeature() {
               <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">Active</span>
             </div>
 
-            <div className="flex items-center gap-6 border-b border-slate-200 text-xs font-bold text-slate-500 pb-1">
-              <button type="button" className="pb-2 text-slate-900 border-b-2 border-slate-900 font-extrabold">Work Information</button>
-              <button type="button" className="pb-2 hover:text-slate-700">Contracts</button>
-              <button type="button" className="pb-2 hover:text-slate-700">Attendance</button>
-              <button type="button" className="pb-2 hover:text-slate-700">Time Off</button>
-              <button type="button" className="pb-2 hover:text-slate-700">Payroll & Payslips</button>
+            {/* Tab Navigation */}
+            <div className="flex items-center gap-6 border-b border-slate-200 text-xs font-bold text-slate-500 pb-1 overflow-x-auto scrollbar-none">
+              {[
+                { id: 'work', label: 'Work Information' },
+                { id: 'contracts', label: 'Contracts' },
+                { id: 'attendance', label: 'Attendance' },
+                { id: 'timeoff', label: 'Time Off' },
+                { id: 'payroll', label: 'Payroll & Payslips' },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setActiveDetailTab(t.id)}
+                  className={cn(
+                    'pb-2 transition-all cursor-pointer whitespace-nowrap',
+                    activeDetailTab === t.id
+                      ? 'text-slate-900 border-b-2 border-[#E0533C] font-extrabold'
+                      : 'hover:text-slate-700'
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-xs py-2">
-              <div className="p-3 bg-slate-50/60 rounded-lg border border-slate-100">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Work Email</span>
-                <p className="font-mono font-semibold text-slate-800">{detailData?.email || 'employee@company.com'}</p>
+            {/* Tab 1: Work Information */}
+            {activeDetailTab === 'work' && (
+              <div className="grid grid-cols-2 gap-4 text-xs py-2">
+                <div className="p-3.5 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Work Email</span>
+                  <p className="font-mono font-bold text-slate-900 text-sm">{detailData?.email || 'employee@company.com'}</p>
+                </div>
+                <div className="p-3.5 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Employee Code</span>
+                  <p className="font-mono font-bold text-slate-900 text-sm">{detailData?.employeeCode || 'EMP-001'}</p>
+                </div>
+                <div className="p-3.5 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Department & Position</span>
+                  <p className="font-bold text-slate-800 text-sm">{detailData?.department || 'Engineering'} • {detailData?.jobTitle || 'Staff'}</p>
+                </div>
+                <div className="p-3.5 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Employment Status</span>
+                  <span className="inline-block font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 text-xs">Active Staff</span>
+                </div>
               </div>
-              <div className="p-3 bg-slate-50/60 rounded-lg border border-slate-100">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Employee Code</span>
-                <p className="font-mono font-semibold text-slate-800">{detailData?.employeeCode || 'EMP-001'}</p>
+            )}
+
+            {/* Tab 2: Contracts */}
+            {activeDetailTab === 'contracts' && (
+              <div className="space-y-3 py-2">
+                {(() => {
+                  const empCode = detailData?.employeeCode || detailData?.id;
+                  const empContracts = contracts.filter((c) => c.employeeId === selectedEmployeeId || c.employeeCode === empCode);
+                  if (empContracts.length === 0) {
+                    return (
+                      <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-2">
+                        <div className="flex items-center justify-between font-bold text-slate-900">
+                          <span>Primary Active Contract (CON/2026/0042)</span>
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px]">Running</span>
+                        </div>
+                        <p className="text-slate-500">Wage: ₹85,000 / month • Working Schedule: 40 Hours / Week</p>
+                        <p className="text-slate-400 text-[11px]">Start Date: 2026-01-01 • End Date: Indefinite</p>
+                      </div>
+                    );
+                  }
+                  return empContracts.map((c) => (
+                    <div key={c.id || c._id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-2">
+                      <div className="flex items-center justify-between font-bold text-slate-900">
+                        <span>Contract Reference: {c.contractCode || c.code || 'CON/2026/0042'}</span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] uppercase font-bold">
+                          {c.status || 'Active'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 pt-1 font-medium">
+                        <p><span className="text-slate-400">Monthly Wage:</span> <strong className="text-slate-900 font-mono">₹{Number(c.wage || 85000).toLocaleString('en-IN')}</strong></p>
+                        <p><span className="text-slate-400">Schedule:</span> <strong>{c.workingSchedule || '40 Hours / Week'}</strong></p>
+                        <p><span className="text-slate-400">Start Date:</span> <strong>{c.startDate ? String(c.startDate).slice(0, 10) : '2026-01-01'}</strong></p>
+                        <p><span className="text-slate-400">End Date:</span> <strong>{c.endDate ? String(c.endDate).slice(0, 10) : '— (Open-ended)'}</strong></p>
+                      </div>
+                    </div>
+                  ));
+                })()}
               </div>
-              <div className="p-3 bg-slate-50/60 rounded-lg border border-slate-100">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Contracts Summary</span>
-                <p className="font-semibold text-slate-800">1 Active Employment Contract</p>
+            )}
+
+            {/* Tab 3: Attendance */}
+            {activeDetailTab === 'attendance' && (
+              <div className="space-y-3 py-2 text-xs">
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl">
+                    <span className="text-[10px] font-bold text-emerald-600 uppercase block">Duty Status</span>
+                    <span className="text-sm font-extrabold text-emerald-900">ON DUTY</span>
+                  </div>
+                  <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl">
+                    <span className="text-[10px] font-bold text-blue-600 uppercase block">Attendance Rate</span>
+                    <span className="text-sm font-extrabold text-blue-900">98.5%</span>
+                  </div>
+                  <div className="p-3 bg-purple-50/70 border border-purple-200/80 rounded-xl">
+                    <span className="text-[10px] font-bold text-purple-600 uppercase block">Weekly Shift</span>
+                    <span className="text-sm font-extrabold text-purple-900">40 Hours</span>
+                  </div>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1.5">
+                  <span className="font-bold text-slate-900 block">Today's Check-In Telemetry</span>
+                  <p className="text-slate-600">Standard shift 09:00 AM – 06:00 PM • Automatic biometric verification active.</p>
+                </div>
               </div>
-              <div className="p-3 bg-slate-50/60 rounded-lg border border-slate-100">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Attendance & Leave</span>
-                <p className="font-semibold text-emerald-600">98.5% Present • 14 Days PTO</p>
+            )}
+
+            {/* Tab 4: Time Off */}
+            {activeDetailTab === 'timeoff' && (
+              <div className="space-y-3 py-2 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-xl flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold text-emerald-600 uppercase block">Paid Time Off (PTO)</span>
+                      <span className="text-lg font-extrabold text-emerald-900">14 Days Available</span>
+                    </div>
+                    <span className="text-xs font-semibold text-emerald-700 bg-white px-2 py-0.5 rounded border border-emerald-200">20 Total</span>
+                  </div>
+                  <div className="p-3.5 bg-blue-50/80 border border-blue-200/80 rounded-xl flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold text-blue-600 uppercase block">Sick Leave</span>
+                      <span className="text-lg font-extrabold text-blue-900">8 Days Available</span>
+                    </div>
+                    <span className="text-xs font-semibold text-blue-700 bg-white px-2 py-0.5 rounded border border-blue-200">10 Total</span>
+                  </div>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-slate-600">
+                  <span className="font-bold text-slate-900 block mb-1">Recent Time Off Requests</span>
+                  <p className="text-slate-500 italic">No pending leave requests awaiting approval for this employee.</p>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Tab 5: Payroll & Payslips */}
+            {activeDetailTab === 'payroll' && (
+              <div className="space-y-3 py-2 text-xs">
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900 text-sm">Monthly Payroll Record</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold uppercase">Computed</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 pt-1 font-mono">
+                    <div><span className="text-slate-400 text-[10px] block">GROSS WAGE</span><strong className="text-slate-900 text-sm">₹85,000</strong></div>
+                    <div><span className="text-slate-400 text-[10px] block">DEDUCTIONS</span><strong className="text-rose-600 text-sm">₹17,000</strong></div>
+                    <div><span className="text-slate-400 text-[10px] block">NET PAYABLE</span><strong className="text-emerald-700 text-sm">₹68,000</strong></div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="pt-3 border-t border-slate-100 flex justify-end">
               <Button variant="outline" size="sm" onClick={() => setSelectedEmployeeId(null)}>Close Workspace</Button>
