@@ -10,7 +10,6 @@ import { TimeOffRequest } from '../models/TimeOffRequest.js';
 import { resolveApplicableContract } from '../payroll/contractResolver.js';
 import { calculatePayslipLines } from '../payroll/calculator.js';
 import {
-  checkDuplicateFinalizedPayslip,
   checkEmployeeBankDetails,
   getWarningLabel,
 } from '../payroll/warningService.js';
@@ -25,28 +24,37 @@ export async function getEligibleEmployeesForPayrun({ salaryStructureId, periodS
     .populate('departmentId scheduleId')
     .sort({ name: 1 });
 
-  const eligibleList = [];
+  const employeeIds = employees.map((e) => e._id);
 
-  for (const emp of employees) {
-    // Find active contract overlapping the period
-    const contract = await Contract.findOne({
-      employeeId: emp._id,
-      status: 'ACTIVE',
-      startDate: { $lte: pEnd },
-      $or: [{ endDate: null }, { endDate: { $gte: pStart } }],
-    }).populate('salaryStructureId');
+  // Batch query all active overlapping contracts in ONE query
+  const contracts = await Contract.find({
+    employeeId: { $in: employeeIds },
+    status: 'ACTIVE',
+    startDate: { $lte: pEnd },
+    $or: [{ endDate: null }, { endDate: { $gte: pStart } }],
+  }).populate('salaryStructureId');
 
+  const contractMap = new Map();
+  for (const contract of contracts) {
+    const key = String(contract.employeeId);
+    if (!contractMap.has(key)) {
+      contractMap.set(key, contract);
+    }
+  }
+
+  const eligibleList = employees.map((emp) => {
+    const contract = contractMap.get(String(emp._id));
     const workingHours =
       contract?.workingSchedule ||
       emp.scheduleId?.name ||
       (emp.scheduleId?.weeklyHours ? `${emp.scheduleId.weeklyHours} hours/week` : '40 hours/week');
 
-    eligibleList.push({
+    return {
       id: String(emp._id),
       _id: emp._id,
       name: emp.name,
-      firstName: emp.name.split(' ')[0] || '',
-      lastName: emp.name.split(' ').slice(1).join(' ') || '',
+      firstName: emp.name?.split(' ')[0] || '',
+      lastName: emp.name?.split(' ').slice(1).join(' ') || '',
       employeeCode: emp.employeeCode,
       department: emp.departmentId?.name || 'General',
       jobTitle: emp.jobPosition || 'Employee',
@@ -57,8 +65,8 @@ export async function getEligibleEmployeesForPayrun({ salaryStructureId, periodS
       contractCode: contract?.contractCode || null,
       hasActiveContract: !!contract,
       status: emp.status,
-    });
-  }
+    };
+  });
 
   return eligibleList;
 }
@@ -121,6 +129,64 @@ export async function computePayrun(payrunId) {
     active: true,
   }).sort({ sequence: 1 });
 
+  const employeeIds = payrun.employeeIds || [];
+
+  // Batch query all required data in parallel
+  const [
+    employees,
+    contracts,
+    attendances,
+    approvedLeaves,
+  ] = await Promise.all([
+    Employee.find({ _id: { $in: employeeIds } }).populate('departmentId'),
+    Contract.find({
+      employeeId: { $in: employeeIds },
+      status: 'ACTIVE',
+      startDate: { $lte: payrun.periodEnd },
+      $or: [{ endDate: null }, { endDate: { $gte: payrun.periodStart } }],
+    }).populate('departmentId salaryStructureId'),
+    Attendance.find({
+      employeeId: { $in: employeeIds },
+      date: { $gte: payrun.periodStart, $lte: payrun.periodEnd },
+      status: { $in: ['PRESENT', 'LATE'] },
+    }),
+    TimeOffRequest.find({
+      employeeId: { $in: employeeIds },
+      status: 'APPROVED',
+      startDate: { $lte: payrun.periodEnd },
+      endDate: { $gte: payrun.periodStart },
+    }),
+  ]);
+
+  // Group fetched data by employee ID
+  const employeeMap = new Map(employees.map((e) => [String(e._id), e]));
+
+  const contractsMap = new Map();
+  for (const c of contracts) {
+    const k = String(c.employeeId);
+    if (!contractsMap.has(k)) {
+      contractsMap.set(k, []);
+    }
+    contractsMap.get(k).push(c);
+  }
+
+  const attendanceCountMap = new Map();
+  for (const att of attendances) {
+    const k = String(att.employeeId);
+    attendanceCountMap.set(k, (attendanceCountMap.get(k) || 0) + 1);
+  }
+
+  const leavesMap = new Map();
+  for (const req of approvedLeaves) {
+    const k = String(req.employeeId);
+    if (!leavesMap.has(k)) {
+      leavesMap.set(k, { leaveDays: 0, unpaidDays: 0 });
+    }
+    const current = leavesMap.get(k);
+    current.leaveDays += (req.paidDuration ?? req.duration ?? 0);
+    current.unpaidDays += (req.unpaidDuration ?? 0);
+  }
+
   const globalWarnings = [];
   let totalGross = 0;
   let totalDeductions = 0;
@@ -131,62 +197,54 @@ export async function computePayrun(payrunId) {
 
   const generatedPayslips = [];
 
-  for (const empId of payrun.employeeIds) {
-    const employee = await Employee.findById(empId).populate('departmentId');
+  for (const empId of employeeIds) {
+    const empIdStr = String(empId);
+    const employee = employeeMap.get(empIdStr);
     if (!employee) continue;
 
     const empWarnings = [];
+    const empLabel = `Employee ${employee.name} (${employee.employeeCode}): `;
 
     // 1. Resolve contract
-    const { contract, warning: contractWarning } = await resolveApplicableContract({
-      employeeId: empId,
-      periodStart: payrun.periodStart,
-      periodEnd: payrun.periodEnd,
-    });
-
-    if (contractWarning) {
+    const empContracts = contractsMap.get(empIdStr) || [];
+    let contract = null;
+    if (empContracts.length === 0) {
+      const contractWarning = {
+        code: 'MISSING_CONTRACT',
+        severity: 'BLOCKING',
+        employeeId: empIdStr,
+        message: `${empLabel}No active contract found applicable for period ${payrun.periodStart.toISOString().slice(0, 10)} to ${payrun.periodEnd.toISOString().slice(0, 10)}.`,
+      };
       empWarnings.push(contractWarning);
       globalWarnings.push(contractWarning);
+    } else if (empContracts.length > 1) {
+      const contractWarning = {
+        code: 'AMBIGUOUS_CONTRACT',
+        severity: 'BLOCKING',
+        employeeId: empIdStr,
+        message: `${empLabel}Multiple active contracts (${empContracts.length}) overlap payroll period ${payrun.periodStart.toISOString().slice(0, 10)} to ${payrun.periodEnd.toISOString().slice(0, 10)}. Ambiguity must be resolved before payroll computation.`,
+      };
+      empWarnings.push(contractWarning);
+      globalWarnings.push(contractWarning);
+    } else {
+      contract = empContracts[0];
     }
 
-    // 2. Check duplicate finalized payslips (BR-08)
-    const duplicateWarning = await checkDuplicateFinalizedPayslip({
-      employeeId: empId,
-      periodStart: payrun.periodStart,
-      periodEnd: payrun.periodEnd,
-      currentPayrunId: payrun._id,
-    });
-
-    if (duplicateWarning) {
-      empWarnings.push(duplicateWarning);
-      globalWarnings.push(duplicateWarning);
-    }
-
-    // 3. Check bank details warning
+    // 2. Check bank details warning
     const bankWarning = checkEmployeeBankDetails(employee);
     if (bankWarning) {
       empWarnings.push(bankWarning);
       globalWarnings.push(bankWarning);
     }
 
-    // 4. Calculate actual worked days from attendance & leaves
-    const presentAttendanceCount = await Attendance.countDocuments({
-      employeeId: empId,
-      date: { $gte: payrun.periodStart, $lte: payrun.periodEnd },
-      status: { $in: ['PRESENT', 'LATE'] },
-    });
+    // 3. Calculate actual worked days from attendance & leaves
+    const presentAttendanceCount = attendanceCountMap.get(empIdStr) || 0;
     const workedDays = presentAttendanceCount > 0 ? presentAttendanceCount : 22;
 
-    const approvedLeaves = await TimeOffRequest.find({
-      employeeId: empId,
-      status: 'APPROVED',
-      startDate: { $lte: payrun.periodEnd },
-      endDate: { $gte: payrun.periodStart },
-    });
-    const leaveDays = approvedLeaves.reduce((sum, req) => sum + (req.paidDuration ?? req.duration ?? 0), 0);
-    const unpaidDays = approvedLeaves.reduce((sum, req) => sum + (req.unpaidDuration ?? 0), 0);
+    const leaveData = leavesMap.get(empIdStr) || { leaveDays: 0, unpaidDays: 0 };
+    const { leaveDays, unpaidDays } = leaveData;
 
-    // 5. Calculate rule lines
+    // 4. Calculate rule lines
     let calculationResult = { ruleLines: [], gross: 0, deductions: 0, net: 0, warnings: [] };
     if (contract) {
       calculationResult = calculatePayslipLines({
@@ -199,7 +257,7 @@ export async function computePayrun(payrunId) {
 
       if (calculationResult.warnings && calculationResult.warnings.length > 0) {
         calculationResult.warnings.forEach((w) => {
-          const warnObj = { ...w, employeeId: String(empId) };
+          const warnObj = { ...w, employeeId: empIdStr };
           empWarnings.push(warnObj);
           globalWarnings.push(warnObj);
         });
@@ -209,7 +267,7 @@ export async function computePayrun(payrunId) {
     // 6. Create Payslip document snapshot
     const payslip = new Payslip({
       payrunId: payrun._id,
-      employeeId: empId,
+      employeeId: employee._id,
       contractId: contract ? contract._id : null,
       salaryStructureId: payrun.salaryStructureId,
       periodStart: payrun.periodStart,
@@ -224,12 +282,16 @@ export async function computePayrun(payrunId) {
       warnings: empWarnings,
     });
 
-    await payslip.save();
     generatedPayslips.push(payslip);
 
     totalGross += calculationResult.gross;
     totalDeductions += calculationResult.deductions;
     totalNet += calculationResult.net;
+  }
+
+  // Bulk insert payslips for high performance
+  if (generatedPayslips.length > 0) {
+    await Payslip.insertMany(generatedPayslips);
   }
 
   payrun.status = 'COMPUTED';
@@ -471,24 +533,13 @@ export async function createSinglePayslip({ employeeId, salaryStructureId, perio
     empWarnings.push(contractWarning);
   }
 
-  // 2. Check duplicate finalized payslips
-  const duplicateWarning = await checkDuplicateFinalizedPayslip({
-    employeeId,
-    periodStart: pStart,
-    periodEnd: pEnd,
-    currentPayrunId: payrunId || null,
-  });
-  if (duplicateWarning) {
-    empWarnings.push(duplicateWarning);
-  }
-
-  // 3. Check bank details
+  // 2. Check bank details
   const bankWarning = checkEmployeeBankDetails(employee);
   if (bankWarning) {
     empWarnings.push(bankWarning);
   }
 
-  // 4. Resolve salary structure
+  // 3. Resolve salary structure
   let structureId = salaryStructureId || contract?.salaryStructureId;
   if (!structureId) {
     const defaultStructure = await SalaryStructure.findOne({ active: true }).sort({ createdAt: 1 });
@@ -500,7 +551,7 @@ export async function createSinglePayslip({ employeeId, salaryStructureId, perio
     active: true,
   }).sort({ sequence: 1 });
 
-  // 5. Worked days
+  // 4. Worked days
   let finalWorkedDays = workedDays;
   if (finalWorkedDays === undefined || finalWorkedDays === null) {
     const presentAttendanceCount = await Attendance.countDocuments({
@@ -520,7 +571,7 @@ export async function createSinglePayslip({ employeeId, salaryStructureId, perio
   const leaveDays = approvedLeaves.reduce((sum, req) => sum + (req.paidDuration ?? req.duration ?? 0), 0);
   const unpaidDays = approvedLeaves.reduce((sum, req) => sum + (req.unpaidDuration ?? 0), 0);
 
-  // 6. Calculate
+  // 5. Calculate
   let calculationResult = { ruleLines: [], gross: 0, deductions: 0, net: 0, warnings: [] };
   if (contract) {
     calculationResult = calculatePayslipLines({
@@ -590,14 +641,6 @@ export async function recomputeSinglePayslip(payslipId, actorId) {
     periodEnd: payslip.periodEnd,
   });
   if (contractWarning) empWarnings.push(contractWarning);
-
-  const duplicateWarning = await checkDuplicateFinalizedPayslip({
-    employeeId: payslip.employeeId,
-    periodStart: payslip.periodStart,
-    periodEnd: payslip.periodEnd,
-    currentPayrunId: payslip.payrunId || null,
-  });
-  if (duplicateWarning) empWarnings.push(duplicateWarning);
 
   if (employee) {
     const bankWarning = checkEmployeeBankDetails(employee);

@@ -192,10 +192,10 @@ export function PayrunWizard({
     if (onComplete) {
       onComplete({
         name: generatedName,
-        salaryStructureId,
+        salaryStructureId: String(salaryStructureId),
         periodStart,
         periodEnd,
-        employeeIds: selectedEmployeeIds,
+        employeeIds: selectedEmployeeIds.map((id) => String(id)),
       });
     }
   };

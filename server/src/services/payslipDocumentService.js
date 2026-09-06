@@ -343,5 +343,14 @@ export async function sendPayrunPayslips(payrunId, actorId) {
     entityId: payrun._id,
   });
 
-  return { payrunId, results };
+  const sentCount = results.filter((r) => r.status === 'SENT').length;
+  const failedCount = results.filter((r) => r.status === 'FAILED').length;
+
+  return {
+    payrunId,
+    results,
+    sentCount,
+    failedCount,
+    totalCount: payslips.length,
+  };
 }
