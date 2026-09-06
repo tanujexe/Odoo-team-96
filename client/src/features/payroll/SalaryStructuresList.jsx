@@ -144,15 +144,6 @@ export function SalaryStructuresList({
         </Table>
       </Card>
 
-      {/* Useful Note Footer matching Image 1 wireframe */}
-      <div className="p-3.5 bg-slate-100/70 border border-slate-200 rounded-xl text-xs text-slate-600">
-        <p>
-          <strong className="font-semibold text-slate-800">Structures</strong> group salary rules; rules define the ordered salary computation used by a payslip. Both require List and Form views.
-        </p>
-        <p className="mt-1 text-slate-500 italic">
-          Useful note: the Salary Structure selected on a Payrun determines which set of salary rules will calculate each payslip.
-        </p>
-      </div>
     </div>
   );
 }

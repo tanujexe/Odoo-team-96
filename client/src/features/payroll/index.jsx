@@ -314,6 +314,9 @@ export default function PayrollFeature() {
       queryClient.invalidateQueries(['payslipsList']);
       queryClient.invalidateQueries(['payruns']);
     },
+    onError: (err) => {
+      alert(`Computation Error: ${err.message || 'Failed to compute payrun'}`);
+    },
   });
 
   const validateMutation = useMutation({
@@ -324,7 +327,7 @@ export default function PayrollFeature() {
       queryClient.invalidateQueries(['payruns']);
     },
     onError: (err) => {
-      alert(`Validation Blocked: ${err.message}`);
+      alert(`Validation Blocked: ${err.message || 'Validation failed due to blocking issues'}`);
     },
   });
 
@@ -336,6 +339,9 @@ export default function PayrollFeature() {
       queryClient.invalidateQueries(['payslipsList']);
       queryClient.invalidateQueries(['payruns']);
     },
+    onError: (err) => {
+      alert(`Payment Error: ${err.message || 'Failed to mark payrun as paid'}`);
+    },
   });
 
   const bulkSendMutation = useMutation({
@@ -346,6 +352,9 @@ export default function PayrollFeature() {
       queryClient.invalidateQueries(['payrunDetail', selectedPayrunId]);
       queryClient.invalidateQueries(['payslips', selectedPayrunId]);
       queryClient.invalidateQueries(['payslipsList']);
+    },
+    onError: (err) => {
+      alert(`Bulk Send Error: ${err.message || 'Failed to dispatch payslips'}`);
     },
   });
 
@@ -1062,23 +1071,6 @@ export default function PayrollFeature() {
               </Button>
             </div>
           </div>
-        </Modal>
-      )}
-
-      {/* Payrun Wizard Modal */}
-      {isWizardOpen && (
-        <Modal
-          isOpen={isWizardOpen}
-          onClose={() => setIsWizardOpen(false)}
-          title="Create Scoped Payrun Batch"
-          maxWidth="max-w-2xl"
-        >
-          <PayrunWizard
-            salaryStructures={structures}
-            employees={employees}
-            onCancel={() => setIsWizardOpen(false)}
-            onComplete={(payload) => createPayrunMutation.mutate(payload)}
-          />
         </Modal>
       )}
 
