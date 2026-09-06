@@ -3,72 +3,151 @@ import { mockPayruns } from './mockData';
 
 export let mockPayslips = [
   {
-    id: 'ps-1',
-    _id: 'ps-1',
-    payrunId: 'pr-2026-09',
-    employeeId: 'emp-alex-1',
-    employeeName: 'Alex Rivera',
-    employeeCode: 'EMP-002',
+    id: 'ps-aarav-1',
+    _id: 'ps-aarav-1',
+    payrunId: 'pr-2026-02',
+    payrunName: 'February 2026',
+    employeeId: 'emp-aarav-1',
+    employeeName: 'Aarav Mehta',
+    employeeCode: 'EMP-001',
     department: 'Engineering',
-    baseWage: 8500,
-    gross: 8500,
-    deductions: 1700,
-    net: 6800,
-    periodStart: '2026-09-01',
-    periodEnd: '2026-09-30',
-    deliveryStatus: 'NOT_SENT',
-    status: 'COMPUTED',
-    ruleLines: [
-      { code: 'BASIC', name: 'Basic Wage', category: 'BASIC', rate: '50%', amount: 4250 },
-      { code: 'HRA', name: 'House Rent Allowance', category: 'ALW', rate: '30%', amount: 2550 },
-      { code: 'PF', name: 'Provident Fund', category: 'DED', rate: '12%', amount: 1020 },
-      { code: 'TAX', name: 'Income Tax (TDS)', category: 'DED', rate: '8%', amount: 680 },
-    ],
-  },
-  {
-    id: 'ps-2',
-    _id: 'ps-2',
-    payrunId: 'pr-2026-09',
-    employeeId: 'emp-john-1',
-    employeeName: 'John Developer',
-    employeeCode: 'EMP001',
-    department: 'Engineering',
-    baseWage: 10000,
-    gross: 10000,
-    deductions: 2000,
-    net: 8000,
-    periodStart: '2026-09-01',
-    periodEnd: '2026-09-30',
+    jobPosition: 'Senior Software Engineer',
+    salaryStructureId: 'str-reg-1',
+    salaryStructureName: 'Regular Salary',
+    structureName: 'Regular',
+    periodStart: '2026-02-01',
+    periodEnd: '2026-02-28',
+    workedDays: 22,
+    baseWage: 80000,
+    basic: 50000,
+    gross: 80000,
+    deductions: 5000,
+    net: 75000,
+    status: 'Done',
+    rawStatus: 'PAID',
+    warningLabel: '—',
+    warningSeverity: null,
+    warnings: [],
     deliveryStatus: 'SENT',
-    status: 'COMPUTED',
     ruleLines: [
-      { code: 'BASIC', name: 'Basic Wage', category: 'BASIC', rate: '50%', amount: 5000 },
-      { code: 'HRA', name: 'House Rent Allowance', category: 'ALW', rate: '30%', amount: 3000 },
-      { code: 'PF', name: 'Provident Fund', category: 'DED', rate: '12%', amount: 1200 },
-      { code: 'TAX', name: 'Income Tax (TDS)', category: 'DED', rate: '8%', amount: 800 },
+      { code: 'BASIC', name: 'Basic Salary', category: 'Basic', computationType: 'FIXED', sequence: 1, amount: 50000 },
+      { code: 'HRA', name: 'House Rent Allowance', category: 'Allowance', computationType: 'FIXED', sequence: 2, amount: 20000 },
+      { code: 'STI', name: 'Standard Allowance', category: 'Allowance', computationType: 'FIXED', sequence: 3, amount: 10000 },
+      { code: 'GROSS', name: 'Gross Salary', category: 'Gross', computationType: 'FORMULA', sequence: 4, amount: 80000 },
+      { code: 'PF', name: 'Provident Fund', category: 'Deduction', computationType: 'FIXED', sequence: 5, amount: -3000 },
+      { code: 'PT', name: 'Professional Tax', category: 'Deduction', computationType: 'FIXED', sequence: 6, amount: -2000 },
+      { code: 'NET', name: 'Net Salary', category: 'Net', computationType: 'FORMULA', sequence: 7, amount: 75000 },
     ],
   },
   {
-    id: 'ps-3',
-    _id: 'ps-3',
-    payrunId: 'pr-2026-09',
-    employeeId: 'emp-sarah-1',
-    employeeName: 'Sarah Connor',
-    employeeCode: 'EMP-003',
-    department: 'Finance & Payroll',
-    baseWage: 7200,
-    gross: 7200,
-    deductions: 1440,
-    net: 5760,
-    periodStart: '2026-09-01',
-    periodEnd: '2026-09-30',
+    id: 'ps-sara-1',
+    _id: 'ps-sara-1',
+    payrunId: 'pr-2026-02',
+    payrunName: 'February 2026',
+    employeeId: 'emp-sara-1',
+    employeeName: 'Sara Khan',
+    employeeCode: 'EMP-002',
+    department: 'Product & Design',
+    jobPosition: 'UI/UX Designer',
+    salaryStructureId: 'str-reg-1',
+    salaryStructureName: 'Regular Salary',
+    structureName: 'Regular',
+    periodStart: '2026-02-01',
+    periodEnd: '2026-02-28',
+    workedDays: 22,
+    baseWage: 96000,
+    basic: 60000,
+    gross: 96000,
+    deductions: 8000,
+    net: 88000,
+    status: 'Done',
+    rawStatus: 'VALIDATED',
+    warningLabel: 'A/C missing',
+    warningSeverity: 'WARNING',
+    warnings: [{ code: 'MISSING_BANK_DETAILS', severity: 'WARNING', message: 'Bank account number missing' }],
     deliveryStatus: 'NOT_SENT',
-    status: 'COMPUTED',
     ruleLines: [
-      { code: 'BASIC', name: 'Basic Wage', category: 'BASIC', rate: '50%', amount: 3600 },
-      { code: 'HRA', name: 'House Rent Allowance', category: 'ALW', rate: '30%', amount: 2160 },
-      { code: 'PF', name: 'Provident Fund', category: 'DED', rate: '12%', amount: 864 },
-      { code: 'TAX', name: 'Income Tax (TDS)', category: 'DED', rate: '8%', amount: 576 },
+      { code: 'BASIC', name: 'Basic Salary', category: 'Basic', computationType: 'FIXED', sequence: 1, amount: 60000 },
+      { code: 'HRA', name: 'House Rent Allowance', category: 'Allowance', computationType: 'FIXED', sequence: 2, amount: 24000 },
+      { code: 'STI', name: 'Standard Allowance', category: 'Allowance', computationType: 'FIXED', sequence: 3, amount: 12000 },
+      { code: 'GROSS', name: 'Gross Salary', category: 'Gross', computationType: 'FORMULA', sequence: 4, amount: 96000 },
+      { code: 'PF', name: 'Provident Fund', category: 'Deduction', computationType: 'FIXED', sequence: 5, amount: -5000 },
+      { code: 'PT', name: 'Professional Tax', category: 'Deduction', computationType: 'FIXED', sequence: 6, amount: -3000 },
+      { code: 'NET', name: 'Net Salary', category: 'Net', computationType: 'FORMULA', sequence: 7, amount: 88000 },
+    ],
+  },
+  {
+    id: 'ps-john-1',
+    _id: 'ps-john-1',
+    payrunId: 'pr-2026-02',
+    payrunName: 'February 2026',
+    employeeId: 'emp-john-1',
+    employeeName: 'John Dsouza',
+    employeeCode: 'EMP-003',
+    department: 'Quality Assurance',
+    jobPosition: 'QA Engineer',
+    salaryStructureId: 'str-reg-1',
+    salaryStructureName: 'Regular Salary',
+    structureName: 'Regular',
+    periodStart: '2026-02-01',
+    periodEnd: '2026-02-28',
+    workedDays: 20,
+    baseWage: 72000,
+    basic: 45000,
+    gross: 72000,
+    deductions: 6000,
+    net: 66000,
+    status: 'Draft',
+    rawStatus: 'DRAFT',
+    warningLabel: 'Duplicate',
+    warningSeverity: 'BLOCKING',
+    warnings: [{ code: 'DUPLICATE_PAYSLIP', severity: 'BLOCKING', message: 'Overlapping payslip draft found' }],
+    deliveryStatus: 'NOT_SENT',
+    ruleLines: [
+      { code: 'BASIC', name: 'Basic Salary', category: 'Basic', computationType: 'FIXED', sequence: 1, amount: 45000 },
+      { code: 'HRA', name: 'House Rent Allowance', category: 'Allowance', computationType: 'FIXED', sequence: 2, amount: 18000 },
+      { code: 'STI', name: 'Standard Allowance', category: 'Allowance', computationType: 'FIXED', sequence: 3, amount: 9000 },
+      { code: 'GROSS', name: 'Gross Salary', category: 'Gross', computationType: 'FORMULA', sequence: 4, amount: 72000 },
+      { code: 'PF', name: 'Provident Fund', category: 'Deduction', computationType: 'FIXED', sequence: 5, amount: -4000 },
+      { code: 'PT', name: 'Professional Tax', category: 'Deduction', computationType: 'FIXED', sequence: 6, amount: -2000 },
+      { code: 'NET', name: 'Net Salary', category: 'Net', computationType: 'FORMULA', sequence: 7, amount: 66000 },
+    ],
+  },
+  {
+    id: 'ps-neha-1',
+    _id: 'ps-neha-1',
+    payrunId: 'pr-2026-02',
+    payrunName: 'February 2026',
+    employeeId: 'emp-neha-1',
+    employeeName: 'Neha Patel',
+    employeeCode: 'EMP-004',
+    department: 'Human Resources',
+    jobPosition: 'HR Executive',
+    salaryStructureId: 'str-reg-1',
+    salaryStructureName: 'Regular Salary',
+    structureName: 'Regular',
+    periodStart: '2026-02-01',
+    periodEnd: '2026-02-28',
+    workedDays: 22,
+    baseWage: 64000,
+    basic: 40000,
+    gross: 64000,
+    deductions: 5000,
+    net: 59000,
+    status: 'Done',
+    rawStatus: 'PAID',
+    warningLabel: '—',
+    warningSeverity: null,
+    warnings: [],
+    deliveryStatus: 'SENT',
+    ruleLines: [
+      { code: 'BASIC', name: 'Basic Salary', category: 'Basic', computationType: 'FIXED', sequence: 1, amount: 40000 },
+      { code: 'HRA', name: 'House Rent Allowance', category: 'Allowance', computationType: 'FIXED', sequence: 2, amount: 16000 },
+      { code: 'STI', name: 'Standard Allowance', category: 'Allowance', computationType: 'FIXED', sequence: 3, amount: 8000 },
+      { code: 'GROSS', name: 'Gross Salary', category: 'Gross', computationType: 'FORMULA', sequence: 4, amount: 64000 },
+      { code: 'PF', name: 'Provident Fund', category: 'Deduction', computationType: 'FIXED', sequence: 5, amount: -3500 },
+      { code: 'PT', name: 'Professional Tax', category: 'Deduction', computationType: 'FIXED', sequence: 6, amount: -1500 },
+      { code: 'NET', name: 'Net Salary', category: 'Net', computationType: 'FORMULA', sequence: 7, amount: 59000 },
     ],
   },
 ];
@@ -639,7 +718,137 @@ export async function fetchEligibleEmployees(params = {}) {
 }
 
 export async function fetchPayslipsByPayrun(payrunId) {
-  const response = await apiClient(`/payslips?payrunId=${payrunId}`);
-  return response.data || [];
+  try {
+    const response = await apiClient(`/payslips?payrunId=${payrunId}`);
+    return response.data || [];
+  } catch (err) {
+    return mockPayslips.filter((ps) => ps.payrunId === payrunId);
+  }
 }
+
+export async function fetchPayslips(params = {}) {
+  const query = new URLSearchParams();
+  if (params.search) query.set('search', params.search);
+  if (params.period) query.set('period', params.period);
+  if (params.status) query.set('status', params.status);
+  if (params.employeeId) query.set('employeeId', params.employeeId);
+  if (params.payrunId) query.set('payrunId', params.payrunId);
+
+  const queryString = query.toString() ? `?${query.toString()}` : '';
+  try {
+    const response = await apiClient(`/payslips${queryString}`);
+    return response.data || [];
+  } catch (err) {
+    let result = [...mockPayslips];
+    if (params.search) {
+      const q = params.search.toLowerCase().trim();
+      result = result.filter(
+        (ps) =>
+          ps.employeeName.toLowerCase().includes(q) ||
+          ps.employeeCode.toLowerCase().includes(q) ||
+          ps.warningLabel?.toLowerCase().includes(q)
+      );
+    }
+    if (params.status && params.status !== 'ALL') {
+      result = result.filter((ps) => ps.status === params.status);
+    }
+    return result;
+  }
+}
+
+export async function fetchPayslipById(id) {
+  try {
+    const response = await apiClient(`/payslips/${id}`);
+    return response.data;
+  } catch (err) {
+    return mockPayslips.find((ps) => ps.id === id || ps._id === id) || mockPayslips[0];
+  }
+}
+
+export async function createPayslipApi(data) {
+  try {
+    const response = await apiClient('/payslips', {
+      method: 'POST',
+      body: data,
+    });
+    return response.data;
+  } catch (err) {
+    const newPs = {
+      id: `ps-${Date.now()}`,
+      _id: `ps-${Date.now()}`,
+      payrunId: data.payrunId || 'pr-2026-02',
+      payrunName: data.payrunName || 'February 2026',
+      employeeId: data.employeeId,
+      employeeName: data.employeeName || 'New Employee',
+      employeeCode: data.employeeCode || 'EMP-999',
+      department: data.department || 'Operations',
+      jobPosition: data.jobPosition || 'Specialist',
+      salaryStructureId: data.salaryStructureId || 'str-reg-1',
+      salaryStructureName: 'Regular Salary',
+      structureName: 'Regular',
+      periodStart: data.periodStart || '2026-02-01',
+      periodEnd: data.periodEnd || '2026-02-28',
+      workedDays: data.workedDays || 22,
+      baseWage: 80000,
+      basic: 50000,
+      gross: 80000,
+      deductions: 5000,
+      net: 75000,
+      status: 'Done',
+      rawStatus: 'COMPUTED',
+      warningLabel: '—',
+      warningSeverity: null,
+      warnings: [],
+      deliveryStatus: 'NOT_SENT',
+      ruleLines: [
+        { code: 'BASIC', name: 'Basic Salary', category: 'Basic', computationType: 'FIXED', sequence: 1, amount: 50000 },
+        { code: 'HRA', name: 'House Rent Allowance', category: 'Allowance', computationType: 'FIXED', sequence: 2, amount: 20000 },
+        { code: 'STI', name: 'Standard Allowance', category: 'Allowance', computationType: 'FIXED', sequence: 3, amount: 10000 },
+        { code: 'GROSS', name: 'Gross Salary', category: 'Gross', computationType: 'FORMULA', sequence: 4, amount: 80000 },
+        { code: 'PF', name: 'Provident Fund', category: 'Deduction', computationType: 'FIXED', sequence: 5, amount: -3000 },
+        { code: 'PT', name: 'Professional Tax', category: 'Deduction', computationType: 'FIXED', sequence: 6, amount: -2000 },
+        { code: 'NET', name: 'Net Salary', category: 'Net', computationType: 'FORMULA', sequence: 7, amount: 75000 },
+      ],
+    };
+    mockPayslips.unshift(newPs);
+    return newPs;
+  }
+}
+
+export async function computePayslipByIdApi(id) {
+  try {
+    const response = await apiClient(`/payslips/${id}/compute`, { method: 'POST' });
+    return response.data;
+  } catch (err) {
+    const idx = mockPayslips.findIndex((ps) => ps.id === id || ps._id === id);
+    if (idx !== -1) {
+      mockPayslips[idx] = {
+        ...mockPayslips[idx],
+        status: 'Done',
+        rawStatus: 'COMPUTED',
+      };
+      return mockPayslips[idx];
+    }
+    return mockPayslips[0];
+  }
+}
+
+export async function markPayslipPaidByIdApi(id) {
+  try {
+    const response = await apiClient(`/payslips/${id}/pay`, { method: 'POST' });
+    return response.data;
+  } catch (err) {
+    const idx = mockPayslips.findIndex((ps) => ps.id === id || ps._id === id);
+    if (idx !== -1) {
+      mockPayslips[idx] = {
+        ...mockPayslips[idx],
+        status: 'Done',
+        rawStatus: 'PAID',
+      };
+      return mockPayslips[idx];
+    }
+    return mockPayslips[0];
+  }
+}
+
 

@@ -19,6 +19,12 @@ import {
   validatePayrunApi,
   markPayrunPaidApi,
   fetchPayslipsByPayrun,
+  fetchPayslips,
+  fetchPayslipById,
+  createPayslipApi,
+  computePayslipByIdApi,
+  markPayslipPaidByIdApi,
+  mockPayslips,
 } from '../../lib/api/payroll';
 import { fetchEmployees } from '../../lib/api/employees';
 import { mockPayruns } from '../../lib/api/mockData';
@@ -30,6 +36,9 @@ import { Modal } from '../../components/ui/Modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import { WarningPanel } from '../../components/WarningPanel';
 import { PayrunWizard } from '../../components/PayrunWizard';
+import { PayslipsList } from './PayslipsList';
+import { PayslipDetail } from './PayslipDetail';
+import { PayslipCreateModal } from './PayslipCreateModal';
 import { SalaryStructuresList } from './SalaryStructuresList';
 import { SalaryStructureForm } from './SalaryStructureForm';
 import { SalaryRulesList } from './SalaryRulesList';
@@ -58,7 +67,14 @@ export default function PayrollFeature() {
   const canEditSalaryRules = hasAccess([ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER]);
   const canOperatePayroll = hasAccess([ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER]);
 
-  const [activeTab, setActiveTab] = useState('payruns'); // 'payruns' | 'structures' | 'rules'
+  const [activeTab, setActiveTab] = useState('payslips'); // 'payslips' | 'payruns' | 'structures' | 'rules'
+  
+  // Payslips Tab State
+  const [payslipViewMode, setPayslipViewMode] = useState('list'); // 'list' | 'detail'
+  const [selectedDetailedPayslipId, setSelectedDetailedPayslipId] = useState(null);
+  const [isNewPayslipModalOpen, setIsNewPayslipModalOpen] = useState(false);
+
+  // Payruns Tab State
   const [payrunViewMode, setPayrunViewMode] = useState('list'); // 'list' | 'detail'
   const [searchPayrunsQuery, setSearchPayrunsQuery] = useState('');
   const [selectedPayrunYear, setSelectedPayrunYear] = useState('2026');
@@ -114,6 +130,68 @@ export default function PayrollFeature() {
   const { data: employees = [] } = useQuery({
     queryKey: ['employees'],
     queryFn: () => fetchEmployees(),
+  });
+
+  // Payslips Queries
+  const { data: payslipsList = [], isLoading: isLoadingPayslips } = useQuery({
+    queryKey: ['payslipsList'],
+    queryFn: () => fetchPayslips(),
+  });
+
+  const { data: activeDetailedPayslipData } = useQuery({
+    queryKey: ['payslipDetail', selectedDetailedPayslipId],
+    queryFn: () => fetchPayslipById(selectedDetailedPayslipId),
+    enabled: !!selectedDetailedPayslipId,
+  });
+
+  const activeDetailedPayslip =
+    activeDetailedPayslipData ||
+    payslipsList.find((ps) => (ps.id || ps._id) === selectedDetailedPayslipId) ||
+    mockPayslips.find((ps) => (ps.id || ps._id) === selectedDetailedPayslipId) ||
+    mockPayslips[0];
+
+  // Payslip Mutations
+  const createPayslipMutation = useMutation({
+    mutationFn: createPayslipApi,
+    onSuccess: (newPs) => {
+      queryClient.invalidateQueries(['payslipsList']);
+      queryClient.invalidateQueries(['payruns']);
+      setIsNewPayslipModalOpen(false);
+      const newId = newPs._id || newPs.id;
+      setSelectedDetailedPayslipId(newId);
+      setPayslipViewMode('detail');
+    },
+    onError: (err) => {
+      alert(`Failed to create payslip: ${err.message || 'Error'}`);
+    },
+  });
+
+  const computePayslipMutation = useMutation({
+    mutationFn: (id) => computePayslipByIdApi(id || selectedDetailedPayslipId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['payslipDetail', selectedDetailedPayslipId]);
+      queryClient.invalidateQueries(['payslipsList']);
+      queryClient.invalidateQueries(['payrunDetail']);
+      queryClient.invalidateQueries(['payruns']);
+      alert('Payslip computed successfully!');
+    },
+    onError: (err) => {
+      alert(`Computation Error: ${err.message || 'Failed to compute'}`);
+    },
+  });
+
+  const payPayslipMutation = useMutation({
+    mutationFn: (id) => markPayslipPaidByIdApi(id || selectedDetailedPayslipId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['payslipDetail', selectedDetailedPayslipId]);
+      queryClient.invalidateQueries(['payslipsList']);
+      queryClient.invalidateQueries(['payrunDetail']);
+      queryClient.invalidateQueries(['payruns']);
+      alert('Payslip marked as PAID!');
+    },
+    onError: (err) => {
+      alert(`Payment Error: ${err.message || 'Failed to mark paid'}`);
+    },
   });
 
   // Structure Mutations
@@ -233,6 +311,7 @@ export default function PayrollFeature() {
     onSuccess: () => {
       queryClient.invalidateQueries(['payrunDetail', selectedPayrunId]);
       queryClient.invalidateQueries(['payslips', selectedPayrunId]);
+      queryClient.invalidateQueries(['payslipsList']);
       queryClient.invalidateQueries(['payruns']);
     },
   });
@@ -241,6 +320,7 @@ export default function PayrollFeature() {
     mutationFn: () => validatePayrunApi(selectedPayrunId),
     onSuccess: () => {
       queryClient.invalidateQueries(['payrunDetail', selectedPayrunId]);
+      queryClient.invalidateQueries(['payslipsList']);
       queryClient.invalidateQueries(['payruns']);
     },
     onError: (err) => {
@@ -253,6 +333,7 @@ export default function PayrollFeature() {
     onSuccess: () => {
       queryClient.invalidateQueries(['payrunDetail', selectedPayrunId]);
       queryClient.invalidateQueries(['payslips', selectedPayrunId]);
+      queryClient.invalidateQueries(['payslipsList']);
       queryClient.invalidateQueries(['payruns']);
     },
   });
@@ -264,11 +345,18 @@ export default function PayrollFeature() {
       setIsBulkSendModalOpen(true);
       queryClient.invalidateQueries(['payrunDetail', selectedPayrunId]);
       queryClient.invalidateQueries(['payslips', selectedPayrunId]);
+      queryClient.invalidateQueries(['payslipsList']);
     },
   });
 
   const handleDownloadPdf = (ps) => {
     downloadPayslipPdf(ps.id || ps._id, `Payslip_${ps.employeeCode || 'EMP'}_${ps.periodStart || 'period'}.pdf`);
+  };
+
+  const handleSelectDetailedPayslip = (payslipId) => {
+    setSelectedDetailedPayslipId(payslipId);
+    setActiveTab('payslips');
+    setPayslipViewMode('detail');
   };
 
   const currentSelectedStructure = structures.find(
@@ -359,9 +447,23 @@ export default function PayrollFeature() {
       <div className="flex border-b border-slate-200 gap-6">
         <button
           onClick={() => {
-            setActiveTab('payruns');
+            setActiveTab('payslips');
+            setPayslipViewMode('list');
           }}
-          className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
+          className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+            activeTab === 'payslips'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Payslips
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('payruns');
+            setPayrunViewMode('list');
+          }}
+          className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
             activeTab === 'payruns'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -374,7 +476,7 @@ export default function PayrollFeature() {
             setActiveTab('structures');
             setStructureViewMode('list');
           }}
-          className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
+          className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
             activeTab === 'structures'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -387,7 +489,7 @@ export default function PayrollFeature() {
             setActiveTab('rules');
             setRuleViewMode('list');
           }}
-          className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
+          className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
             activeTab === 'rules'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -397,7 +499,33 @@ export default function PayrollFeature() {
         </button>
       </div>
 
-      {/* 1. PAYRUNS TAB */}
+      {/* 1. PAYSLIPS TAB */}
+      {activeTab === 'payslips' && (
+        <div>
+          {payslipViewMode === 'list' ? (
+            <PayslipsList
+              payslips={payslipsList}
+              onSelectPayslip={(psId) => handleSelectDetailedPayslip(psId)}
+              onNewPayslip={() => setIsNewPayslipModalOpen(true)}
+              canCreate={canOperatePayroll}
+              isLoading={isLoadingPayslips}
+            />
+          ) : (
+            <PayslipDetail
+              payslip={activeDetailedPayslip}
+              onBack={() => setPayslipViewMode('list')}
+              onCompute={() => computePayslipMutation.mutate(selectedDetailedPayslipId)}
+              onMarkPaid={() => payPayslipMutation.mutate(selectedDetailedPayslipId)}
+              onPrintPayslip={() => handleDownloadPdf(activeDetailedPayslip)}
+              isComputing={computePayslipMutation.isPending}
+              isMarkingPaid={payPayslipMutation.isPending}
+              canOperate={canOperatePayroll}
+            />
+          )}
+        </div>
+      )}
+
+      {/* 2. PAYRUNS TAB */}
       {activeTab === 'payruns' && (
         <div className="space-y-6">
           {isWizardOpen && (
@@ -697,7 +825,11 @@ export default function PayrollFeature() {
                           </TableRow>
                         ) : (
                           payslips.map((ps) => (
-                            <TableRow key={ps.id || ps._id} className="hover:bg-slate-50/80 transition-colors">
+                            <TableRow
+                              key={ps.id || ps._id}
+                              onClick={() => handleSelectDetailedPayslip(ps.id || ps._id)}
+                              className="hover:bg-slate-50/80 transition-colors cursor-pointer"
+                            >
                               <TableCell className="py-3.5 px-5 font-semibold text-slate-900">
                                 {ps.employeeName || ps.employeeId?.name || 'Employee'}
                               </TableCell>
@@ -732,7 +864,10 @@ export default function PayrollFeature() {
                               <TableCell className="py-3.5 px-5 text-right">
                                 <button
                                   type="button"
-                                  onClick={() => handleDownloadPdf(ps)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDownloadPdf(ps);
+                                  }}
                                   className="text-blue-600 hover:text-blue-800 text-xs font-bold hover:underline"
                                 >
                                   PDF
@@ -946,6 +1081,20 @@ export default function PayrollFeature() {
           />
         </Modal>
       )}
+
+      {/* Payslip Create Modal */}
+      {isNewPayslipModalOpen && (
+        <PayslipCreateModal
+          isOpen={isNewPayslipModalOpen}
+          onClose={() => setIsNewPayslipModalOpen(false)}
+          onSave={(formData) => createPayslipMutation.mutate(formData)}
+          employees={employees}
+          salaryStructures={structures}
+          payruns={payruns}
+          isSubmitting={createPayslipMutation.isPending}
+        />
+      )}
     </div>
   );
 }
+
