@@ -391,8 +391,8 @@ export default function ContractsFeature() {
             </div>
           </div>
 
-          {/* Search, Filter & Export Row */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          {/* Search Row */}
+          <div className="flex items-center justify-between gap-3">
             <div className="relative w-full sm:w-80">
               <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
               <input
@@ -404,24 +404,8 @@ export default function ContractsFeature() {
               />
               <span className="absolute right-3 top-2.5 text-[10px] font-mono text-slate-400 border border-slate-200 px-1 rounded">⌘K</span>
             </div>
-
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              <button
-                type="button"
-                className="px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 text-xs font-semibold text-slate-700 flex items-center gap-1.5 hover:bg-slate-50 shadow-2xs cursor-pointer"
-              >
-                <Filter className="w-3.5 h-3.5 text-slate-500" />
-                <span>Filter</span>
-              </button>
-              <button
-                type="button"
-                className="px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 text-xs font-semibold text-slate-700 flex items-center gap-1.5 hover:bg-slate-50 shadow-2xs cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5 text-slate-500" />
-                <span>Export CSV</span>
-              </button>
-            </div>
           </div>
+
 
           {/* Table or Form Subview */}
           {contractSubView === 'list' ? (

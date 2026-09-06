@@ -78,10 +78,8 @@ export default function LoginFeature() {
                   <Home className="w-3.5 h-3.5 text-[#FF7A00] group-hover:scale-110 transition-transform" />
                   <span>Home</span>
                 </button>
-                <div className="flex items-center gap-1">
-                  <span className="font-logo-script text-[#FF7A00] text-2xl sm:text-3xl leading-none">P</span>
-                  <span className="font-logo-serif text-lg sm:text-xl font-semibold tracking-tight text-[#1C1613] leading-none">eoplePay</span>
-                </div>
+                <img src="/logo.png" alt="PeoplePay Logo" className="h-8 sm:h-9 w-auto object-contain" />
+
               </div>
               <button 
                 type="button"

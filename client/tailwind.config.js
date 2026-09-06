@@ -65,12 +65,13 @@ export default {
       fontFamily: {
         sans: ["Inter", "Plus Jakarta Sans", "ui-sans-serif", "system-ui", "sans-serif"],
         serif: ["EB Garamond", "serif"],
-        mono: ["JetBrains Mono", "monospace"],
-        headline: ["Sora"],
-        display: ["Sora"],
+        mono: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        headline: ["Inter", "Sora"],
+        display: ["Inter", "Sora"],
         body: ["Inter"],
-        label: ["Space Grotesk"],
+        label: ["Inter", "Space Grotesk"],
       },
+
 
       boxShadow: {
         pill: "0 10px 30px -10px rgba(60,40,25,0.07), 0 1px 3px rgba(60,40,25,0.04)",
