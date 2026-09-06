@@ -21,7 +21,8 @@ const payslipSchema = new mongoose.Schema(
     payrunId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Payrun',
-      required: true,
+      required: false,
+      default: null,
       index: true,
     },
     employeeId: {
