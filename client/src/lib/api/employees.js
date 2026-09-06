@@ -3,12 +3,18 @@ import { mockEmployees, mockContracts } from './mockData';
 
 function normalizeEmployee(emp) {
   if (!emp) return emp;
-  const nameParts = (emp.name || '').split(' ');
+  const rawName = (emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`).trim() || 'Employee';
+  const nameParts = rawName.split(/\s+/);
+  const firstName = emp.firstName || nameParts[0] || 'Employee';
+  const lastName = emp.lastName !== undefined && emp.lastName !== null && emp.lastName !== ''
+    ? emp.lastName
+    : (nameParts.length > 1 ? nameParts.slice(1).join(' ') : '');
   return {
     ...emp,
     id: emp._id || emp.id,
-    firstName: emp.firstName || nameParts[0] || 'Employee',
-    lastName: emp.lastName || nameParts.slice(1).join(' ') || '',
+    name: rawName,
+    firstName: firstName.trim(),
+    lastName: lastName.trim(),
     jobTitle: emp.jobTitle || emp.jobPosition || 'Staff',
     department: emp.department || (typeof emp.departmentId === 'object' ? emp.departmentId?.name : 'General'),
     employmentType: emp.employmentType || emp.employeeType || 'FULL_TIME',
@@ -22,17 +28,18 @@ export async function fetchEmployees(params = {}) {
     const list = Array.isArray(response.data) ? response.data : [];
     const normalizedList = list.map(normalizeEmployee);
     const serverIds = new Set(normalizedList.map((e) => e.id));
-    const extraMocks = mockEmployees.filter((m) => !serverIds.has(m.id));
+    const extraMocks = mockEmployees.filter((m) => !serverIds.has(m.id)).map(normalizeEmployee);
     return [...normalizedList, ...extraMocks];
   } catch (err) {
     console.warn('[Employees API] Using fallback mock data:', err);
-    let filtered = [...mockEmployees];
+    let filtered = mockEmployees.map(normalizeEmployee);
     if (params.search) {
       const q = params.search.toLowerCase();
       filtered = filtered.filter(
         (e) =>
           e.firstName.toLowerCase().includes(q) ||
           e.lastName.toLowerCase().includes(q) ||
+          (e.name && e.name.toLowerCase().includes(q)) ||
           e.employeeCode.toLowerCase().includes(q) ||
           e.department.toLowerCase().includes(q)
       );
@@ -55,7 +62,8 @@ export async function fetchEmployeeById(id) {
       employee: normalizeEmployee(response.data.employee),
     };
   } catch (err) {
-    const emp = mockEmployees.find((e) => e.id === id) || mockEmployees[0];
+    const rawEmp = mockEmployees.find((e) => e.id === id) || mockEmployees[0];
+    const emp = normalizeEmployee(rawEmp);
     const empContracts = mockContracts.filter(
       (c) => c.employeeId === id || c.employeeCode === emp?.employeeCode
     );
@@ -74,9 +82,17 @@ export async function fetchEmployeeById(id) {
 
 export async function createEmployee(data) {
   const isMongoId = (id) => typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
-  const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.name || 'New Employee';
+  const fullName = (data.name || `${data.firstName || ''} ${data.lastName || ''}`).trim() || 'New Employee';
+  const nameParts = fullName.split(/\s+/);
+  const firstName = data.firstName || nameParts[0] || 'Employee';
+  const lastName = data.lastName !== undefined && data.lastName !== null
+    ? data.lastName
+    : (nameParts.length > 1 ? nameParts.slice(1).join(' ') : '');
+
   const payload = {
     name: fullName,
+    firstName,
+    lastName,
     email: data.email,
     employeeCode: data.employeeCode,
     jobPosition: data.jobTitle || data.jobPosition || 'Staff',
@@ -110,8 +126,9 @@ export async function createEmployee(data) {
     const newEmp = {
       id: `emp-${Date.now()}`,
       employeeCode: data.employeeCode || `EMP-00${mockEmployees.length + 1}`,
-      firstName: data.firstName || fullName.split(' ')[0],
-      lastName: data.lastName || fullName.split(' ').slice(1).join(' '),
+      name: fullName,
+      firstName,
+      lastName,
       email: data.email,
       jobTitle: data.jobTitle || 'Software Engineer',
       departmentId: data.departmentId || 'dept-eng',
@@ -128,7 +145,7 @@ export async function createEmployee(data) {
         id: `cnt-${Date.now()}`,
         contractCode: data.contractCode || `CON/2026/00${mockContracts.length + 42}`,
         employeeId: newEmp.id,
-        employeeName: `${newEmp.firstName} ${newEmp.lastName}`.trim(),
+        employeeName: fullName,
         employeeCode: newEmp.employeeCode,
         department: newEmp.department,
         jobPosition: newEmp.jobTitle,

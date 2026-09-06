@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth, ROLES } from '../auth/AuthContext';
+import { fetchEmployees } from '../../lib/api/employees';
 import {
   LayoutDashboard,
   Users,
@@ -20,6 +21,19 @@ import { Badge } from '../../components/ui/Badge';
 export function AppLayout() {
   const { user, role, switchRole, logout, availableRoles } = useAuth();
   const location = useLocation();
+  const [employeeCount, setEmployeeCount] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetchEmployees().then((employees) => {
+      if (isMounted) setEmployeeCount(employees.length);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Role-aware navigation definitions
   const navItems = [
@@ -174,7 +188,7 @@ export function AppLayout() {
                             : 'bg-stone-200 text-slate-700'
                         )}
                       >
-                        226
+                        {employeeCount}
                       </span>
                     )}
 
