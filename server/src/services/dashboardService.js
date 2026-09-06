@@ -2,12 +2,14 @@ import { Payslip } from '../models/Payslip.js';
 import { Employee } from '../models/Employee.js';
 import { Attendance } from '../models/Attendance.js';
 import { TimeOffRequest } from '../models/TimeOffRequest.js';
+import { TimeOffType } from '../models/TimeOffType.js';
 import { Payrun } from '../models/Payrun.js';
 import { Department } from '../models/Department.js';
+import { Contract } from '../models/Contract.js';
 
 export async function getDashboardMetrics(query = {}) {
   const matchPayslip = {};
-  const timeOffMatch = { status: 'APPROVED' };
+  const timeOffMatch = {};
   const attendanceMatch = {};
 
   // Resolve Date Range Filter
@@ -75,6 +77,9 @@ export async function getDashboardMetrics(query = {}) {
         totalGrossPaid: {
           $sum: { $cond: [{ $eq: ['$status', 'PAID'] }, '$gross', 0] },
         },
+        totalDeductionsPaid: {
+          $sum: { $cond: [{ $eq: ['$status', 'PAID'] }, '$deductions', 0] },
+        },
         payslipsCount: { $sum: 1 },
         paidCount: {
           $sum: { $cond: [{ $eq: ['$status', 'PAID'] }, 1, 0] },
@@ -93,6 +98,7 @@ export async function getDashboardMetrics(query = {}) {
   const stats = payslipAgg[0] || {
     totalNetPaid: 0,
     totalGrossPaid: 0,
+    totalDeductionsPaid: 0,
     payslipsCount: 0,
     paidCount: 0,
     doneCount: 0,
@@ -100,13 +106,61 @@ export async function getDashboardMetrics(query = {}) {
     avgSalary: 0,
   };
 
+  // If no payslips exist for current filter, check active contracts for estimated avg salary
+  let calculatedAvgSalary = stats.avgSalary > 0 ? Number(stats.avgSalary.toFixed(2)) : 0;
+  if (calculatedAvgSalary === 0) {
+    const activeContracts = await Contract.find({ status: 'ACTIVE' }).select('wage');
+    if (activeContracts.length > 0) {
+      const totalWage = activeContracts.reduce((sum, c) => sum + (parseFloat(c.wage) || 0), 0);
+      calculatedAvgSalary = Number((totalWage / activeContracts.length).toFixed(2));
+    }
+  }
+
   // 2. Approved Time Off Days
+  const approvedTimeOffMatch = { ...timeOffMatch, status: 'APPROVED' };
   const timeOffAgg = await TimeOffRequest.aggregate([
-    { $match: timeOffMatch },
+    { $match: approvedTimeOffMatch },
     { $group: { _id: null, totalDays: { $sum: '$duration' } } },
   ]);
 
   const approvedTimeOffDays = timeOffAgg[0]?.totalDays || 0;
+
+  // Time-Off Summary grouped by Type
+  const allTimeOffTypes = await TimeOffType.find({ status: 'ACTIVE' }).lean();
+  const timeOffRequests = await TimeOffRequest.find(timeOffMatch).populate('typeId').lean();
+  
+  const timeOffSummaryMap = {};
+  allTimeOffTypes.forEach((t) => {
+    timeOffSummaryMap[t._id.toString()] = {
+      typeName: t.name,
+      code: t.code,
+      approvedDays: 0,
+      pendingDays: 0,
+      totalRequests: 0,
+    };
+  });
+
+  timeOffRequests.forEach((req) => {
+    const typeIdStr = req.typeId?._id?.toString() || req.typeId?.toString() || 'other';
+    if (!timeOffSummaryMap[typeIdStr]) {
+      timeOffSummaryMap[typeIdStr] = {
+        typeName: req.typeId?.name || req.leaveTypeName || 'Time Off',
+        code: req.typeId?.code || 'LEAVE',
+        approvedDays: 0,
+        pendingDays: 0,
+        totalRequests: 0,
+      };
+    }
+    const days = req.duration || req.days || 1;
+    timeOffSummaryMap[typeIdStr].totalRequests += 1;
+    if (req.status === 'APPROVED') {
+      timeOffSummaryMap[typeIdStr].approvedDays += days;
+    } else if (req.status === 'PENDING') {
+      timeOffSummaryMap[typeIdStr].pendingDays += days;
+    }
+  });
+
+  const timeOffSummary = Object.values(timeOffSummaryMap);
 
   // 3. Attendance Health
   const attendanceAgg = await Attendance.aggregate([
@@ -118,13 +172,15 @@ export async function getDashboardMetrics(query = {}) {
         present: { $sum: { $cond: [{ $eq: ['$status', 'PRESENT'] }, 1, 0] } },
         late: { $sum: { $cond: [{ $eq: ['$status', 'LATE'] }, 1, 0] } },
         exception: { $sum: { $cond: [{ $eq: ['$status', 'EXCEPTION'] }, 1, 0] } },
+        overtime: { $sum: { $cond: [{ $gt: ['$workedHours', 8] }, 1, 0] } },
         missingCheckout: { $sum: { $cond: [{ $eq: ['$checkOut', null] }, 1, 0] } },
+        manualEdits: { $sum: { $cond: [{ $eq: ['$status', 'CORRECTED'] }, 1, 0] } },
       },
     },
   ]);
 
-  const attStats = attendanceAgg[0] || { total: 0, present: 0, late: 0, exception: 0, missingCheckout: 0 };
-  const attendanceCoveragePct = attStats.total > 0 ? Number(((attStats.present / attStats.total) * 100).toFixed(1)) : 94;
+  const attStats = attendanceAgg[0] || { total: 0, present: 0, late: 0, exception: 0, overtime: 0, missingCheckout: 0, manualEdits: 0 };
+  const attendanceCoveragePct = attStats.total > 0 ? Number(((attStats.present / attStats.total) * 100).toFixed(1)) : 100;
 
   // 4. Salary Cost by Department Chart Series
   const deptCostAgg = await Payslip.aggregate([
@@ -149,7 +205,7 @@ export async function getDashboardMetrics(query = {}) {
     { $unwind: { path: '$dept', preserveNullAndEmptyArrays: true } },
     {
       $group: {
-        _id: { $ifNull: ['$dept.name', 'Unassigned'] },
+        _id: { $ifNull: ['$dept.name', 'General'] },
         totalNet: { $sum: '$net' },
         totalGross: { $sum: '$gross' },
         headcount: { $addToSet: '$employeeId' },
@@ -165,6 +221,41 @@ export async function getDashboardMetrics(query = {}) {
     },
   ]);
 
+  // If no payslips match, aggregate by active contracts per department
+  let salaryCostByDepartment = deptCostAgg;
+  if (salaryCostByDepartment.length === 0) {
+    const contractsByDept = await Contract.aggregate([
+      { $match: { status: 'ACTIVE' } },
+      {
+        $lookup: {
+          from: 'departments',
+          localField: 'departmentId',
+          foreignField: '_id',
+          as: 'dept',
+        },
+      },
+      { $unwind: { path: '$dept', preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: { $ifNull: ['$dept.name', 'General'] },
+          totalWage: { $sum: '$wage' },
+          headcount: { $addToSet: '$employeeId' },
+        },
+      },
+      {
+        $project: {
+          departmentName: '$_id',
+          totalNet: '$totalWage',
+          totalGross: '$totalWage',
+          employeeCount: { $size: '$headcount' },
+        },
+      },
+    ]);
+    if (contractsByDept.length > 0) {
+      salaryCostByDepartment = contractsByDept;
+    }
+  }
+
   // 5. Monthly Net Salary Trends Chart Series
   const monthlyTrendAgg = await Payslip.aggregate([
     { $match: {} },
@@ -178,15 +269,62 @@ export async function getDashboardMetrics(query = {}) {
     { $sort: { _id: 1 } },
   ]);
 
-  // 6. Operational Alerts
-  const activePayruns = await Payrun.find({ status: { $in: ['DRAFT', 'COMPUTED'] } }).select('name status warnings');
-  const alertList = [];
+  let monthlySalaryTrends = monthlyTrendAgg.map((m) => ({
+    month: m._id,
+    totalNet: m.totalNet,
+    count: m.payslipCount,
+  }));
 
+  // Identify peak month in trends
+  if (monthlySalaryTrends.length > 0) {
+    let maxVal = -1;
+    let peakIndex = 0;
+    monthlySalaryTrends.forEach((t, i) => {
+      if (t.totalNet > maxVal) {
+        maxVal = t.totalNet;
+        peakIndex = i;
+      }
+    });
+    monthlySalaryTrends = monthlySalaryTrends.map((t, i) => ({
+      ...t,
+      isPeak: i === peakIndex && maxVal > 0,
+    }));
+  }
+
+  // 6. Department Headcount
+  const allDepartments = await Department.find({ status: 'ACTIVE' }).lean();
+  const employeesByDept = await Employee.aggregate([
+    { $match: { status: 'ACTIVE' } },
+    {
+      $group: {
+        _id: '$departmentId',
+        headcount: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const headcountMap = {};
+  employeesByDept.forEach((item) => {
+    if (item._id) headcountMap[item._id.toString()] = item.headcount;
+  });
+
+  const departmentHeadcount = allDepartments.map((dept) => ({
+    id: dept._id,
+    departmentName: dept.name,
+    code: dept.code,
+    headcount: headcountMap[dept._id.toString()] || 0,
+  }));
+
+  // 7. Dynamic Operational Alerts
+  const alertList = [];
+  
+  // A. Payrun Warnings
+  const activePayruns = await Payrun.find({ status: { $in: ['DRAFT', 'COMPUTED'] } }).select('name status warnings');
   activePayruns.forEach((run) => {
     if (run.warnings && run.warnings.length > 0) {
       run.warnings.forEach((w) => {
         alertList.push({
-          id: `alt-${Math.random().toString(36).substr(2, 5)}`,
+          id: `alt-${Math.random().toString(36).substr(2, 6)}`,
           type: w.severity === 'BLOCKING' ? 'BLOCKING_PAYROLL' : 'WARNING_PAYROLL',
           title: `Payrun Alert: ${run.name}`,
           message: w.message,
@@ -196,15 +334,74 @@ export async function getDashboardMetrics(query = {}) {
     }
   });
 
-  // Default system alerts if none triggered
-  if (alertList.length === 0) {
-    alertList.push(
-      { id: 'alt-1', type: 'WARNING', title: 'Bank Account Integrity', message: '2 employees missing bank account details for payroll disbursement', link: '/employees' },
-      { id: 'alt-2', type: 'WARNING', title: 'Duplicate Payslip Check', message: '1 duplicate payslip warning flagged in current batch', link: '/payroll' },
-      { id: 'alt-3', type: 'DRAFT', title: 'Unvalidated Payrun Drafts', message: '4 drafts still not validated before final payrun lock', link: '/payroll' },
-      { id: 'alt-4', type: 'CONTRACT', title: 'Contract Expiration Notice', message: '3 contracts expiring this month requiring renewal review', link: '/contracts' }
-    );
+  // B. Missing Bank Accounts
+  const employeesMissingBank = await Employee.countDocuments({
+    status: 'ACTIVE',
+    $or: [
+      { bankDetails: { $exists: false } },
+      { 'bankDetails.accountNumber': { $exists: false } },
+      { 'bankDetails.accountNumber': '' },
+      { 'bankDetails.accountNumber': null },
+    ],
+  });
+  if (employeesMissingBank > 0) {
+    alertList.push({
+      id: 'alt-bank',
+      type: 'WARNING',
+      title: 'Bank Account Integrity',
+      message: `${employeesMissingBank} employee${employeesMissingBank > 1 ? 's' : ''} missing bank account details for payroll disbursement`,
+      link: '/employees',
+    });
   }
+
+  // C. Unvalidated Payrun Drafts
+  const unvalidatedDraftsCount = await Payrun.countDocuments({ status: 'DRAFT' });
+  if (unvalidatedDraftsCount > 0) {
+    alertList.push({
+      id: 'alt-drafts',
+      type: 'DRAFT',
+      title: 'Unvalidated Payrun Drafts',
+      message: `${unvalidatedDraftsCount} payrun draft${unvalidatedDraftsCount > 1 ? 's' : ''} awaiting computation and validation`,
+      link: '/payroll',
+    });
+  }
+
+  // D. Expiring Contracts in next 30 days
+  const thirtyDaysOut = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const expiringContractsCount = await Contract.countDocuments({
+    status: 'ACTIVE',
+    endDate: { $ne: null, $gte: new Date(), $lte: thirtyDaysOut },
+  });
+  if (expiringContractsCount > 0) {
+    alertList.push({
+      id: 'alt-contracts',
+      type: 'CONTRACT',
+      title: 'Contract Expiration Notice',
+      message: `${expiringContractsCount} contract${expiringContractsCount > 1 ? 's' : ''} expiring within 30 days requiring renewal review`,
+      link: '/contracts',
+    });
+  }
+
+  // E. Missing Check-Outs
+  if (attStats.missingCheckout > 0) {
+    alertList.push({
+      id: 'alt-attendance',
+      type: 'WARNING',
+      title: 'Attendance Exception',
+      message: `${attStats.missingCheckout} unresolved missing check-out${attStats.missingCheckout > 1 ? 's' : ''} requiring manager review`,
+      link: '/attendance',
+    });
+  }
+
+  // 8. Compliance & Challans (EPF, ESI, TDS)
+  const totalNet = stats.totalNetPaid > 0 ? stats.totalNetPaid : (stats.totalGrossPaid > 0 ? stats.totalGrossPaid * 0.85 : 0);
+  const totalGross = stats.totalGrossPaid > 0 ? stats.totalGrossPaid : (totalNet > 0 ? totalNet * 1.15 : 0);
+  
+  const compliance = {
+    epf: Number((totalGross * 0.12).toFixed(2)),
+    esi: Number((totalGross * 0.0075).toFixed(2)),
+    tds: Number((totalGross * 0.10).toFixed(2)),
+  };
 
   const empCountFilter = {};
   if (query.departmentId) empCountFilter.departmentId = query.departmentId;
@@ -212,51 +409,31 @@ export async function getDashboardMetrics(query = {}) {
   empCountFilter.status = 'ACTIVE';
 
   const totalEmployees = await Employee.countDocuments(empCountFilter);
-  const totalDepartments = await Department.countDocuments({ status: 'ACTIVE' });
-
-  const hasFilter = Boolean(startDate || endDate || query.datePreset || query.departmentId || query.employeeType);
-
-  const hasDateFilter = Boolean(startDate || endDate);
+  const totalDepartments = allDepartments.length;
 
   return {
     kpis: {
-      totalNetSalaryPaid: stats.totalNetPaid > 0 ? Number(stats.totalNetPaid.toFixed(2)) : (hasFilter ? 0 : 1840000),
-      totalGrossSalaryPaid: stats.totalGrossPaid > 0 ? Number(stats.totalGrossPaid.toFixed(2)) : (hasFilter ? 0 : 2200000),
-      payslipsGenerated: stats.payslipsCount > 0 ? stats.payslipsCount : (hasFilter ? 0 : 148),
-      paidPayslipsCount: stats.paidCount > 0 ? stats.paidCount : (hasFilter ? 0 : 142),
-      totalNetSalaryPaid: stats.totalNetPaid > 0 ? Number(stats.totalNetPaid.toFixed(2)) : (hasDateFilter ? 0 : 1840000),
-      totalGrossSalaryPaid: stats.totalGrossPaid > 0 ? Number(stats.totalGrossPaid.toFixed(2)) : (hasDateFilter ? 0 : 2200000),
-      payslipsGenerated: stats.payslipsCount > 0 ? stats.payslipsCount : (hasDateFilter ? 0 : 148),
-      paidPayslipsCount: stats.paidCount > 0 ? stats.paidCount : (hasDateFilter ? 0 : 142),
-      donePayslipsCount: stats.doneCount || 0,
-      pendingPayslipsCount: stats.pendingCount > 0 ? stats.pendingCount : (hasFilter ? 0 : 6),
-      averageSalary: stats.avgSalary > 0 ? Number(stats.avgSalary.toFixed(2)) : (hasFilter ? 0 : 12432),
-      approvedTimeOffDays: approvedTimeOffDays > 0 ? approvedTimeOffDays : (hasFilter ? 0 : 34),
-      pendingPayslipsCount: stats.pendingCount > 0 ? stats.pendingCount : (hasDateFilter ? 0 : 6),
-      averageSalary: stats.avgSalary > 0 ? Number(stats.avgSalary.toFixed(2)) : (hasDateFilter ? 0 : 12432),
-      approvedTimeOffDays: approvedTimeOffDays > 0 ? approvedTimeOffDays : (hasDateFilter ? 0 : 34),
-      attendanceCoveragePct: attendanceCoveragePct,
-      activeEmployeeCount: totalEmployees > 0 ? totalEmployees : (hasFilter ? 0 : 226),
-      totalDepartments: totalDepartments > 0 ? totalDepartments : (hasFilter ? 0 : 5),
+      totalNetSalaryPaid: Number(stats.totalNetPaid.toFixed(2)),
+      totalGrossSalaryPaid: Number(stats.totalGrossPaid.toFixed(2)),
+      totalDeductionsPaid: Number(stats.totalDeductionsPaid.toFixed(2)),
+      payslipsGenerated: stats.payslipsCount,
+      paidPayslipsCount: stats.paidCount,
+      donePayslipsCount: stats.doneCount,
+      pendingPayslipsCount: stats.pendingCount,
+      averageSalary: calculatedAvgSalary,
+      approvedTimeOffDays,
+      attendanceCoveragePct,
+      activeEmployeeCount: totalEmployees,
+      totalDepartments,
     },
     attendanceSummary: attStats,
+    timeOffSummary,
+    departmentHeadcount,
     charts: {
-      salaryCostByDepartment: deptCostAgg.length > 0 ? deptCostAgg : [
-        { departmentName: 'HR', totalNet: 110000, percentage: 65 },
-        { departmentName: 'Sales', totalNet: 150000, percentage: 85 },
-        { departmentName: 'Support', totalNet: 90000, percentage: 50 },
-        { departmentName: 'Finance', totalNet: 130000, percentage: 75 },
-        { departmentName: 'IT', totalNet: 170000, percentage: 95 },
-      ],
-      monthlySalaryTrends: monthlyTrendAgg.length > 0 ? monthlyTrendAgg.map((m) => ({ month: m._id, totalNet: m.totalNet, count: m.payslipCount })) : [
-        { month: 'Apr', totalNet: 1200000 },
-        { month: 'May', totalNet: 1280000 },
-        { month: 'Jun', totalNet: 1220000 },
-        { month: 'Jul', totalNet: 1500000, isPeak: true },
-        { month: 'Aug', totalNet: 1050000 },
-        { month: 'Sep', totalNet: 1350000 },
-      ],
+      salaryCostByDepartment,
+      monthlySalaryTrends,
     },
+    compliance,
     alerts: alertList,
   };
 }

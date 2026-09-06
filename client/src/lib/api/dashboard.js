@@ -4,20 +4,36 @@ export const mockDashboardData = {
   kpis: {
     totalNetSalaryPaid: 14505,
     totalGrossSalaryPaid: 18275,
+    totalDeductionsPaid: 3770,
     payslipsGenerated: 2,
     paidPayslipsCount: 2,
+    donePayslipsCount: 0,
+    pendingPayslipsCount: 0,
     averageSalary: 7252.5,
     approvedTimeOffDays: 4,
     attendanceCoveragePct: 98.2,
     activeEmployeeCount: 4,
+    totalDepartments: 3,
   },
   attendanceSummary: {
     total: 3,
     present: 2,
     late: 0,
     exception: 1,
+    overtime: 1,
     missingCheckout: 1,
+    manualEdits: 0,
   },
+  timeOffSummary: [
+    { typeName: 'Paid Time Off', code: 'PTO', approvedDays: 3, pendingDays: 1, totalRequests: 2 },
+    { typeName: 'Sick Leave', code: 'SICK', approvedDays: 1, pendingDays: 0, totalRequests: 1 },
+    { typeName: 'Unpaid Leave', code: 'UNPAID', approvedDays: 0, pendingDays: 1, totalRequests: 1 },
+  ],
+  departmentHeadcount: [
+    { departmentName: 'Engineering', code: 'ENG', headcount: 2 },
+    { departmentName: 'Human Resources', code: 'HR', headcount: 1 },
+    { departmentName: 'Finance', code: 'FIN', headcount: 1 },
+  ],
   charts: {
     salaryCostByDepartment: [
       { departmentName: 'Engineering', totalNet: 7955, totalGross: 10025, employeeCount: 2, percentage: 55 },
@@ -26,10 +42,15 @@ export const mockDashboardData = {
     monthlySalaryTrends: [
       { month: '2026-05', totalNet: 13200, count: 2 },
       { month: '2026-06', totalNet: 13500, count: 2 },
-      { month: '2026-07', totalNet: 13800, count: 2 },
-      { month: '2026-08', totalNet: 14100, count: 2 },
-      { month: '2026-09', totalNet: 14505, count: 2 },
+      { month: '2026-07', totalNet: 13800, count: 2, isPeak: false },
+      { month: '2026-08', totalNet: 14100, count: 2, isPeak: false },
+      { month: '2026-09', totalNet: 14505, count: 2, isPeak: true },
     ],
+  },
+  compliance: {
+    epf: 2193,
+    esi: 137.06,
+    tds: 1827.5,
   },
   alerts: [
     {
