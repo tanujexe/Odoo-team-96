@@ -34,7 +34,8 @@ import { formatDate } from '../../lib/utils';
 
 export default function AttendanceFeature() {
   const queryClient = useQueryClient();
-  const { user, hasAccess } = useAuth();
+  const { user, role, hasAccess } = useAuth();
+  const isAdminRole = role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
   const [searchParams] = useSearchParams();
   const queryEmpId = searchParams.get('employeeId');
 
@@ -289,23 +290,26 @@ export default function AttendanceFeature() {
         </div>
 
         {/* Self-service terminal (compact for form view) */}
-        <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500"><Clock className="w-4 h-4" /></div>
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Self-Service Terminal</span>
-              <span className="text-xs font-semibold text-slate-700">{user?.name || 'Employee Portal'} &bull; {isCheckedIn ? 'Currently checked in' : 'Not checked in today'}</span>
+        {!isAdminRole && (
+          <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500"><Clock className="w-4 h-4" /></div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Self-Service Terminal</span>
+                <span className="text-xs font-semibold text-slate-700">{user?.name || 'Employee Portal'} &bull; {isCheckedIn ? 'Currently checked in' : 'Not checked in today'}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button type="button" disabled={isCheckedIn} onClick={() => checkInMutation.mutate()} className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 text-white text-xs font-bold transition-colors flex items-center gap-1.5">
+                <LogIn className="w-3.5 h-3.5" />Check In
+              </button>
+              <button type="button" disabled={!isCheckedIn} onClick={() => checkOutMutation.mutate()} className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 text-slate-700 text-xs font-bold transition-colors flex items-center gap-1.5">
+                <LogOut className="w-3.5 h-3.5" />Check Out
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button type="button" disabled={isCheckedIn} onClick={() => checkInMutation.mutate()} className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 text-white text-xs font-bold transition-colors flex items-center gap-1.5">
-              <LogIn className="w-3.5 h-3.5" />Check In
-            </button>
-            <button type="button" disabled={!isCheckedIn} onClick={() => checkOutMutation.mutate()} className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 text-slate-700 text-xs font-bold transition-colors flex items-center gap-1.5">
-              <LogOut className="w-3.5 h-3.5" />Check Out
-            </button>
-          </div>
-        </div>
+        )}
+
 
         {/* Employee header */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -417,31 +421,34 @@ export default function AttendanceFeature() {
       </div>
 
       {/* ── Self-Service Terminal (compact, for check-in/out) ── */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-            <Clock className="w-4 h-4" />
-          </div>
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Self-Service Terminal &bull; Check-In</span>
-            <span className="text-xs font-semibold text-slate-700">
-              {user?.name || 'Employee Portal'}
-              {todayUserLog?.checkIn ? ' • Clocked in at ' + new Date(todayUserLog.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-              <span className={'ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-bold ' + (isCheckedIn ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200')}>
-                {isCheckedIn ? 'Checked In' : 'Checked Out'}
+      {!isAdminRole && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+              <Clock className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Self-Service Terminal &bull; Check-In</span>
+              <span className="text-xs font-semibold text-slate-700">
+                {user?.name || 'Employee Portal'}
+                {todayUserLog?.checkIn ? ' • Clocked in at ' + new Date(todayUserLog.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                <span className={'ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-bold ' + (isCheckedIn ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200')}>
+                  {isCheckedIn ? 'Checked In' : 'Checked Out'}
+                </span>
               </span>
-            </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button type="button" disabled={isCheckedIn} onClick={() => checkInMutation.mutate()} className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 text-white text-xs font-bold transition-colors">
+              <LogIn className="w-3.5 h-3.5" />Check In
+            </button>
+            <button type="button" disabled={!isCheckedIn} onClick={() => checkOutMutation.mutate()} className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 text-slate-700 text-xs font-bold transition-colors">
+              <LogOut className="w-3.5 h-3.5" />Check Out
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button type="button" disabled={isCheckedIn} onClick={() => checkInMutation.mutate()} className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 text-white text-xs font-bold transition-colors">
-            <LogIn className="w-3.5 h-3.5" />Check In
-          </button>
-          <button type="button" disabled={!isCheckedIn} onClick={() => checkOutMutation.mutate()} className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 text-slate-700 text-xs font-bold transition-colors">
-            <LogOut className="w-3.5 h-3.5" />Check Out
-          </button>
-        </div>
-      </div>
+      )}
+
 
       {/* ── KPI Cards ──────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

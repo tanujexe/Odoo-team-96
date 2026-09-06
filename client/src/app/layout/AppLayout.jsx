@@ -97,23 +97,19 @@ export function AppLayout() {
         return 'HR Manager';
       case ROLES.EMPLOYEE:
         return 'Staff Member';
-    }
-  };
       default:
         return 'HR Payroll Lead';
     }
   };
 
   const SidebarContent = () => (
-    <div className="flex flex-col justify-between h-full p-4 overflow-y-auto no-scrollbar">
-      <div>
     <div className="flex flex-col h-full bg-[#F8F6F1]">
       {/* Top Scrollable Area */}
-      <div className="flex-1 p-5 overflow-y-auto no-scrollbar">
+      <div className="flex-1 p-4 overflow-y-auto no-scrollbar">
         {/* Brand Header with Uploaded Logo */}
         <div className="flex items-center justify-between px-1 py-1">
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="PeoplePay Logo" className="h-10 sm:h-12 w-auto object-contain max-w-[170px]" />
+            <img src="/logo.png" alt="PeoplePay Logo" className="h-14 sm:h-16 w-auto object-contain max-w-[210px]" />
           </div>
           {/* Close button for mobile drawer */}
           <button
@@ -177,7 +173,6 @@ export function AppLayout() {
             );
           })}
         </nav>
-      </div>
       </div>
 
       {/* Pinned Sticky Bottom Section: Role Switcher & Light Red Logout Button */}
