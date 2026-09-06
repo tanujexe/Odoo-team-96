@@ -1,0 +1,14 @@
+.curved-loop-jacket {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  touch-action: none;
+}
+
+.curved-loop-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  display: block;
+}

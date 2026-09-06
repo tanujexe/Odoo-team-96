@@ -14,11 +14,20 @@ import PayrollFeature from '../features/payroll';
 import ReportsFeature from '../features/reports';
 import AdminFeature from '../features/admin';
 import LoginFeature from '../features/auth';
+import HeroPage from '../pages/HeroPage';
 
 export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginFeature />,
+  },
+  {
+    path: '/hero',
+    element: <HeroPage />,
+  },
+  {
+    path: '/landing',
+    element: <HeroPage />,
   },
   {
     path: '/',
