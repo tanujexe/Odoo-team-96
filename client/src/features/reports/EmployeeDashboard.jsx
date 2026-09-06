@@ -163,16 +163,41 @@ export default function EmployeeDashboard() {
           </p>
         </div>
 
-        {/* Upper Right Corner Status Indicator */}
-        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-2xs">
-          <span
-            className={`w-2.5 h-2.5 rounded-full ${
-              isCheckedIn ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
-            }`}
-          />
-          <span className="text-xs font-semibold text-slate-700">
-            {isCheckedIn ? 'Checked In' : 'Checked Out'}
-          </span>
+        {/* Upper Right Corner Check In / Check Out Action Controls */}
+        <div className="flex items-center gap-3 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-2xs">
+          <Button
+            variant={isCheckedIn ? 'outline' : 'primary'}
+            size="sm"
+            icon={LogIn}
+            disabled={isCheckedIn}
+            isLoading={checkInMutation.isPending}
+            onClick={() => checkInMutation.mutate()}
+            className={isCheckedIn ? 'opacity-50 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white font-bold'}
+          >
+            Check In
+          </Button>
+          <Button
+            variant={!isCheckedIn ? 'outline' : 'danger'}
+            size="sm"
+            icon={LogOut}
+            disabled={!isCheckedIn}
+            isLoading={checkOutMutation.isPending}
+            onClick={() => checkOutMutation.mutate()}
+            className={!isCheckedIn ? 'opacity-50 cursor-not-allowed text-slate-400' : 'bg-rose-600 hover:bg-rose-700 text-white font-bold'}
+          >
+            Check Out
+          </Button>
+          <div className="h-6 w-px bg-slate-200 mx-1" />
+          <div className="flex items-center gap-2 pr-2">
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${
+                isCheckedIn ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+              }`}
+            />
+            <span className="text-xs font-bold text-slate-700">
+              {isCheckedIn ? 'Checked In' : 'Checked Out'}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -296,164 +321,93 @@ export default function EmployeeDashboard() {
         </CardContent>
       </Card>
 
-      {/* 2. ATTENDANCE TERMINAL & RECENT RECORDS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Terminal Card */}
-        <Card className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white border-0 shadow-md">
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-emerald-400" />
-                Attendance Terminal
-              </span>
-              <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  isCheckedIn ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-700 text-slate-300'
-                }`}
-              >
-                {isCheckedIn ? '● Checked In' : '○ Checked Out'}
-              </span>
-            </div>
-
+      {/* 2. ATTENDANCE SUMMARY & RECENT RECORDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Card className="hover:border-slate-300 transition-colors">
+          <CardContent className="p-5 flex items-center justify-between">
             <div>
-              <h4 className="text-xl font-bold tracking-tight">
-                {isCheckedIn ? 'Currently on Shift' : 'Off-Duty / Ready to Clock In'}
-              </h4>
-              <p className="text-xs text-slate-300 mt-1">
-                Today: {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Days Present</p>
+              <h3 className="text-2xl font-extrabold text-slate-900 mt-1">
+                {presentDaysCount} <span className="text-xs font-medium text-slate-500">Days</span>
+              </h3>
+              <p className="text-[11px] text-emerald-600 font-semibold mt-1">
+                Recorded in current cycle
               </p>
             </div>
-
-            {isCheckedIn && todayRecord?.checkIn && (
-              <div className="p-3 bg-white/10 rounded-xl text-xs space-y-1.5">
-                <div className="flex justify-between text-slate-300">
-                  <span>Clocked In At:</span>
-                  <span className="font-mono font-bold text-emerald-300">
-                    {new Date(todayRecord.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-                <div className="flex justify-between text-slate-300">
-                  <span>Scheduled Shift:</span>
-                  <span className="font-mono">8.0 hrs planned</span>
-                </div>
-              </div>
-            )}
-
-            <div className="pt-2 flex items-center gap-3">
-              <Button
-                variant="primary"
-                size="md"
-                className="flex-1"
-                icon={LogIn}
-                disabled={isCheckedIn}
-                isLoading={checkInMutation.isPending}
-                onClick={() => checkInMutation.mutate()}
-              >
-                Check In
-              </Button>
-              <Button
-                variant="outline"
-                size="md"
-                className="flex-1 bg-white/10 text-white border-white/20 hover:bg-white/20 disabled:opacity-40"
-                icon={LogOut}
-                disabled={!isCheckedIn}
-                isLoading={checkOutMutation.isPending}
-                onClick={() => checkOutMutation.mutate()}
-              >
-                Check Out
-              </Button>
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <CalendarCheck className="w-6 h-6" />
             </div>
           </CardContent>
         </Card>
 
-        {/* Attendance Summary KPIs */}
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card className="hover:border-slate-300 transition-colors">
-            <CardContent className="p-5 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Days Present</p>
-                <h3 className="text-2xl font-extrabold text-slate-900 mt-1">
-                  {presentDaysCount} <span className="text-xs font-medium text-slate-500">Days</span>
-                </h3>
-                <p className="text-[11px] text-emerald-600 font-semibold mt-1">
-                  Recorded in current cycle
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <CalendarCheck className="w-6 h-6" />
-              </div>
-            </CardContent>
-          </Card>
+        <Card className="hover:border-slate-300 transition-colors">
+          <CardContent className="p-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Worked Hours</p>
+              <h3 className="text-2xl font-extrabold text-slate-900 mt-1">
+                {totalHoursWorked.toFixed(1)} <span className="text-xs font-medium text-slate-500">hrs</span>
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-1">Calculated from verified check-outs</p>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <Clock className="w-6 h-6" />
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="hover:border-slate-300 transition-colors">
-            <CardContent className="p-5 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Worked Hours</p>
-                <h3 className="text-2xl font-extrabold text-slate-900 mt-1">
-                  {totalHoursWorked.toFixed(1)} <span className="text-xs font-medium text-slate-500">hrs</span>
-                </h3>
-                <p className="text-[11px] text-slate-400 mt-1">Calculated from verified check-outs</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <Clock className="w-6 h-6" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Attendance History Snippet */}
-          <Card className="sm:col-span-2">
-            <CardHeader
-              title="Recent Attendance History"
-              subtitle="Your latest daily check-ins and verified worked hours"
-              action={
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon={ArrowRight}
-                  onClick={() => navigate('/attendance')}
-                >
-                  View All
-                </Button>
-              }
-            />
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Check In</TableHead>
-                    <TableHead>Check Out</TableHead>
-                    <TableHead>Worked Hours</TableHead>
-                    <TableHead className="text-right">Status</TableHead>
+        {/* Quick Attendance History Snippet */}
+        <Card className="sm:col-span-2">
+          <CardHeader
+            title="Recent Attendance History"
+            subtitle="Your latest daily check-ins and verified worked hours"
+            action={
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={ArrowRight}
+                onClick={() => navigate('/attendance')}
+              >
+                View All
+              </Button>
+            }
+          />
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Check In</TableHead>
+                  <TableHead>Check Out</TableHead>
+                  <TableHead>Worked Hours</TableHead>
+                  <TableHead className="text-right">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {attendanceLogs.slice(0, 3).map((log) => (
+                  <TableRow key={log.id}>
+                    <TableCell className="text-xs font-semibold text-slate-800">{formatDate(log.date)}</TableCell>
+                    <TableCell className="font-mono text-xs text-slate-700">
+                      {log.checkIn ? new Date(log.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-slate-700">
+                      {log.checkOut ? (
+                        new Date(log.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      ) : (
+                        <span className="text-emerald-600 font-semibold">In Progress</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-mono font-bold text-slate-900">
+                      {log.workedHours !== null ? `${log.workedHours}h` : '—'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Badge status={log.status} />
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {attendanceLogs.slice(0, 3).map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell className="text-xs font-semibold text-slate-800">{formatDate(log.date)}</TableCell>
-                      <TableCell className="font-mono text-xs text-slate-700">
-                        {log.checkIn ? new Date(log.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-slate-700">
-                        {log.checkOut ? (
-                          new Date(log.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                        ) : (
-                          <span className="text-emerald-600 font-semibold">In Progress</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-mono font-bold text-slate-900">
-                        {log.workedHours !== null ? `${log.workedHours}h` : '—'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge status={log.status} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </div>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
 
       {/* 3. TIME OFF & LEAVE BALANCES */}

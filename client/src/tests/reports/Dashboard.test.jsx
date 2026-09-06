@@ -46,6 +46,28 @@ describe('Executive Dashboard & Live Filters (BR-11)', () => {
       expect(screen.getByTestId('kpi-total-net')).toHaveTextContent('$7,955.00');
     });
   });
+
+  it('renders dynamic attendance, department breakdown, and compliance figures', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider initialUser={{ name: 'Sarah Connor', role: ROLES.HR_PAYROLL_MANAGER }}>
+          <MemoryRouter>
+            <DashboardFeature />
+          </MemoryRouter>
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByText(/Attendance Overview/i)).toBeInTheDocument();
+    expect(screen.getByText(/Time Off Overview/i)).toBeInTheDocument();
+    expect(screen.getByText(/Department Overview/i)).toBeInTheDocument();
+    expect(screen.getByText(/Compliance & Challans Summary/i)).toBeInTheDocument();
+    expect(screen.getByText(/EPF/i)).toBeInTheDocument();
+    expect(screen.getByText(/ESI/i)).toBeInTheDocument();
+    expect(screen.getByText(/TDS/i)).toBeInTheDocument();
+  });
 });
 
 describe('Employee Self-Service Dashboard (BR-12)', () => {
