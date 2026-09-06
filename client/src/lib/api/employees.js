@@ -22,6 +22,7 @@ function normalizeEmployee(emp) {
 }
 
 export async function fetchEmployees(params = {}) {
+  let result = [];
   try {
     const query = new URLSearchParams(params).toString();
     const response = await apiClient(`/employees${query ? `?${query}` : ''}`);
@@ -29,29 +30,45 @@ export async function fetchEmployees(params = {}) {
     const normalizedList = list.map(normalizeEmployee);
     const serverIds = new Set(normalizedList.map((e) => e.id));
     const extraMocks = mockEmployees.filter((m) => !serverIds.has(m.id)).map(normalizeEmployee);
-    return [...normalizedList, ...extraMocks];
+    result = [...normalizedList, ...extraMocks];
   } catch (err) {
     console.warn('[Employees API] Using fallback mock data:', err);
-    let filtered = mockEmployees.map(normalizeEmployee);
-    if (params.search) {
-      const q = params.search.toLowerCase();
-      filtered = filtered.filter(
-        (e) =>
-          e.firstName.toLowerCase().includes(q) ||
-          e.lastName.toLowerCase().includes(q) ||
-          (e.name && e.name.toLowerCase().includes(q)) ||
-          e.employeeCode.toLowerCase().includes(q) ||
-          e.department.toLowerCase().includes(q)
-      );
-    }
-    if (params.departmentId) {
-      filtered = filtered.filter((e) => e.departmentId === params.departmentId);
-    }
-    if (params.status) {
-      filtered = filtered.filter((e) => e.status === params.status);
-    }
-    return filtered;
+    result = mockEmployees.map(normalizeEmployee);
   }
+
+  // Client-side search and department filter logic to guarantee real-time reactivity
+  if (params.search) {
+    const q = params.search.trim().toLowerCase();
+    result = result.filter(
+      (e) =>
+        (e.name && e.name.toLowerCase().includes(q)) ||
+        (e.firstName && e.firstName.toLowerCase().includes(q)) ||
+        (e.lastName && e.lastName.toLowerCase().includes(q)) ||
+        (e.email && e.email.toLowerCase().includes(q)) ||
+        (e.employeeCode && e.employeeCode.toLowerCase().includes(q)) ||
+        (e.department && e.department.toLowerCase().includes(q)) ||
+        (e.jobTitle && e.jobTitle.toLowerCase().includes(q))
+    );
+  }
+
+  if (params.departmentId) {
+    const depKey = params.departmentId.toLowerCase();
+    result = result.filter((e) => {
+      if (e.departmentId === params.departmentId) return true;
+      const deptName = (e.department || '').toLowerCase();
+      if (depKey === 'dept-fin' && deptName.includes('fin')) return true;
+      if (depKey === 'dept-hr' && (deptName.includes('hr') || deptName.includes('human') || deptName.includes('people'))) return true;
+      if (depKey === 'dept-eng' && (deptName.includes('eng') || deptName.includes('dev') || deptName.includes('tech'))) return true;
+      if (depKey === 'dept-ops' && (deptName.includes('op') || deptName.includes('service') || deptName.includes('product'))) return true;
+      return false;
+    });
+  }
+
+  if (params.status) {
+    result = result.filter((e) => (e.status || 'ACTIVE').toUpperCase() === params.status.toUpperCase());
+  }
+
+  return result;
 }
 
 export async function fetchEmployeeById(id) {
