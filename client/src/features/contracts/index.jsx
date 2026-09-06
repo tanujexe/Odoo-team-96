@@ -349,7 +349,7 @@ export default function ContractsFeature() {
                 className="px-4 py-2 rounded-full bg-[#E0533C] hover:bg-[#CD442E] text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
               >
                 <span className="font-extrabold text-sm">+</span>
-                <span>+ New Contract</span>
+                <span>New Contract</span>
               </button>
             </div>
 
