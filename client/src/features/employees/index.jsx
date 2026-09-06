@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { fetchEmployees, createEmployee, updateEmployee, fetchEmployeeById } from '../../lib/api/employees';
@@ -115,6 +115,7 @@ export default function EmployeesFeature() {
   const [activeDetailTab, setActiveDetailTab] = useState('work');
 
   const [formData, setFormData] = useState({
+    name: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -209,6 +210,7 @@ export default function EmployeesFeature() {
     const nextCode = getNextEmployeeCode(employees);
     const nextContractCode = getNextContractCode(contracts);
     setFormData({
+      name: '',
       firstName: '',
       lastName: '',
       email: '',
@@ -281,27 +283,10 @@ export default function EmployeesFeature() {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      try {
-        await createUserApi({
-          name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'New Employee',
-          email: data.email,
-          password: data.password,
-          role: ROLES.EMPLOYEE,
-          employeeCode: data.employeeCode,
-          jobPosition: data.jobTitle,
-          departmentId: data.departmentId,
-          contractCode: data.contractCode,
-          wage: data.wage,
-          workingSchedule: data.workingSchedule,
-          startDate: data.startDate,
-          endDate: data.endDate,
-          notes: data.notes,
-        });
-      } catch (err) {
-        console.warn('[Employees] createUserApi fallback:', err);
-      }
+      const fullName = (data.name || `${data.firstName || ''} ${data.lastName || ''}`).trim() || 'New Employee';
       return createEmployee({
         ...data,
+        name: fullName,
         bankDetails: {
           bankName: data.bankName,
           accountNumber: data.accountNumber,
@@ -315,6 +300,7 @@ export default function EmployeesFeature() {
       queryClient.invalidateQueries(['contracts']);
       setIsCreateModalOpen(false);
       setFormData({
+        name: '',
         firstName: '',
         lastName: '',
         email: '',
@@ -562,8 +548,8 @@ export default function EmployeesFeature() {
             <TableBody>
               {finalEmployeesList.slice((empPage - 1) * empPageSize, empPage * empPageSize).map((emp, idx) => {
                 const empId = emp.id || emp._id || idx;
-                const name = `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.name || 'Employee';
-                const initials = `${emp.firstName?.[0] || 'E'}${emp.lastName?.[0] || ''}`;
+                const name = emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Employee';
+                const initials = `${(emp.firstName?.[0] || emp.name?.[0] || 'E').toUpperCase()}${(emp.lastName?.[0] || (emp.name?.trim().split(/\s+/)?.[1]?.[0]) || '').toUpperCase()}`;
                 const workEmail = emp.email || `${name.toLowerCase().replace(/\s+/g, '.')}@oxp.com`;
                 const empCode = emp.employeeCode || `EMP-${1000 + idx}`;
                 return (
@@ -600,8 +586,8 @@ export default function EmployeesFeature() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {finalEmployeesList.slice((empPage - 1) * empPageSize, empPage * empPageSize).map((emp, idx) => {
               const empId = emp.id || emp._id || `emp-${idx}`;
-              const name = `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.name || 'Employee';
-              const initials = `${emp.firstName?.[0] || 'E'}${emp.lastName?.[0] || ''}`;
+              const name = emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Employee';
+              const initials = `${(emp.firstName?.[0] || emp.name?.[0] || 'E').toUpperCase()}${(emp.lastName?.[0] || (emp.name?.trim().split(/\s+/)?.[1]?.[0]) || '').toUpperCase()}`;
               const empContracts = contracts.filter((c) => c.employeeId === empId || c.employee === empId || c.employeeCode === emp.employeeCode);
               const contractsCount = empContracts.length > 0 ? empContracts.length : (idx % 2 === 0 ? 2 : 1);
               const attendanceRate = idx % 3 === 0 ? '100%' : idx % 2 === 0 ? '98.2%' : '96.5%';
@@ -674,8 +660,8 @@ export default function EmployeesFeature() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-slate-50/90 rounded-xl border border-slate-200">
               <div className="flex items-center gap-4 min-w-0">
                 <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white font-extrabold text-lg flex items-center justify-center shrink-0 shadow-sm">
-                  {(employeeDetail?.firstName || employeeDetail?.name || 'E').charAt(0).toUpperCase()}
-                  {(employeeDetail?.lastName || '').charAt(0).toUpperCase() || ''}
+                  {(employeeDetail?.firstName?.[0] || employeeDetail?.name?.[0] || 'E').toUpperCase()}
+                  {(employeeDetail?.lastName?.[0] || (employeeDetail?.name?.trim().split(/\s+/)?.[1]?.[0]) || '').toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -708,10 +694,49 @@ export default function EmployeesFeature() {
         <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="New Employee Account & Contract Setup" description="Provision employee credentials and generate initial running contract." maxWidth="max-w-2xl">
           <form onSubmit={handleCreateSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="First Name" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} required />
-              <Input label="Last Name" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} required />
-              <Input label="Work Email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
-              <Input label="Initial Password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
+              <Input
+                label="First Name"
+                placeholder="e.g. house"
+                value={formData.firstName}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    firstName: val,
+                    name: `${val} ${prev.lastName || ''}`.trim(),
+                  }));
+                }}
+                required
+              />
+              <Input
+                label="Last Name (Optional)"
+                placeholder="e.g. Vance"
+                value={formData.lastName}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    lastName: val,
+                    name: `${prev.firstName || ''} ${val}`.trim(),
+                  }));
+                }}
+              />
+              <Input
+                label="Work Email"
+                type="email"
+                placeholder="employee@company.com"
+                value={formData.email}
+                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                required
+              />
+              <Input
+                label="Initial Password"
+                type="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+                required
+              />
             </div>
 
             <div className="space-y-3 pt-1">

@@ -117,7 +117,7 @@ export default function EmployeeDashboard() {
       createTimeOffRequest({
         ...formData,
         employeeId,
-        employeeName: `${matchedEmployee.firstName} ${matchedEmployee.lastName}`,
+        employeeName: matchedEmployee?.name || `${matchedEmployee?.firstName || ''} ${matchedEmployee?.lastName || ''}`.trim() || 'Employee',
       }),
     onSuccess: () => {
       queryClient.invalidateQueries(['timeOffRequests']);
@@ -182,13 +182,13 @@ export default function EmployeeDashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl bg-emerald-600 text-white font-bold text-xl flex items-center justify-center border-2 border-emerald-400/40 shadow-lg shrink-0">
-                {matchedEmployee?.firstName?.[0]}
-                {matchedEmployee?.lastName?.[0]}
+                {(matchedEmployee?.firstName?.[0] || matchedEmployee?.name?.[0] || 'E').toUpperCase()}
+                {(matchedEmployee?.lastName?.[0] || (matchedEmployee?.name?.trim().split(/\s+/)?.[1]?.[0]) || '').toUpperCase()}
               </div>
               <div>
                 <div className="flex items-center gap-2.5">
                   <h3 className="text-lg font-bold tracking-tight text-white">
-                    {matchedEmployee?.firstName} {matchedEmployee?.lastName}
+                    {matchedEmployee?.name || `${matchedEmployee?.firstName || ''} ${matchedEmployee?.lastName || ''}`.trim() || 'Employee'}
                   </h3>
                   <span
                     className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
