@@ -63,14 +63,15 @@ export default {
         "accent-forest-soft": "#EBF3EF",
       },
       fontFamily: {
-        sans: ["Plus Jakarta Sans", "Inter", "sans-serif"],
+        sans: ["Inter", "Plus Jakarta Sans", "ui-sans-serif", "system-ui", "sans-serif"],
         serif: ["EB Garamond", "serif"],
         mono: ["JetBrains Mono", "monospace"],
         headline: ["Sora"],
         display: ["Sora"],
         body: ["Inter"],
-        label: ["Space Grotesk"]
+        label: ["Space Grotesk"],
       },
+
       boxShadow: {
         pill: "0 10px 30px -10px rgba(60,40,25,0.07), 0 1px 3px rgba(60,40,25,0.04)",
         wispr: "0 20px 45px -15px rgba(45,30,20,0.07), 0 0 0 1px rgba(220,207,191,0.75)",

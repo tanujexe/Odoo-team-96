@@ -45,7 +45,7 @@ export function TableRow({ className, isSelected, children, ...props }) {
 
 export function TableHead({ className, children, ...props }) {
   return (
-    <th className={cn('px-4 py-3.5 whitespace-nowrap', className)} {...props}>
+    <th className={cn('px-3 py-3 whitespace-nowrap text-left', className)} {...props}>
       {children}
     </th>
   );
@@ -53,7 +53,7 @@ export function TableHead({ className, children, ...props }) {
 
 export function TableCell({ className, children, ...props }) {
   return (
-    <td className={cn('px-4 py-3.5 whitespace-nowrap', className)} {...props}>
+    <td className={cn('px-3 py-3 align-middle', className)} {...props}>
       {children}
     </td>
   );

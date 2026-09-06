@@ -24,3 +24,10 @@ export async function updateUserApi(userId, data) {
 export async function updateUserRoleApi(userId, role) {
   return updateUserApi(userId, { role });
 }
+
+export async function deleteUserApi(userId) {
+  const response = await apiClient(`/users/${userId}`, {
+    method: 'DELETE',
+  });
+  return response.data;
+}
