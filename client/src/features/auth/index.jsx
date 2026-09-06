@@ -14,7 +14,15 @@ export default function LoginFeature() {
   const [errorMessage, setErrorMessage] = useState('');
   const [forgotNotice, setForgotNotice] = useState(false);
 
-  const from = location.state?.from?.pathname || '/';
+  const incomingFrom = location.state?.from?.pathname;
+  const targetDestination =
+    incomingFrom &&
+    incomingFrom !== '/' &&
+    incomingFrom !== '/hero' &&
+    incomingFrom !== '/landing' &&
+    incomingFrom !== '/login'
+      ? incomingFrom
+      : '/app';
 
   const handleRoleQuickSelect = (roleKey) => {
     setSelectedRole(roleKey);
@@ -30,7 +38,7 @@ export default function LoginFeature() {
 
     try {
       await login({ email, password, role: selectedRole });
-      navigate(from, { replace: true });
+      navigate(targetDestination, { replace: true });
     } catch (err) {
       setErrorMessage(err.message || 'Invalid corporate email or password');
     }
