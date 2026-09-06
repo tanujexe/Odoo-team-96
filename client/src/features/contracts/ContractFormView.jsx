@@ -347,19 +347,6 @@ export function ContractFormView({
 
             {/* Working Schedule */}
             <div className="space-y-1">
-              <Select
-                label="Working Schedule (Database)"
-                value={formData.workingSchedule || (schedules[0]?.name || '40 Hours / Week')}
-                onChange={(e) => setFormData({ ...formData, workingSchedule: e.target.value })}
-              >
-                {schedules.map((s) => (
-                  <option key={s.id || s._id} value={s.name}>
-                    {s.name} ({s.hoursPerWeek || '40h'})
-                  </option>
-                ))}
-              </Select>
-            {/* Working Schedule */}
-            <div className="space-y-1">
               <label className="text-slate-600 font-semibold text-xs">Working Schedule *</label>
               {isEditing ? (
                 <Select
@@ -374,7 +361,7 @@ export function ContractFormView({
                 </Select>
               ) : (
                 <div className="p-3 bg-slate-50/80 border border-slate-200/60 rounded-xl flex items-center justify-between text-xs font-semibold text-slate-800">
-                  <span>{formData.workingSchedule}</span>
+                  <span>{formData.workingSchedule || '40 Hours / Week'}</span>
                   <Clock className="w-4 h-4 text-slate-400" />
                 </div>
               )}
@@ -428,18 +415,18 @@ export function ContractFormView({
             </div>
           </div>
 
-          {isEditing && (
-            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-              <Button type="button" variant="outline" size="sm" onClick={() => setIsEditing(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary" size="sm" isLoading={isPending} icon={Save}>
-                Save Contract
-              </Button>
-            </div>
-          )}
-        </form>
-      </div>
+            {isEditing && (
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <Button type="button" variant="outline" size="sm" onClick={() => setIsEditing(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" size="sm" isLoading={isPending} icon={Save}>
+                  Save Contract
+                </Button>
+              </div>
+            )}
+          </form>
+        </div>
 
       {/* Salary Structure / Notes Card */}
       <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-2xs space-y-4">

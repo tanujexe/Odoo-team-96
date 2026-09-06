@@ -42,17 +42,20 @@
   font-family: 'EB Garamond', Garamond, Georgia, serif;
 }
 
+.font-logo-serif {
+  font-family: 'Cormorant Garamond', 'Playfair Display', 'EB Garamond', Georgia, serif;
+}
+
+.font-logo-script {
+  font-family: 'Alex Brush', 'Great Vibes', 'Parisienne', cursive;
+}
+
+
 
 /* Custom Animation Classes for Hero Page — Clean Inter Tempting Shimmer Text */
 .text-stroke-animate {
   font-family: 'Inter', sans-serif;
   color: #1C1613;
-  background: linear-gradient(110deg, #1C1613 0%, #3D2D24 25%, #B86B30 50%, #8A4B1F 75%, #1C1613 100%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: shimmerFill 4s ease-in-out infinite alternate;
   letter-spacing: -0.035em;
   display: inline-block;
 }
@@ -68,6 +71,20 @@
   }
   100% {
     background-position: 100% 50%;
+  }
+}
+
+@keyframes strokeReveal {
+  0% {
+    -webkit-text-stroke-color: transparent;
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+    -webkit-text-stroke-color: rgba(255, 255, 255, 0.5);
+  }
+  100% {
+    -webkit-text-stroke-color: rgba(255, 255, 255, 0.9);
   }
 }
 
@@ -146,9 +163,40 @@
   50% { opacity: 0.85; transform: scale(1.05); }
 }
 
-.animate-pulse-glow {
-  animation: pulseGlow 4s ease-in-out infinite;
+
+/* Letter Fall Animation - Exact Match from User Snippet */
+@keyframes letterFall {
+  0% {
+    opacity: 0;
+    transform: translateY(-120vh);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  84% {
+    transform: translateY(-18px);
+  }
+  92% {
+    transform: translateY(0);
+  }
+  96% {
+    transform: translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
+.letter-fall {
+  display: inline-block;
+  opacity: 0;
+  animation: letterFall 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+
+
 
 
 

@@ -38,6 +38,7 @@ const clarifyAnimation = {
 export default function HeroPage() {
   const [activeRole, setActiveRole] = useState('employee');
   const [simulatorStep, setSimulatorStep] = useState(2); // 0 to 4
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // --- Scroll Expand & Scroll-Driven Animation References ---
   // 1. Hero Overview Cards Scroll Expand
@@ -111,27 +112,24 @@ export default function HeroPage() {
   };
 
   return (
-    <div className="bg-[#FAF7F2] font-sans text-text-primary antialiased min-h-screen flex flex-col selection:bg-[#F3E5D4] selection:text-[#1E1714] scroll-smooth">
+    <div className="min-h-screen bg-[#F3EFE9] text-[#1C1613] font-sans antialiased selection:bg-[#B86B30] selection:text-white relative overflow-x-hidden">
       
       {/* FLOATING PILL NAVIGATION */}
       <motion.div 
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 100, damping: 20, delay: 0.1 }}
-        className="fixed top-5 inset-x-0 z-50 flex justify-center px-4 sm:px-6 pointer-events-none"
+        className="fixed top-3 sm:top-5 inset-x-0 z-50 flex justify-center px-3 sm:px-6 pointer-events-none"
       >
-        <header className="pointer-events-auto w-full max-w-5xl rounded-full bg-white/85 backdrop-blur-xl border border-[#E8DFD1]/90 shadow-pill py-2.5 px-4 sm:px-6 flex items-center justify-between transition-all">
-          <a className="flex items-center gap-2.5 group" href="#">
-            <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center p-0.5 ring-1 ring-[#E8DFD1] bg-white group-hover:scale-105 transition-transform">
-              <img
-                alt="PeoplePay360"
-                className="w-full h-full object-contain rounded-full"
-                src="https://lh3.googleusercontent.com/aida/AEtjO1UIwN8d4jJAVqXtj2-Arhkk_pu7oHcbmqnyaoZIkyfn_caLAgwkFS67y_OTybv3J7tE3uaE7OUvf62TqKu_RAIh4oC86EWprXtfU_GkOwktMCrmAxAjylYjGu6k6uH_VJigC9JFGAT_73teAfpUeqFN9AelnYQ2_JkpjG4EdHcoAyqabUDKgnLnGz2L_n7XIGENX6Dgg-VYbARz4PReGKO9UDb7eRvAo50QyFDD_K3GJVY-QKe_ZNbYBA"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm tracking-tight text-text-primary">PeoplePay360</span>
-              <span className="hidden md:inline-flex font-mono text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#F4EFEA] text-[#70655D] border border-[#E8DFD1]">v2.4</span>
+        <header className="pointer-events-auto w-full max-w-5xl rounded-full bg-white/90 backdrop-blur-xl border border-[#E8DFD1]/90 shadow-pill py-2 px-3 sm:py-2.5 sm:px-6 flex items-center justify-between transition-all">
+          <a className="flex items-center group py-0.5" href="#">
+            <div className="flex items-baseline tracking-tight leading-none select-none">
+              {/* "People" - Clean serif black */}
+              <span className="font-logo-serif text-[#1C1613] text-xl sm:text-2xl font-bold tracking-tight">People</span>
+              {/* "P" - Orange script */}
+              <span className="font-logo-script text-[#FF7A00] text-2xl sm:text-3xl font-normal leading-none -ml-0.5 -mr-1 -mt-1 inline-block">P</span>
+              {/* "ay" - Clean serif black */}
+              <span className="font-logo-serif text-[#1C1613] text-xl sm:text-2xl font-bold tracking-tight">ay</span>
             </div>
           </a>
           <nav className="hidden lg:flex items-center gap-1 text-[13px] font-medium text-[#70655D]">
@@ -140,17 +138,39 @@ export default function HeroPage() {
             <a onClick={(e) => scrollToSection(e, 'payroll-engine')} className="px-3 py-1.5 rounded-full hover:text-[#1E1714] hover:bg-[#F4EFEA] transition cursor-pointer" href="#payroll-engine">Payroll Engine</a>
             <a onClick={(e) => scrollToSection(e, 'role-based')} className="px-3 py-1.5 rounded-full hover:text-[#1E1714] hover:bg-[#F4EFEA] transition cursor-pointer" href="#role-based">Roles</a>
             <a onClick={(e) => scrollToSection(e, 'workflow')} className="px-3 py-1.5 rounded-full hover:text-[#1E1714] hover:bg-[#F4EFEA] transition cursor-pointer" href="#workflow">Workflow</a>
-            <a onClick={(e) => scrollToSection(e, 'governance')} className="px-3 py-1.5 rounded-full hover:text-[#1E1714] hover:bg-[#F4EFEA] transition cursor-pointer" href="#governance">Governance</a>
-            <a onClick={(e) => scrollToSection(e, 'dashboard')} className="px-3 py-1.5 rounded-full hover:text-[#1E1714] hover:bg-[#F4EFEA] transition cursor-pointer" href="#dashboard">Dashboard</a>
           </nav>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <a className="text-xs font-semibold text-[#70655D] hover:text-[#1E1714] px-3 py-1.5 rounded-full transition" href="/login">Sign In</a>
-            <a onClick={(e) => scrollToSection(e, 'workflow')} className="inline-flex items-center justify-center px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium text-white bg-[#1C1613] hover:bg-[#B86B30] shadow-sm transition hover:scale-[1.02] cursor-pointer" href="#workflow">
+          <div className="flex items-center gap-1.5 sm:gap-3">
+            <a className="text-xs font-semibold text-[#70655D] hover:text-[#1E1714] px-2.5 sm:px-3 py-1.5 rounded-full transition" href="/login">Sign In</a>
+            <a onClick={(e) => scrollToSection(e, 'workflow')} className="inline-flex items-center justify-center px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium text-white bg-[#1C1613] hover:bg-[#B86B30] shadow-sm transition hover:scale-[1.02] cursor-pointer" href="#workflow">
               Explore Platform
             </a>
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 text-[#1C1613] hover:bg-[#F4EFEA] rounded-full transition"
+              aria-label="Toggle Navigation Menu"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
         </header>
       </motion.div>
+
+      {/* MOBILE DROPDOWN MENU DRAWER */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-x-4 top-20 z-40 lg:hidden p-5 rounded-3xl bg-white/95 backdrop-blur-2xl border border-[#E8DFD1] shadow-2xl space-y-3 font-medium text-sm text-[#1C1613]">
+          <a onClick={(e) => { scrollToSection(e, 'connected-system'); setMobileMenuOpen(false); }} className="block px-4 py-2.5 rounded-2xl hover:bg-[#F4EFEA] transition" href="#connected-system">Overview</a>
+          <a onClick={(e) => { scrollToSection(e, 'core-platform'); setMobileMenuOpen(false); }} className="block px-4 py-2.5 rounded-2xl hover:bg-[#F4EFEA] transition" href="#core-platform">Platform</a>
+          <a onClick={(e) => { scrollToSection(e, 'payroll-engine'); setMobileMenuOpen(false); }} className="block px-4 py-2.5 rounded-2xl hover:bg-[#F4EFEA] transition" href="#payroll-engine">Payroll Engine</a>
+          <a onClick={(e) => { scrollToSection(e, 'role-based'); setMobileMenuOpen(false); }} className="block px-4 py-2.5 rounded-2xl hover:bg-[#F4EFEA] transition" href="#role-based">Roles</a>
+          <a onClick={(e) => { scrollToSection(e, 'workflow'); setMobileMenuOpen(false); }} className="block px-4 py-2.5 rounded-2xl hover:bg-[#F4EFEA] transition" href="#workflow">Workflow</a>
+        </div>
+      )}
 
       {/* =========================================================================
           01 — HERO SECTION
@@ -249,9 +269,9 @@ export default function HeroPage() {
 
             {/* Main Heading — Line 1: Unified HR & Automated, Line 2: Payroll. */}
             <motion.h1 variants={fadeUp} className="font-inter text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[80px] font-extrabold tracking-tight text-[#1A1513] leading-[1.1] mb-4 relative">
-              <span className="inline-block whitespace-normal sm:whitespace-nowrap">Unified HR & Automated</span>
+              <span className="inline-block whitespace-normal sm:whitespace-nowrap text-stroke-animate">Unified HR & Automated</span>
               <br />
-              <span className="inline-block">Payroll.</span>
+              <span className="inline-block text-stroke-animate">Payroll.</span>
             </motion.h1>
 
             {/* Highlighted Line — Serif Italic Typography (Matching Reference Image) */}
@@ -302,18 +322,6 @@ export default function HeroPage() {
               >
                 See How It Works
               </a>
-            </motion.div>
-
-            {/* CURVED LOOP ANIMATION — Interactive Curved Text Loop Component */}
-            <motion.div variants={fadeUp} className="w-full max-w-4xl overflow-hidden py-1 px-4 rounded-full bg-white/80 backdrop-blur-md border border-[#E8DFD1] shadow-sm relative">
-              <CurvedLoop 
-                marqueeText="Employees   ✦   Attendance   ✦   Time Off   ✦   Payroll   ✦   Payslips   ✦   Reports   ✦   "
-                speed={2}
-                curveAmount={35}
-                direction="left"
-                interactive={true}
-                className="fill-[#3D322B] text-sm font-extrabold tracking-wider uppercase font-sans cursor-pointer hover:fill-[#B86B30] transition-colors"
-              />
             </motion.div>
 
           </motion.div>
@@ -687,7 +695,7 @@ export default function HeroPage() {
               <div className="flex flex-col md:flex-row items-center justify-between gap-4 relative">
                 {/* Rule 1 */}
                 <div className="w-full md:w-1/5 p-4 rounded-2xl bg-white border border-[#E8DFD1] text-center shadow-xs">
-                  <span className="text-[10px] font-mono font-bold text-[#8C7E74] block mb-1">01 BASE</span>
+                  <span className="text-[10px] font-sans font-bold text-[#8C7E74] block mb-1">01 BASE</span>
                   <h4 className="font-bold text-sm text-[#1C1613]">Basic Salary</h4>
                   <p className="text-lg font-extrabold text-[#1C1613] mt-2">₹50,000</p>
                 </div>
@@ -696,7 +704,7 @@ export default function HeroPage() {
 
                 {/* Rule 2 */}
                 <div className="w-full md:w-1/5 p-4 rounded-2xl bg-white border border-[#E8DFD1] text-center shadow-xs">
-                  <span className="text-[10px] font-mono font-bold text-[#8C7E74] block mb-1">02 ALLOWANCE</span>
+                  <span className="text-[10px] font-sans font-bold text-[#8C7E74] block mb-1">02 ALLOWANCE</span>
                   <h4 className="font-bold text-sm text-[#1C1613]">Housing Allow.</h4>
                   <p className="text-lg font-extrabold text-emerald-600 mt-2">+ ₹8,500</p>
                 </div>
@@ -705,7 +713,7 @@ export default function HeroPage() {
 
                 {/* Rule 3 */}
                 <div className="w-full md:w-1/5 p-4 rounded-2xl bg-white border border-[#E8DFD1] text-center shadow-xs">
-                  <span className="text-[10px] font-mono font-bold text-[#8C7E74] block mb-1">03 TOTAL</span>
+                  <span className="text-[10px] font-sans font-bold text-[#8C7E74] block mb-1">03 TOTAL</span>
                   <h4 className="font-bold text-sm text-[#1C1613]">Gross Salary</h4>
                   <p className="text-lg font-extrabold text-[#1C1613] mt-2">₹58,500</p>
                 </div>
@@ -714,7 +722,7 @@ export default function HeroPage() {
 
                 {/* Rule 4 */}
                 <div className="w-full md:w-1/5 p-4 rounded-2xl bg-white border border-[#E8DFD1] text-center shadow-xs">
-                  <span className="text-[10px] font-mono font-bold text-[#8C7E74] block mb-1">04 DEDUCTION</span>
+                  <span className="text-[10px] font-sans font-bold text-[#8C7E74] block mb-1">04 DEDUCTION</span>
                   <h4 className="font-bold text-sm text-[#1C1613]">Tax / Deduct.</h4>
                   <p className="text-lg font-extrabold text-rose-500 mt-2">− ₹6,500</p>
                 </div>
@@ -723,7 +731,7 @@ export default function HeroPage() {
 
                 {/* Final Net */}
                 <div className="w-full md:w-1/5 p-4 rounded-2xl bg-[#1C1613] text-white text-center shadow-md">
-                  <span className="text-[10px] font-mono font-bold text-[#F3E5D4] block mb-1">05 NET PAY</span>
+                  <span className="text-[10px] font-sans font-bold text-[#F3E5D4] block mb-1">05 NET PAY</span>
                   <h4 className="font-bold text-sm text-white">Net Salary</h4>
                   <p className="text-xl font-extrabold text-[#F3E5D4] mt-2">₹52,000</p>
                 </div>
@@ -769,7 +777,7 @@ export default function HeroPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
-                <span className="text-xs font-mono font-bold uppercase text-[#B86B30] tracking-wider block mb-1">ROLE LEVEL 01</span>
+                <span className="text-xs font-sans font-bold uppercase text-[#B86B30] tracking-wider block mb-1">ROLE LEVEL 01</span>
                 <h3 className="text-2xl font-bold text-[#1C1613] mb-2">Employee</h3>
                 <p className="text-xs font-semibold text-[#8A4B1F] mb-4">"Your information. Your time. Your payslip."</p>
                 <p className="text-sm text-[#655951] leading-relaxed mb-6">
@@ -801,7 +809,7 @@ export default function HeroPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <span className="text-xs font-mono font-bold uppercase text-[#B86B30] tracking-wider block mb-1">ROLE LEVEL 02</span>
+                <span className="text-xs font-sans font-bold uppercase text-[#B86B30] tracking-wider block mb-1">ROLE LEVEL 02</span>
                 <h3 className="text-2xl font-bold text-[#1C1613] mb-2">HR Manager</h3>
                 <p className="text-xs font-semibold text-[#8A4B1F] mb-4">"Keep your workforce running smoothly."</p>
                 <p className="text-sm text-[#655951] leading-relaxed mb-6">
@@ -834,7 +842,7 @@ export default function HeroPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <span className="text-xs font-mono font-bold uppercase text-[#B86B30] tracking-wider block mb-1">ROLE LEVEL 03</span>
+                <span className="text-xs font-sans font-bold uppercase text-[#B86B30] tracking-wider block mb-1">ROLE LEVEL 03</span>
                 <h3 className="text-2xl font-bold text-[#1C1613] mb-2">Payroll Team</h3>
                 <p className="text-xs font-semibold text-[#8A4B1F] mb-4">"Run payroll with control and confidence."</p>
                 <p className="text-sm text-[#655951] leading-relaxed mb-6">
@@ -888,11 +896,15 @@ export default function HeroPage() {
                     onClick={() => setSimulatorStep(idx)}
                     className={`flex items-center gap-3 px-4 py-2.5 rounded-full text-left transition ${
                       simulatorStep === idx
-                        ? 'bg-[#B86B30] text-white shadow-md'
+                        ? 'bg-[#FF7A00] text-white shadow-md'
                         : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
                     }`}
                   >
-                    <span className="font-mono text-xs font-bold opacity-80">{step.num}</span>
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                      simulatorStep === idx ? 'bg-white text-[#FF7A00]' : 'bg-[#FF7A00] text-white'
+                    }`}>
+                      {step.num}
+                    </span>
                     <div>
                       <div className="font-bold text-xs">{step.title}</div>
                       <div className="text-[10px] opacity-70 hidden lg:block">{step.desc}</div>
@@ -905,7 +917,7 @@ export default function HeroPage() {
               <div className="bg-white/5 p-6 sm:p-8 rounded-3xl border border-white/10 relative">
                 {simulatorStep === 0 && (
                   <div className="space-y-4">
-                    <span className="text-xs font-mono text-[#F3E5D4]">STEP 01 — DEFINE RUN</span>
+                    <span className="text-xs font-sans font-bold text-[#F3E5D4]">STEP 01 — DEFINE RUN</span>
                     <h4 className="text-xl font-bold text-white">Configure Payroll Period & Structure</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                       <div className="p-4 rounded-xl bg-white/5 border border-white/10">
@@ -922,7 +934,7 @@ export default function HeroPage() {
 
                 {simulatorStep === 1 && (
                   <div className="space-y-4">
-                    <span className="text-xs font-mono text-[#F3E5D4]">STEP 02 — SELECT EMPLOYEES</span>
+                    <span className="text-xs font-sans font-bold text-[#F3E5D4]">STEP 02 — SELECT EMPLOYEES</span>
                     <h4 className="text-xl font-bold text-white">Filter & Choose Eligible Personnel</h4>
                     <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
                       <div>
@@ -936,15 +948,15 @@ export default function HeroPage() {
 
                 {simulatorStep === 2 && (
                   <div className="space-y-4">
-                    <span className="text-xs font-mono text-[#F3E5D4]">STEP 03 — COMPUTE PAYSLIPS</span>
+                    <span className="text-xs font-sans font-bold text-[#F3E5D4]">STEP 03 — COMPUTE PAYSLIPS</span>
                     <h4 className="text-xl font-bold text-white">Rule Execution & Attendance Compilation</h4>
                     <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2 text-xs">
                       <div className="flex justify-between text-white/80">
                         <span>Rule Sequence Executed:</span>
-                        <span className="font-mono text-emerald-400">100% Complete</span>
+                        <span className="font-sans font-bold text-[#FF7A00]">100% Complete</span>
                       </div>
                       <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
-                        <div className="bg-[#B86B30] h-full w-[85%]" />
+                        <div className="bg-[#FF7A00] h-full w-[85%]" />
                       </div>
                       <p className="text-[11px] text-white/50 pt-1">Computed 124 payslips in 1.4 seconds with attendance inputs.</p>
                     </div>
@@ -953,7 +965,7 @@ export default function HeroPage() {
 
                 {simulatorStep === 3 && (
                   <div className="space-y-4">
-                    <span className="text-xs font-mono text-[#F3E5D4]">STEP 04 — VALIDATE & AUDIT</span>
+                    <span className="text-xs font-sans font-bold text-[#F3E5D4]">STEP 04 — VALIDATE & AUDIT</span>
                     <h4 className="text-xl font-bold text-white">Review System Warnings & Resolving Issues</h4>
                     <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -974,7 +986,7 @@ export default function HeroPage() {
 
                 {simulatorStep === 4 && (
                   <div className="space-y-4">
-                    <span className="text-xs font-mono text-[#F3E5D4]">STEP 05 — FINALIZE & PAY</span>
+                    <span className="text-xs font-sans font-bold text-[#F3E5D4]">STEP 05 — FINALIZE & PAY</span>
                     <h4 className="text-xl font-bold text-white">Mark Paid, Generate PDFs & Dispatch Payslips</h4>
                     <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-xs flex items-center justify-between">
                       <div>
@@ -992,7 +1004,7 @@ export default function HeroPage() {
                 <span className="text-xs text-white/60">Controlled Compute → Validate → Mark Paid → Send Payslips workflow.</span>
                 <a 
                   href="#dashboard" 
-                  className="px-6 py-3 rounded-full bg-[#B86B30] hover:bg-[#a35c27] text-white font-semibold text-xs transition flex items-center gap-2"
+                  className="px-6 py-3 rounded-full bg-[#FF7A00] hover:bg-[#e66e00] text-white font-semibold text-xs transition flex items-center gap-2"
                 >
                   Try the Payroll Flow →
                 </a>
@@ -1228,10 +1240,10 @@ export default function HeroPage() {
       {/* =========================================================================
           09 — FINAL CTA SECTION (+ FOOTER)
           ========================================================================= */}
-      <section ref={finalCtaRef} className="py-16 md:py-24 bg-[#FAF7F2] px-3 sm:px-6 lg:px-8 overflow-hidden">
+      <section ref={finalCtaRef} className="py-12 sm:py-16 md:py-24 bg-[#FAF7F2] px-3 sm:px-6 lg:px-8 overflow-hidden">
         <motion.div 
           style={{ scale: finalCtaScale, opacity: finalCtaOpacity }}
-          className="w-full max-w-full rounded-[3.5rem] bg-[#181311] text-white p-10 sm:p-16 lg:p-20 border border-white/10 shadow-2xl relative overflow-hidden animate-breathe-glow"
+          className="w-full max-w-full rounded-[2.2rem] sm:rounded-[3.5rem] bg-[#181311] text-white p-6 sm:p-12 md:p-16 lg:p-20 border border-white/10 shadow-2xl relative overflow-hidden animate-breathe-glow"
         >
           {/* Subtle Ambient Background Gradients */}
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#B86B30]/15 rounded-full blur-[140px] pointer-events-none" />
@@ -1239,106 +1251,93 @@ export default function HeroPage() {
 
           <div className="max-w-4xl mx-auto text-center relative z-10">
             {/* Small Badge */}
-            <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider text-[#F3E5D4] bg-white/10 border border-white/15 mb-6">
+            <span className="inline-block px-3.5 py-1 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-[#F3E5D4] bg-white/10 border border-white/15 mb-4 sm:mb-6">
               READY TO SIMPLIFY YOUR HR OPERATIONS?
             </span>
 
             {/* Main Title */}
-            <h2 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight mb-4">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight mb-3 sm:mb-4">
               Modernize your HR & payroll operations.
             </h2>
 
             {/* Highlight */}
-            <p className="text-xl sm:text-2xl font-bold text-[#F3E5D4] mb-6">
+            <p className="text-base sm:text-xl md:text-2xl font-bold text-[#F3E5D4] mb-4 sm:mb-6">
               From employee data to paid payslip — everything connected.
             </p>
 
             {/* Description */}
-            <p className="text-base sm:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed mb-10">
+            <p className="text-xs sm:text-base md:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed mb-6 sm:mb-10">
               Bring employees, contracts, attendance, time off, salary rules, payroll, payslips, and workforce insights together in one operational platform.
             </p>
 
             {/* CTA Button */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a 
                 href="/login"
-                className="w-full sm:w-auto px-10 py-4 rounded-full bg-[#B86B30] hover:bg-[#a35c27] text-white font-bold text-base shadow-xl transition-all hover:scale-105"
+                className="w-full sm:w-auto px-8 sm:px-10 py-3.5 sm:py-4 rounded-full bg-[#FF7A00] hover:bg-[#e66e00] text-white font-bold text-sm sm:text-base shadow-xl transition-all hover:scale-105"
               >
-                Explore PeoplePay360 →
+                Explore PeoplePay →
               </a>
-            </div>
-
-            {/* Small Supporting Line */}
-            <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-mono text-white/50">
-              {['Employees', 'Attendance', 'Time Off', 'Payroll', 'Payslips', 'Reports'].map((item, idx) => (
-                <React.Fragment key={item}>
-                  <span>{item}</span>
-                  {idx < 5 && <span>•</span>}
-                </React.Fragment>
-              ))}
             </div>
           </div>
         </motion.div>
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-[#14100E] text-white/70 py-16 border-t border-white/10 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
-            
-            {/* Brand Column */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-base text-white tracking-tight">PeoplePay360</span>
+      <footer className="bg-[#000000] text-white/70 py-8 md:py-12 border-t border-white/10 text-xs overflow-hidden relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          
+          {/* Scroll Revealed Animated Letter-Fall Logo Container */}
+          <div className="py-4 flex flex-col items-center justify-center select-none">
+            <div className="relative flex items-center justify-center tracking-tight leading-none py-2 my-1">
+              {/* "People" - Clean elegant white serif matching image */}
+              <div className="flex font-logo-serif text-white text-[clamp(36px,7vw,85px)] font-normal tracking-tight">
+                {['P', 'e', 'o', 'p', 'l', 'e'].map((char, index) => (
+                  <span
+                    key={`people-${index}`}
+                    className="letter-fall"
+                    style={{ animationDelay: `${index * 0.08}s` }}
+                  >
+                    {char}
+                  </span>
+                ))}
               </div>
-              <p className="text-white/50 text-xs leading-relaxed">
-                HR & Payroll Operations Platform
-              </p>
-              <p className="text-white/40 text-[11px]">
-                Connected HR. Smarter payroll. Better operations.
-              </p>
+
+              {/* "Pay" - Stylized script P in orange + serif ay in white matching image */}
+              <div className="flex items-baseline -ml-1 sm:-ml-2">
+                {/* Large Stylized Orange Cursive Script P */}
+                <span
+                  key="pay-P"
+                  className="letter-fall font-logo-script text-[#FF7A00] text-[clamp(65px,13vw,150px)] leading-none -mt-4 sm:-mt-7 inline-block select-none font-normal"
+                  style={{ animationDelay: `0.48s` }}
+                >
+                  P
+                </span>
+
+                {/* "ay" in clean white serif matching People */}
+                <div className="flex font-logo-serif text-white text-[clamp(36px,7vw,85px)] font-normal tracking-tight -ml-2 sm:-ml-4">
+                  {['a', 'y'].map((char, index) => (
+                    <span
+                      key={`pay-rest-${index}`}
+                      className="letter-fall"
+                      style={{ animationDelay: `${(index + 7) * 0.08}s` }}
+                    >
+                      {char}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* Platform Links */}
-            <div>
-              <h5 className="font-bold text-white mb-4 uppercase tracking-wider text-[11px]">Platform</h5>
-              <ul className="space-y-2.5">
-                {['Employees', 'Contracts', 'Attendance', 'Time Off', 'Payroll', 'Payslips', 'Reports'].map((item) => (
-                  <li key={item}>
-                    <a href="#core-platform" className="hover:text-white transition">{item}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Resources Links */}
-            <div>
-              <h5 className="font-bold text-white mb-4 uppercase tracking-wider text-[11px]">Resources</h5>
-              <ul className="space-y-2.5">
-                {['Documentation', 'Product Overview', 'Demo', 'Support'].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="hover:text-white transition">{item}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Company Links */}
-            <div>
-              <h5 className="font-bold text-white mb-4 uppercase tracking-wider text-[11px]">Company</h5>
-              <ul className="space-y-2.5">
-                {['About', 'Contact', 'Privacy', 'Terms'].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="hover:text-white transition">{item}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <p className="text-white/40 font-mono text-[10px] sm:text-xs mt-4 tracking-widest uppercase">
+              Connected Operational HR & Payroll Platform
+            </p>
           </div>
 
-          <div className="pt-8 border-t border-white/10 text-center text-white/40 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p>© 2026 PeoplePay360 Inc. All rights reserved.</p>
-            <p className="font-mono text-[11px]">Connected Operational HR & Payroll Platform</p>
+          {/* Footer Copyright Bar */}
+          <div className="pt-6 border-t border-white/10 text-center text-white/40 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p>© 2026 PeoplePay Inc. All rights reserved.</p>
+            <p className="font-mono text-[11px]">All-in-One HR & Payroll Ecosystem</p>
           </div>
         </div>
       </footer>
