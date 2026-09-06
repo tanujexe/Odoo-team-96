@@ -11,15 +11,31 @@ function getStartOfDay(dateInput = new Date()) {
   return d;
 }
 
-export async function checkIn({ employeeId, checkInTime = new Date() }) {
+export async function checkIn({ employeeId, checkInTime = new Date(), actorId = null }) {
   const dateObj = getStartOfDay(checkInTime);
 
   const existing = await Attendance.findOne({ employeeId, date: dateObj });
   if (existing) {
-    const err = new Error('Attendance record already exists for today');
-    err.code = 'ATTENDANCE_EXISTS';
-    err.statusCode = 400;
-    throw err;
+    if (!existing.checkOut) {
+      return existing.populate('employeeId');
+    }
+    // Re-open existing record if checked out previously today
+    const beforeObj = existing.toObject();
+    existing.checkOut = null;
+    existing.workedHours = 0;
+    existing.checkIn = checkInTime;
+    await existing.save();
+
+    await logAudit({
+      actorId,
+      action: 'REOPEN_CHECK_IN',
+      entityType: 'Attendance',
+      entityId: existing._id,
+      before: beforeObj,
+      after: existing.toObject(),
+    });
+
+    return existing.populate('employeeId');
   }
 
   const attendance = new Attendance({
@@ -30,23 +46,32 @@ export async function checkIn({ employeeId, checkInTime = new Date() }) {
   });
 
   await attendance.save();
+
+  await logAudit({
+    actorId,
+    action: 'CHECK_IN',
+    entityType: 'Attendance',
+    entityId: attendance._id,
+    before: null,
+    after: attendance.toObject(),
+  });
+
   return attendance.populate('employeeId');
 }
 
-export async function checkOut({ attendanceId, employeeId, checkOutTime = new Date() }) {
-  const filter = {};
+export async function checkOut({ attendanceId, employeeId, checkOutTime = new Date(), actorId = null }) {
+  let attendance = null;
+
   if (attendanceId && mongoose.isValidObjectId(attendanceId)) {
-    filter._id = attendanceId;
-  } else if (employeeId && mongoose.isValidObjectId(employeeId)) {
-    filter.employeeId = employeeId;
-    filter.checkOut = null;
-  } else {
-    const err = new Error('No open check-in attendance record found');
-    err.code = 'ATTENDANCE_NOT_FOUND';
-    err.statusCode = 404;
-    throw err;
+    attendance = await Attendance.findById(attendanceId);
   }
-  const attendance = await Attendance.findOne(filter);
+
+  if (!attendance && employeeId && mongoose.isValidObjectId(employeeId)) {
+    attendance = await Attendance.findOne({ employeeId, checkOut: null }).sort({ checkIn: -1 });
+    if (!attendance) {
+      attendance = await Attendance.findOne({ employeeId }).sort({ checkIn: -1 });
+    }
+  }
 
   if (!attendance) {
     const err = new Error('No open check-in attendance record found');
@@ -55,6 +80,7 @@ export async function checkOut({ attendanceId, employeeId, checkOutTime = new Da
     throw err;
   }
 
+  const beforeObj = attendance.toObject();
   const durationMs = new Date(checkOutTime).getTime() - new Date(attendance.checkIn).getTime();
   const workedHours = Math.max(0, Number((durationMs / (1000 * 60 * 60)).toFixed(2)));
 
@@ -62,6 +88,16 @@ export async function checkOut({ attendanceId, employeeId, checkOutTime = new Da
   attendance.workedHours = workedHours;
 
   await attendance.save();
+
+  await logAudit({
+    actorId,
+    action: 'CHECK_OUT',
+    entityType: 'Attendance',
+    entityId: attendance._id,
+    before: beforeObj,
+    after: attendance.toObject(),
+  });
+
   return attendance.populate('employeeId');
 }
 

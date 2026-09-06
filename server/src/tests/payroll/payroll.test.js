@@ -103,7 +103,47 @@ describe('PP-09 Payroll Engine & Operations Integration Tests', () => {
       expect(res.status).toBe(201);
       expect(res.body.data.code).toBe('AUTH_STRUCT');
     });
+
+    it('HR Payroll User should be REJECTED when creating a Salary Rule', async () => {
+      const res = await request(app)
+        .post('/api/salary-rules')
+        .set('Authorization', `Bearer ${payrollUserToken}`)
+        .send({
+          name: 'Bonus Rule',
+          code: 'BONUS',
+          salaryStructureId: structure._id.toString(),
+          category: 'ALLOWANCE',
+          calculationType: 'FIXED',
+          amount: 500,
+          sequence: 2,
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('FORBIDDEN');
+    });
+
+    it('HR Payroll Manager should be ALLOWED to create a Salary Rule with aliases', async () => {
+      const res = await request(app)
+        .post('/api/salary-rules')
+        .set('Authorization', `Bearer ${payrollManagerToken}`)
+        .send({
+          name: 'Bonus Rule',
+          code: 'BONUS',
+          salaryStructureId: structure._id.toString(),
+          category: 'ALLOWANCE',
+          calculationType: 'FIXED',
+          amount: 500,
+          sequence: 2,
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.code).toBe('BONUS');
+      expect(res.body.data.category).toBe('ALW');
+      expect(res.body.data.computationType).toBe('FIXED');
+      expect(res.body.data.fixedAmount).toBe(500);
+    });
   });
+
 
   describe('Two-Step Payrun Wizard & Explicit Employee Selection (BR-07)', () => {
     it('Payrun creation without explicit employee selection should be rejected with 400', async () => {

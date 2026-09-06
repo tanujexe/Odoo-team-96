@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import { Employee } from '../models/Employee.js';
 import { Contract } from '../models/Contract.js';
 import { User } from '../models/User.js';
+import { Attendance } from '../models/Attendance.js';
+import { TimeOffRequest } from '../models/TimeOffRequest.js';
 
 export async function createEmployee(data) {
   const existingCode = await Employee.findOne({ employeeCode: data.employeeCode.trim() });
@@ -154,18 +156,21 @@ export async function getEmployeeById(id) {
     throw err;
   }
 
-
   // Calculate related smart action record counts
-  const contractCount = await Contract.countDocuments({ employeeId: id });
+  const [contractCount, attendanceCount, timeOffCount] = await Promise.all([
+    Contract.countDocuments({ employeeId: id }),
+    Attendance.countDocuments({ employeeId: id }),
+    TimeOffRequest.countDocuments({ employeeId: id }),
+  ]);
 
   return {
     employee,
     smartCounts: {
       contracts: contractCount,
-      // Attendance and TimeOff counts will be appended as models are registered
-      attendance: 0,
-      allocations: 0,
-      requests: 0,
+      attendance: attendanceCount,
+      allocations: timeOffCount,
+      requests: timeOffCount,
+      timeOff: timeOffCount,
     },
   };
 }

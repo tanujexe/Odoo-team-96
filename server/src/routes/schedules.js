@@ -23,4 +23,10 @@ router.patch(
   updateSchedule
 );
 
+router.put(
+  '/:id',
+  requireRole(ROLES.HR_MANAGER, ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN),
+  updateSchedule
+);
+
 export default router;

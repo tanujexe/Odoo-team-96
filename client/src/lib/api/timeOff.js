@@ -68,10 +68,51 @@ export let mockLeaveRequests = [
 export async function fetchTimeOffBalances(employeeId = 'emp-alex-1') {
   try {
     const response = await apiClient(`/time-off/balances?employeeId=${employeeId}`);
-    return response.data;
+    if (response && response.data) {
+      return response.data;
+    }
   } catch (err) {
-    return mockLeaveBalances[employeeId] || mockLeaveBalances['emp-alex-1'];
+    // Dynamic fallback below
   }
+
+  const empRequests = mockLeaveRequests.filter(
+    (r) => (r.employeeId === employeeId || employeeId === 'emp-alex-1') && r.status === 'APPROVED'
+  );
+
+  const ptoTaken = empRequests
+    .filter((r) => r.leaveType === 'PAID_TIME_OFF' || r.leaveTypeName?.includes('Paid'))
+    .reduce((sum, r) => sum + (r.paidDuration ?? r.days ?? 0), 0);
+
+  const sickTaken = empRequests
+    .filter((r) => r.leaveType === 'SICK_LEAVE' || r.leaveTypeName?.includes('Sick'))
+    .reduce((sum, r) => sum + (r.paidDuration ?? r.days ?? 0), 0);
+
+  const unpaidTaken = empRequests
+    .reduce((sum, r) => sum + (r.unpaidDuration || (r.leaveType === 'UNPAID_LEAVE' ? (r.days || 0) : 0)), 0);
+
+  const basePtoTotal = mockLeaveBalances[employeeId]?.pto?.total || 20;
+  const baseSickTotal = mockLeaveBalances[employeeId]?.sick?.total || 10;
+
+  const dynamicBalances = {
+    pto: {
+      total: basePtoTotal,
+      consumed: ptoTaken,
+      available: Math.max(0, basePtoTotal - ptoTaken),
+    },
+    sick: {
+      total: baseSickTotal,
+      consumed: sickTaken,
+      available: Math.max(0, baseSickTotal - sickTaken),
+    },
+    unpaid: {
+      total: 0,
+      consumed: unpaidTaken,
+      available: 0,
+    },
+  };
+
+  mockLeaveBalances[employeeId] = dynamicBalances;
+  return dynamicBalances;
 }
 
 export async function fetchTimeOffRequests(params = {}) {

@@ -7,6 +7,23 @@ export default {
   theme: {
     extend: {
       colors: {
+        terracotta: {
+          50: '#fdf4f2',
+          100: '#fbe6e2',
+          500: '#e0533c',
+          600: '#cd442e',
+          700: '#aa3320',
+        },
+        cream: {
+          50: '#fcfbfa',
+          100: '#f8f6f1',
+          200: '#efece5',
+          300: '#e5e1d7',
+          400: '#d5d0c3',
+          900: '#1a1d20',
+        },
+        canvas: '#f4f1ea',
+        charcoal: '#1a1d20',
         brand: {
           50: '#f0fdf4',
           100: '#dcfce7',
@@ -63,3 +80,4 @@ export default {
   },
   plugins: [],
 }
+

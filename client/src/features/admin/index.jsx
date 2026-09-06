@@ -3,6 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchUsersApi, createUserApi, updateUserApi } from '../../lib/api/users';
 import { fetchEmployees } from '../../lib/api/employees';
 import { fetchContracts } from '../../lib/api/contracts';
+import { fetchSchedules } from '../../lib/api/schedules';
+import { fetchSalaryStructures } from '../../lib/api/payroll';
+import { isEmployeeCheckedIn } from '../../lib/api/attendance';
 import { mockDepartments } from '../../lib/api/mockData';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -102,6 +105,16 @@ export default function AdminFeature() {
   const { data: contracts = [] } = useQuery({
     queryKey: ['contracts'],
     queryFn: () => fetchContracts(),
+  });
+
+  const { data: schedules = [] } = useQuery({
+    queryKey: ['schedules'],
+    queryFn: fetchSchedules,
+  });
+
+  const { data: salaryStructures = [] } = useQuery({
+    queryKey: ['salaryStructures'],
+    queryFn: fetchSalaryStructures,
   });
 
   // When opening modal or when employees load, auto-suggest next Employee ID & Contract Code
@@ -382,7 +395,17 @@ export default function AdminFeature() {
                     </TableCell>
 
                     <TableCell>
-                      <Badge status={u.status || 'ACTIVE'} />
+                      {(() => {
+                        const isCheckedIn = isEmployeeCheckedIn(u.employeeId, u.employeeCode);
+                        if (u.status === 'INACTIVE') {
+                          return <Badge status="INACTIVE">ACCOUNT INACTIVE</Badge>;
+                        }
+                        return (
+                          <Badge status={isCheckedIn ? 'ACTIVE' : 'INACTIVE'}>
+                            {isCheckedIn ? 'ACTIVE (ON DUTY)' : 'INACTIVE (OFF DUTY)'}
+                          </Badge>
+                        );
+                      })()}
                     </TableCell>
                   </TableRow>
                 );
@@ -400,15 +423,15 @@ export default function AdminFeature() {
         description="Create authorized system user, assign role permissions, and provision employment contract setup"
         maxWidth="max-w-2xl"
       >
-        <form onSubmit={handleCreateUserSubmit} className="space-y-5">
+        <form onSubmit={handleCreateUserSubmit} className="space-y-4">
           {/* SECTION 1: USER ACCOUNT & EMPLOYEE PROFILE */}
-          <div className="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-            <div className="flex items-center gap-2 pb-2 border-b border-slate-200 text-slate-900 font-bold text-xs uppercase tracking-wider">
-              <UserCheck className="w-4 h-4 text-emerald-600" />
+          <div className="space-y-3.5 p-5 bg-slate-50/70 border border-slate-200/90 rounded-2xl">
+            <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/90 text-slate-800 font-bold text-xs uppercase tracking-wider">
+              <UserCheck className="w-4 h-4 text-[#00966B]" />
               <span>Section 1: User Account Credentials & Role Permissions</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <Input
                 label="Full Name"
                 placeholder="e.g. Marcus Vance"
@@ -427,7 +450,7 @@ export default function AdminFeature() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <Input
                 label="Password"
                 type="password"
@@ -450,9 +473,9 @@ export default function AdminFeature() {
               </Select>
             </div>
 
-            <div className="space-y-3 pt-1">
+            <div className="space-y-3.5 pt-1">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                   Employee ID / Code
                 </label>
                 <div className="flex gap-2">
@@ -461,7 +484,7 @@ export default function AdminFeature() {
                     value={newUserForm.employeeCode}
                     onChange={(e) => setNewUserForm((prev) => ({ ...prev, employeeCode: e.target.value }))}
                     placeholder="e.g. EMP-005"
-                    className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                    className="flex-1 text-xs border border-slate-300 rounded-lg px-3.5 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white"
                     required
                   />
                   <button
@@ -473,38 +496,38 @@ export default function AdminFeature() {
                       }))
                     }
                     title="Auto-generate sequential next ID"
-                    className="px-3 py-2 text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
+                    className="px-3.5 py-2 text-xs font-semibold bg-emerald-100/90 hover:bg-emerald-200 text-emerald-800 border border-emerald-200/60 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                     Auto-Generate
                   </button>
                 </div>
-                <p className="text-[11px] text-emerald-700 font-medium mt-1 flex items-center gap-1">
+                <p className="text-[11px] text-emerald-700 font-medium mt-1.5 flex items-center gap-1">
                   <span>✓</span> Employee profile ID <code className="font-bold">{newUserForm.employeeCode || 'EMP-xxx'}</code> will be linked to this User Account.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                     Job Position (Optional)
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Software Engineer"
+                    placeholder="Software Engineer"
                     value={newUserForm.jobPosition}
                     onChange={(e) => setNewUserForm((prev) => ({ ...prev, jobPosition: e.target.value }))}
-                    className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                     Department (Optional)
                   </label>
                   <select
                     value={newUserForm.departmentId}
                     onChange={(e) => setNewUserForm((prev) => ({ ...prev, departmentId: e.target.value }))}
-                    className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
                   >
                     <option value="">-- Select Department --</option>
                     {mockDepartments.map((d) => (
@@ -519,20 +542,20 @@ export default function AdminFeature() {
           </div>
 
           {/* SECTION 2: EMPLOYMENT CONTRACT SETUP */}
-          <div className="space-y-3 p-4 bg-emerald-50/50 border border-emerald-200 rounded-xl">
-            <div className="flex items-center justify-between pb-2 border-b border-emerald-200/80 text-emerald-900 font-bold text-xs uppercase tracking-wider">
+          <div className="space-y-3.5 p-5 bg-emerald-50/50 border border-emerald-200/90 rounded-2xl">
+            <div className="flex items-center justify-between pb-2.5 border-b border-emerald-200/90 text-emerald-950 font-bold text-xs uppercase tracking-wider">
               <div className="flex items-center gap-2">
-                <FileSignature className="w-4 h-4 text-emerald-700" />
+                <FileSignature className="w-4 h-4 text-[#00966B]" />
                 <span>Section 2: Employment Contract Setup</span>
               </div>
-              <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-mono font-bold">
+              <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded font-mono font-extrabold tracking-wider border border-emerald-200/60 uppercase">
                 Auto-Linked
               </span>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                   Contract Reference / Code
                 </label>
                 <div className="flex gap-2">
@@ -541,7 +564,7 @@ export default function AdminFeature() {
                     value={newUserForm.contractCode}
                     onChange={(e) => setNewUserForm((prev) => ({ ...prev, contractCode: e.target.value }))}
                     placeholder="e.g. CON/2026/0043"
-                    className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                    className="flex-1 text-xs border border-slate-300 rounded-lg px-3.5 py-2 font-mono font-bold text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white"
                     required
                   />
                   <button
@@ -553,7 +576,7 @@ export default function AdminFeature() {
                       }))
                     }
                     title="Auto-generate next unique contract code"
-                    className="px-3 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex items-center gap-1.5 shrink-0 shadow-sm"
+                    className="px-3.5 py-2 text-xs font-semibold bg-[#00966B] hover:bg-[#007A57] text-white rounded-lg transition-colors flex items-center gap-1.5 shrink-0 shadow-sm"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     Auto-Generate
@@ -561,7 +584,7 @@ export default function AdminFeature() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <Input
                   label="Base Wage / Month (₹)"
                   type="number"
@@ -571,15 +594,39 @@ export default function AdminFeature() {
                   required
                 />
 
-                <Input
-                  label="Working Schedule"
-                  placeholder="e.g. 40 Hours / Week"
-                  value={newUserForm.workingSchedule}
+                <Select
+                  label="Working Schedule (Database)"
+                  value={newUserForm.workingSchedule || (schedules[0]?.name || '40 Hours / Week')}
                   onChange={(e) => setNewUserForm((prev) => ({ ...prev, workingSchedule: e.target.value }))}
-                />
+                >
+                  {schedules.map((sch) => (
+                    <option key={sch.id || sch._id} value={sch.name}>
+                      {sch.name} ({sch.hoursPerWeek || '40h'})
+                    </option>
+                  ))}
+                </Select>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <Select
+                  label="Salary Structure (Database)"
+                  value={newUserForm.salaryStructureId || (salaryStructures[0]?.id || '')}
+                  onChange={(e) => {
+                    const matchedStr = salaryStructures.find((s) => (s.id || s._id) === e.target.value);
+                    setNewUserForm((prev) => ({
+                      ...prev,
+                      salaryStructureId: e.target.value,
+                      salaryStructureName: matchedStr?.name || 'Employee Salary',
+                    }));
+                  }}
+                >
+                  {salaryStructures.map((str) => (
+                    <option key={str.id || str._id} value={str.id || str._id}>
+                      {str.name} ({str.code})
+                    </option>
+                  ))}
+                </Select>
+
                 <Input
                   label="Contract Start Date"
                   type="date"
@@ -587,17 +634,32 @@ export default function AdminFeature() {
                   onChange={(e) => setNewUserForm((prev) => ({ ...prev, startDate: e.target.value }))}
                   required
                 />
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
                   label="Contract End Date (Optional)"
                   type="date"
                   value={newUserForm.endDate || ''}
                   onChange={(e) => setNewUserForm((prev) => ({ ...prev, endDate: e.target.value }))}
                 />
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    Contract Notes / Terms
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Notes regarding contract terms..."
+                    value={newUserForm.notes}
+                    onChange={(e) => setNewUserForm((prev) => ({ ...prev, notes: e.target.value }))}
+                    className="w-full text-xs border border-slate-300 rounded-lg p-2 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                   Salary Structure / Contract Notes
                 </label>
                 <textarea
@@ -605,19 +667,30 @@ export default function AdminFeature() {
                   placeholder="Notes regarding contract structure, allowances or terms..."
                   value={newUserForm.notes}
                   onChange={(e) => setNewUserForm((prev) => ({ ...prev, notes: e.target.value }))}
-                  className="w-full text-xs border border-slate-300 rounded-lg p-2 text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5 text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 resize-none"
                 />
               </div>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-3">
-            <Button variant="outline" size="sm" onClick={() => setIsCreateModalOpen(false)}>
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3 mt-4">
+            <button
+              type="button"
+              onClick={() => setIsCreateModalOpen(false)}
+              className="px-4 py-2 text-xs font-semibold border border-slate-300 rounded-lg text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-sm"
+            >
               Cancel
-            </Button>
-            <Button type="submit" variant="primary" size="sm" isLoading={createUserMutation.isPending}>
+            </button>
+            <button
+              type="submit"
+              disabled={createUserMutation.isPending}
+              className="px-5 py-2.5 text-xs font-bold bg-[#00966B] hover:bg-[#007A57] text-white rounded-lg transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+            >
+              {createUserMutation.isPending && (
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              )}
               Create User & Contract Account
-            </Button>
+            </button>
           </div>
         </form>
       </Modal>

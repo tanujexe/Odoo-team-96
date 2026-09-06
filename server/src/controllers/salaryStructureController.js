@@ -37,3 +37,14 @@ export async function updateStructure(req, res, next) {
     next(error);
   }
 }
+
+export async function deleteStructure(req, res, next) {
+  try {
+    const deleted = await salaryStructureService.deleteSalaryStructure(req.params.id);
+    return res.success(deleted, 'Salary structure deleted successfully');
+  } catch (error) {
+    next(error);
+  }
+}
+
+

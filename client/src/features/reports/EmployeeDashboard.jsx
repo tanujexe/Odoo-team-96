@@ -51,9 +51,6 @@ export default function EmployeeDashboard() {
     reason: '',
   });
 
-  // Effective employee identifier for API queries
-  const employeeId = user?.employeeId || 'emp-john-1';
-
   // 1. Fetch Employee Profile Details
   const { data: employeesList = [], isLoading: isEmployeesLoading } = useQuery({
     queryKey: ['employees'],
@@ -61,9 +58,18 @@ export default function EmployeeDashboard() {
   });
 
   const matchedEmployee =
-    employeesList.find((e) => e.id === employeeId || e.email === user?.email) ||
-    mockEmployees.find((e) => e.id === employeeId || e.email === user?.email) ||
+    employeesList.find(
+      (e) =>
+        e.id === user?.employeeId ||
+        e._id === user?.employeeId ||
+        (user?.email && e.email?.toLowerCase() === user.email.toLowerCase()) ||
+        (user?.employeeCode && e.employeeCode === user.employeeCode)
+    ) ||
+    mockEmployees.find((e) => e.id === user?.employeeId || e.email === user?.email) ||
     mockEmployees[0];
+
+  // Effective employee MongoDB ObjectId or string identifier for API queries
+  const employeeId = matchedEmployee?._id || matchedEmployee?.id || user?.employeeId || 'emp-john-1';
 
   const contractInfo =
     mockContracts.find((c) => c.employeeId === matchedEmployee?.id) || mockContracts[0];
@@ -76,8 +82,7 @@ export default function EmployeeDashboard() {
 
   const todayDateStr = new Date().toISOString().split('T')[0];
   const todayRecord =
-    attendanceLogs.find((l) => (l.employeeId === employeeId || l.employeeId === matchedEmployee?.id) && l.date === todayDateStr) ||
-    attendanceLogs[0];
+    attendanceLogs.find((l) => (l.employeeId === employeeId || l.employeeId === matchedEmployee?.id || l.employeeId === matchedEmployee?._id) && l.date === todayDateStr);
   const isCheckedIn = !!todayRecord && !todayRecord.checkOut;
 
   // 3. Fetch Time Off Balances & Requests
@@ -100,7 +105,7 @@ export default function EmployeeDashboard() {
   });
 
   const checkOutMutation = useMutation({
-    mutationFn: () => checkOutApi(todayRecord?.id),
+    mutationFn: () => checkOutApi(todayRecord?.id, employeeId),
     onSuccess: () => {
       queryClient.invalidateQueries(['attendance']);
     },
@@ -147,6 +152,7 @@ export default function EmployeeDashboard() {
   return (
     <div className="space-y-6">
       {/* Top Banner & Quick Greeting */}
+      {/* Top Header with Upper-Right Corner Check-In / Check-Out Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">
@@ -156,15 +162,17 @@ export default function EmployeeDashboard() {
             Personal employment details, live attendance records, and leave allocations
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="primary"
-            size="sm"
-            icon={Plus}
-            onClick={() => setIsTimeOffModalOpen(true)}
-          >
-            Request Time Off
-          </Button>
+
+        {/* Upper Right Corner Status Indicator */}
+        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-2xs">
+          <span
+            className={`w-2.5 h-2.5 rounded-full ${
+              isCheckedIn ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+            }`}
+          />
+          <span className="text-xs font-semibold text-slate-700">
+            {isCheckedIn ? 'Checked In' : 'Checked Out'}
+          </span>
         </div>
       </div>
 
@@ -182,7 +190,20 @@ export default function EmployeeDashboard() {
                   <h3 className="text-lg font-bold tracking-tight text-white">
                     {matchedEmployee?.firstName} {matchedEmployee?.lastName}
                   </h3>
-                  <Badge status={matchedEmployee?.status || 'ACTIVE'} />
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                      isCheckedIn
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        : 'bg-slate-700/80 text-slate-300 border border-slate-600'
+                    }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        isCheckedIn ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'
+                      }`}
+                    />
+                    {isCheckedIn ? 'ACTIVE (ON DUTY)' : 'INACTIVE (CHECKED OUT)'}
+                  </span>
                 </div>
                 <p className="text-xs text-emerald-300 font-medium mt-0.5">
                   {matchedEmployee?.jobTitle} • {matchedEmployee?.department}
@@ -437,11 +458,21 @@ export default function EmployeeDashboard() {
 
       {/* 3. TIME OFF & LEAVE BALANCES */}
       <div className="space-y-4">
-        <div>
-          <h3 className="text-base font-bold text-slate-900 tracking-tight">Time Off & Leave Balances</h3>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Real-time balance breakdown across leave categories and recent request tracking
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">Time Off & Leave Balances</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Real-time balance breakdown across leave categories and recent request tracking
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            icon={Plus}
+            onClick={() => setIsTimeOffModalOpen(true)}
+          >
+            Request Time Off
+          </Button>
         </div>
 
         {/* Leave Balances Grid */}

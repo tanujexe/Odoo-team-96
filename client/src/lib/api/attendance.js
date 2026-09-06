@@ -3,6 +3,7 @@ import { apiClient } from './client';
 export function normalizeAttendanceLog(log) {
   if (!log) return log;
   const empObj = typeof log.employeeId === 'object' && log.employeeId !== null ? log.employeeId : null;
+  const empIdStr = empObj ? empObj._id || empObj.id : (typeof log.employeeId === 'string' ? log.employeeId : log.employeeId);
   const empName =
     log.employeeName ||
     empObj?.name ||
@@ -11,6 +12,17 @@ export function normalizeAttendanceLog(log) {
   const empCode = log.employeeCode || empObj?.employeeCode || (typeof log.employeeId === 'string' ? log.employeeId : 'EMP-001');
   const dept = log.department || empObj?.department || 'Finance';
   const manager = log.manager || empObj?.manager || 'Sara Khan';
+
+  let dateStr = log.date;
+  if (dateStr) {
+    if (typeof dateStr === 'string' && dateStr.includes('T')) {
+      dateStr = dateStr.split('T')[0];
+    } else if (dateStr instanceof Date) {
+      dateStr = dateStr.toISOString().split('T')[0];
+    }
+  } else {
+    dateStr = new Date().toISOString().split('T')[0];
+  }
 
   let workedHours = log.workedHours;
   let overtime = log.overtime ?? 0;
@@ -31,11 +43,12 @@ export function normalizeAttendanceLog(log) {
   return {
     ...log,
     id: log._id || log.id,
-    employeeId: empObj ? empObj._id || empObj.id : log.employeeId,
+    employeeId: empIdStr,
     employeeName: empName,
     employeeCode: empCode,
     department: dept,
     manager: manager,
+    date: dateStr,
     workedHours,
     overtime,
     status: log.status || (log.checkIn ? 'PRESENT' : 'ABSENT'),
@@ -94,7 +107,7 @@ export let mockAttendanceLogs = [
     employeeId: 'emp-neha-1',
     employeeName: 'Neha Patel',
     employeeCode: 'EMP-004',
-    department: 'Marketing',
+    department: 'Talent Acquisition',
     manager: 'Sara Khan',
     date: '2026-09-02',
     checkIn: null,
@@ -104,7 +117,50 @@ export let mockAttendanceLogs = [
     status: 'ABSENT',
     notes: 'Unplanned absence recorded.',
   },
+  {
+    id: 'att-vikram-1',
+    employeeId: 'emp-vikram-1',
+    employeeName: 'Vikram Rao',
+    employeeCode: 'EMP-005',
+    department: 'Operations',
+    manager: 'Sara Khan',
+    date: '2026-09-02',
+    checkIn: '2026-09-02T09:10:00.000Z',
+    checkOut: null,
+    workedHours: 4.5,
+    overtime: 0.0,
+    status: 'ON_DUTY',
+    notes: 'Field assignment on duty shift.',
+  },
 ];
+
+export let checkedInEmployeeIds = new Set(['emp-alex-1', 'EMP001', 'emp-john-1', 'emp-aarav-1']);
+
+export function isEmployeeCheckedIn(employeeId, employeeCode) {
+  if (!employeeId && !employeeCode) return false;
+  if (
+    (employeeId && checkedInEmployeeIds.has(employeeId)) ||
+    (employeeCode && checkedInEmployeeIds.has(employeeCode))
+  ) {
+    return true;
+  }
+  return mockAttendanceLogs.some(
+    (a) =>
+      (a.employeeId === employeeId || a.employeeCode === employeeCode) &&
+      a.checkIn &&
+      !a.checkOut
+  );
+}
+
+export function setEmployeeCheckInStatus(employeeId, employeeCode, isCheckedIn) {
+  if (isCheckedIn) {
+    if (employeeId) checkedInEmployeeIds.add(employeeId);
+    if (employeeCode) checkedInEmployeeIds.add(employeeCode);
+  } else {
+    if (employeeId) checkedInEmployeeIds.delete(employeeId);
+    if (employeeCode) checkedInEmployeeIds.delete(employeeCode);
+  }
+}
 
 export async function fetchAttendance(params = {}) {
   try {
@@ -112,6 +168,16 @@ export async function fetchAttendance(params = {}) {
     const response = await apiClient(`/attendance${query ? `?${query}` : ''}`);
     const list = Array.isArray(response.data) ? response.data : [];
     const normalized = list.map(normalizeAttendanceLog);
+
+    // Sync live check-in statuses from DB records
+    normalized.forEach((log) => {
+      if (log.checkIn && !log.checkOut) {
+        setEmployeeCheckInStatus(log.employeeId, log.employeeCode, true);
+      } else if (log.checkOut) {
+        setEmployeeCheckInStatus(log.employeeId, log.employeeCode, false);
+      }
+    });
+
     const serverIds = new Set(normalized.map((a) => a.id));
     const extraMocks = mockAttendanceLogs.filter((m) => !serverIds.has(m.id)).map(normalizeAttendanceLog);
     return [...normalized, ...extraMocks];
@@ -128,6 +194,7 @@ export async function fetchAttendance(params = {}) {
 }
 
 export async function checkInApi(employeeId = 'emp-aarav-1') {
+  setEmployeeCheckInStatus(employeeId, null, true);
   try {
     const response = await apiClient('/attendance/check-in', {
       method: 'POST',
@@ -156,11 +223,12 @@ export async function checkInApi(employeeId = 'emp-aarav-1') {
   }
 }
 
-export async function checkOutApi(id) {
+export async function checkOutApi(id, employeeId = 'emp-aarav-1') {
+  setEmployeeCheckInStatus(employeeId, null, false);
   try {
     const response = await apiClient('/attendance/check-out', {
       method: 'POST',
-      body: { id },
+      body: { attendanceId: id, employeeId },
     });
     return normalizeAttendanceLog(response.data);
   } catch (err) {

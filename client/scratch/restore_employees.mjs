@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import fs from 'fs';
+
+const cleanEmployeesFile = `import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { fetchEmployees, createEmployee, fetchEmployeeById } from '../../lib/api/employees';
 import { isEmployeeCheckedIn } from '../../lib/api/attendance';
 import { fetchContracts } from '../../lib/api/contracts';
-import { fetchSchedules } from '../../lib/api/schedules';
-import { fetchSalaryStructures } from '../../lib/api/payroll';
 import { createUserApi } from '../../lib/api/users';
 import { mockDepartments } from '../../lib/api/mockData';
 import { useAuth, ROLES } from '../../app/auth/AuthContext';
@@ -46,7 +46,7 @@ const getNextEmployeeCode = (employeeList = []) => {
   let maxNum = 0;
   employeeList.forEach((emp) => {
     const code = emp.employeeCode || emp.id || '';
-    const match = code.match(/EMP[^\d]*(\d+)/i);
+    const match = code.match(/EMP[^\\d]*(\\d+)/i);
     if (match) {
       const num = parseInt(match[1], 10);
       if (!isNaN(num) && num > maxNum) {
@@ -55,7 +55,7 @@ const getNextEmployeeCode = (employeeList = []) => {
     }
   });
   const nextNum = maxNum + 1;
-  return `EMP-${String(nextNum).padStart(3, '0')}`;
+  return \`EMP-\${String(nextNum).padStart(3, '0')}\`;
 };
 
 const getNextContractCode = (contractList = []) => {
@@ -63,7 +63,7 @@ const getNextContractCode = (contractList = []) => {
   let maxNum = 42;
   (contractList || []).forEach((c) => {
     const code = c.contractCode || c.code || '';
-    const match = code.match(/\d+/g);
+    const match = code.match(/\\d+/g);
     if (match) {
       const lastNum = parseInt(match[match.length - 1], 10);
       if (!isNaN(lastNum) && lastNum > maxNum) {
@@ -72,7 +72,7 @@ const getNextContractCode = (contractList = []) => {
     }
   });
   const nextSeq = maxNum + 1;
-  return `CON/${year}/${String(nextSeq).padStart(4, '0')}`;
+  return \`CON/\${year}/\${String(nextSeq).padStart(4, '0')}\`;
 };
 
 const getAvatarStyle = (index, name = '') => {
@@ -148,16 +148,6 @@ export default function EmployeesFeature() {
     queryFn: () => fetchContracts(),
   });
 
-  const { data: schedules = [] } = useQuery({
-    queryKey: ['schedules'],
-    queryFn: fetchSchedules,
-  });
-
-  const { data: salaryStructures = [] } = useQuery({
-    queryKey: ['salaryStructures'],
-    queryFn: fetchSalaryStructures,
-  });
-
   const isEmployeeRole = role === ROLES.EMPLOYEE;
   const currentEmpId = user?.employeeId;
 
@@ -223,7 +213,7 @@ export default function EmployeesFeature() {
     mutationFn: async (data) => {
       try {
         await createUserApi({
-          name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'New Employee',
+          name: \`\${data.firstName || ''} \${data.lastName || ''}\`.trim() || 'New Employee',
           email: data.email,
           password: data.password,
           role: ROLES.EMPLOYEE,
@@ -469,10 +459,10 @@ export default function EmployeesFeature() {
             <TableBody>
               {finalEmployeesList.slice((empPage - 1) * empPageSize, empPage * empPageSize).map((emp, idx) => {
                 const empId = emp.id || emp._id || idx;
-                const name = `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.name || 'Employee';
-                const initials = `${emp.firstName?.[0] || 'E'}${emp.lastName?.[0] || ''}`;
-                const workEmail = emp.email || `${name.toLowerCase().replace(/\s+/g, '.')}@oxp.com`;
-                const empCode = emp.employeeCode || `EMP-${1000 + idx}`;
+                const name = \`\${emp.firstName || ''} \${emp.lastName || ''}\`.trim() || emp.name || 'Employee';
+                const initials = \`\${emp.firstName?.[0] || 'E'}\${emp.lastName?.[0] || ''}\`;
+                const workEmail = emp.email || \`\${name.toLowerCase().replace(/\\s+/g, '.')}@oxp.com\`;
+                const empCode = emp.employeeCode || \`EMP-\${1000 + idx}\`;
 
                 return (
                   <TableRow key={empId} isSelected={selectedEmployeeId === empId} className="hover:bg-slate-50/70 transition-colors">
@@ -549,9 +539,9 @@ export default function EmployeesFeature() {
         <div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {finalEmployeesList.slice((empPage - 1) * empPageSize, empPage * empPageSize).map((emp, idx) => {
-              const empId = emp.id || emp._id || `emp-${idx}`;
-              const name = `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.name || 'Employee';
-              const initials = `${emp.firstName?.[0] || 'E'}${emp.lastName?.[0] || ''}`;
+              const empId = emp.id || emp._id || \`emp-\${idx}\`;
+              const name = \`\${emp.firstName || ''} \${emp.lastName || ''}\`.trim() || emp.name || 'Employee';
+              const initials = \`\${emp.firstName?.[0] || 'E'}\${emp.lastName?.[0] || ''}\`;
 
               const empContracts = contracts.filter((c) => c.employeeId === empId || c.employee === empId || c.employeeCode === emp.employeeCode);
               const contractsCount = empContracts.length > 0 ? empContracts.length : (idx % 2 === 0 ? 2 : 1);
@@ -608,11 +598,11 @@ export default function EmployeesFeature() {
                     <div className="space-y-1.5 text-xs text-slate-500">
                       <div className="flex items-center gap-2">
                         <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="truncate font-mono text-[11px]">{emp.email || `${name.toLowerCase().replace(/\s+/g, '.')}@oxp.com`}</span>
+                        <span className="truncate font-mono text-[11px]">{emp.email || \`\${name.toLowerCase().replace(/\\s+/g, '.')}@oxp.com\`}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <UserCheck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="font-mono text-[11px]">{emp.employeeCode || `EMP-${1000 + idx}`}</span>
+                        <span className="font-mono text-[11px]">{emp.employeeCode || \`EMP-\${1000 + idx}\`}</span>
                       </div>
                     </div>
                   </div>
@@ -644,61 +634,6 @@ export default function EmployeesFeature() {
             onPageSizeChange={(s) => { setEmpPageSize(s); setEmpPage(1); }}
           />
         </div>
-      )}
-
-            {selectedEmployeeId && (
-        <Modal
-          isOpen={!!selectedEmployeeId}
-          onClose={() => setSelectedEmployeeId(null)}
-          title="Employee Workspace"
-          description="Main employee form with related HR actions"
-          maxWidth="max-w-4xl"
-        >
-          <div className="space-y-4">
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm">
-                  {detailData ? `${detailData.firstName || ''} ${detailData.lastName || ''}`.trim() || detailData.name : 'Employee Workspace'}
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {detailData?.jobTitle || 'Staff Member'} • {detailData?.department || 'Engineering'} • {detailData?.employeeCode || 'EMP-001'}
-                </p>
-              </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">Active</span>
-            </div>
-
-            <div className="flex items-center gap-6 border-b border-slate-200 text-xs font-bold text-slate-500 pb-1">
-              <button type="button" className="pb-2 text-slate-900 border-b-2 border-slate-900 font-extrabold">Work Information</button>
-              <button type="button" className="pb-2 hover:text-slate-700">Contracts</button>
-              <button type="button" className="pb-2 hover:text-slate-700">Attendance</button>
-              <button type="button" className="pb-2 hover:text-slate-700">Time Off</button>
-              <button type="button" className="pb-2 hover:text-slate-700">Payroll & Payslips</button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 text-xs py-2">
-              <div className="p-3 bg-slate-50/60 rounded-lg border border-slate-100">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Work Email</span>
-                <p className="font-mono font-semibold text-slate-800">{detailData?.email || 'employee@company.com'}</p>
-              </div>
-              <div className="p-3 bg-slate-50/60 rounded-lg border border-slate-100">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Employee Code</span>
-                <p className="font-mono font-semibold text-slate-800">{detailData?.employeeCode || 'EMP-001'}</p>
-              </div>
-              <div className="p-3 bg-slate-50/60 rounded-lg border border-slate-100">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Contracts Summary</span>
-                <p className="font-semibold text-slate-800">1 Active Employment Contract</p>
-              </div>
-              <div className="p-3 bg-slate-50/60 rounded-lg border border-slate-100">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Attendance & Leave</span>
-                <p className="font-semibold text-emerald-600">98.5% Present • 14 Days PTO</p>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
-              <Button variant="outline" size="sm" onClick={() => setSelectedEmployeeId(null)}>Close Workspace</Button>
-            </div>
-          </div>
-        </Modal>
       )}
 
       {isCreateModalOpen && (
@@ -801,3 +736,7 @@ export default function EmployeesFeature() {
     </div>
   );
 }
+`;
+
+fs.writeFileSync('c:/Collage/peoplepay_odoo/Odoo-team-96/client/src/features/employees/index.jsx', cleanEmployeesFile, 'utf8');
+console.log('Successfully restored employees/index.jsx cleanly with empPage state!');
