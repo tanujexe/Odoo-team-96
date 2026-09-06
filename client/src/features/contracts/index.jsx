@@ -260,11 +260,17 @@ export default function ContractsFeature() {
   };
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [selectedContractIds, setSelectedContractIds] = useState([]);
 
   const handleExportContractsCSV = () => {
     if (!filteredContractsList || filteredContractsList.length === 0) return;
+    const targetContracts = selectedContractIds.length > 0
+      ? filteredContractsList.filter((c) => selectedContractIds.includes(c.id || c._id))
+      : filteredContractsList;
+    if (targetContracts.length === 0) return;
+
     const headers = ['Contract Code', 'Employee Name', 'Employee Code', 'Monthly Wage', 'Start Date', 'End Date', 'Status', 'Working Schedule'];
-    const rows = filteredContractsList.map((c) => {
+    const rows = targetContracts.map((c) => {
       const code = c.contractCode || (c.id ? `CON/2026/00${String(c.id).slice(-2)}` : 'CON/2026/0042');
       const empName = (c.employeeName || 'Unassigned Employee').replace(/"/g, '""');
       const empCode = c.employeeCode || '';
@@ -464,14 +470,29 @@ export default function ContractsFeature() {
                 className="px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 text-xs font-semibold text-slate-700 flex items-center gap-1.5 hover:bg-slate-50 shadow-2xs cursor-pointer transition-colors"
               >
                 <Download className="w-3.5 h-3.5 text-slate-500" />
-                <span>Export CSV</span>
+                <span>{selectedContractIds.length > 0 ? `Export CSV (${selectedContractIds.length} Selected)` : 'Export CSV'}</span>
               </button>
             </div>
           </div>
 
 
           {/* Table or Form Subview */}
-          {contractSubView === 'list' ? (
+          {contractSubView === 'list' ? (() => {
+            const isAllCurrentSelected = paginatedContracts.length > 0 && paginatedContracts.every((c) => selectedContractIds.includes(c.id || c._id));
+            const toggleSelectAllContracts = () => {
+              if (isAllCurrentSelected) {
+                const currentIds = new Set(paginatedContracts.map((c) => c.id || c._id));
+                setSelectedContractIds((prev) => prev.filter((id) => !currentIds.has(id)));
+              } else {
+                const currentIds = paginatedContracts.map((c) => c.id || c._id);
+                setSelectedContractIds((prev) => Array.from(new Set([...prev, ...currentIds])));
+              }
+            };
+            const toggleSelectContract = (id) => {
+              setSelectedContractIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+            };
+
+            return (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden">
               {isContractsLoading ? (
                 <LoadingState message="Loading contracts..." />
@@ -480,6 +501,14 @@ export default function ContractsFeature() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-10">
+                          <input
+                            type="checkbox"
+                            checked={isAllCurrentSelected}
+                            onChange={toggleSelectAllContracts}
+                            className="rounded border-slate-300 focus:ring-0 cursor-pointer"
+                          />
+                        </TableHead>
                         <TableHead>Contract Code</TableHead>
                         <TableHead>Employee</TableHead>
                         <TableHead>Wage / Salary</TableHead>
@@ -491,16 +520,26 @@ export default function ContractsFeature() {
                     </TableHeader>
                     <TableBody>
                       {paginatedContracts.map((cnt) => {
+                        const cntId = cnt.id || cnt._id;
+                        const isSelected = selectedContractIds.includes(cntId);
                         const code = cnt.contractCode || (cnt.id ? `CON/2026/00${String(cnt.id).slice(-2)}` : 'CON/2026/0042');
                         return (
                           <TableRow
-                            key={cnt.id || cnt._id}
+                            key={cntId}
                             onClick={() => {
                               setSelectedContract(cnt);
                               setContractSubView('form');
                             }}
-                            className="cursor-pointer hover:bg-emerald-50/50 transition-colors group"
+                            className={cn('cursor-pointer hover:bg-emerald-50/50 transition-colors group', isSelected && 'bg-emerald-50/70')}
                           >
+                            <TableCell onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleSelectContract(cntId)}
+                                className="rounded border-slate-300 focus:ring-0 cursor-pointer"
+                              />
+                            </TableCell>
                             <TableCell className="font-mono text-xs font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">
                               <span className="flex items-center gap-1.5">
                                 {code}
@@ -553,7 +592,8 @@ export default function ContractsFeature() {
                 </>
               )}
             </div>
-          ) : (
+          );
+        })() : (
             /* Form View of One Contract matching exact wireframe design */
             <ContractFormView
               contract={selectedContract || contractForm}

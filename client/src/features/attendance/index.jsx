@@ -184,11 +184,17 @@ export default function AttendanceFeature() {
 
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+  const [selectedLogIds, setSelectedLogIds] = useState([]);
 
   const handleExportAttendanceCSV = () => {
     if (!filteredLogs || filteredLogs.length === 0) return;
+    const targetLogs = selectedLogIds.length > 0 
+      ? filteredLogs.filter((log) => selectedLogIds.includes(log.id || log._id))
+      : filteredLogs;
+    if (targetLogs.length === 0) return;
+
     const headers = ['Employee Name', 'Employee Code', 'Department', 'Date', 'Check In', 'Check Out', 'Worked Hours', 'Status'];
-    const rows = filteredLogs.map((log) => {
+    const rows = targetLogs.map((log) => {
       const empName = log.employeeName || 'Employee';
       const empCode = log.employeeCode || '';
       const deptName = log.department || '';
@@ -607,7 +613,8 @@ export default function AttendanceFeature() {
             onClick={handleExportAttendanceCSV}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5 text-slate-500" />Export CSV
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            <span>{selectedLogIds.length > 0 ? `Export CSV (${selectedLogIds.length} Selected)` : 'Export CSV'}</span>
           </button>
         </div>
       </div>
@@ -618,37 +625,69 @@ export default function AttendanceFeature() {
           <LoadingState message="Loading attendance records..." />
         ) : filteredLogs.length === 0 ? (
           <EmptyState title="No attendance entries found" description="Adjust your filters or use NEW button to create a record." />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/80 text-slate-500 text-[11px] font-semibold uppercase tracking-wide">
-                  <th className="py-3 px-4 w-10"><input type="checkbox" className="rounded border-slate-300 focus:ring-0" /></th>
-                  <th className="py-3 px-4">Employee</th>
-                  <th className="py-3 px-4">Check In</th>
-                  <th className="py-3 px-4">Check Out</th>
-                  <th className="py-3 px-4">Worked Hours</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
-                {filteredLogs.slice((attPage - 1) * attPageSize, attPage * attPageSize).map((log, idx) => {
-                  const checkInFmt = log.checkIn ? new Date(log.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null;
-                  const checkOutFmt = log.checkOut ? new Date(log.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null;
-                  const initials = log.employeeName ? log.employeeName.split(' ').map((n) => n[0]).join('') : '?';
-                  const ac = avatarColor(log.employeeName, idx);
-                  const isAbsent = (log.status || '').toUpperCase() === 'ABSENT' || Number(log.workedHours) === 0;
+        ) : (() => {
+          const currentPageLogs = filteredLogs.slice((attPage - 1) * attPageSize, attPage * attPageSize);
+          const isAllCurrentSelected = currentPageLogs.length > 0 && currentPageLogs.every((l) => selectedLogIds.includes(l.id || l._id));
 
-                  return (
-                    <tr
-                      key={log.id}
-                      onClick={() => { setSelectedLog(log); setViewMode('form'); }}
-                      className="hover:bg-slate-50/70 cursor-pointer transition-colors"
-                    >
-                      <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
-                        <input type="checkbox" className="rounded border-slate-300 focus:ring-0" />
-                      </td>
+          const toggleSelectAllLogs = () => {
+            if (isAllCurrentSelected) {
+              const currentPageIds = new Set(currentPageLogs.map((l) => l.id || l._id));
+              setSelectedLogIds((prev) => prev.filter((id) => !currentPageIds.has(id)));
+            } else {
+              const currentPageIds = currentPageLogs.map((l) => l.id || l._id);
+              setSelectedLogIds((prev) => Array.from(new Set([...prev, ...currentPageIds])));
+            }
+          };
+
+          const toggleSelectLog = (id) => {
+            setSelectedLogIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+          };
+
+          return (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/80 text-slate-500 text-[11px] font-semibold uppercase tracking-wide">
+                    <th className="py-3 px-4 w-10">
+                      <input
+                        type="checkbox"
+                        checked={isAllCurrentSelected}
+                        onChange={toggleSelectAllLogs}
+                        className="rounded border-slate-300 focus:ring-0 cursor-pointer"
+                      />
+                    </th>
+                    <th className="py-3 px-4">Employee</th>
+                    <th className="py-3 px-4">Check In</th>
+                    <th className="py-3 px-4">Check Out</th>
+                    <th className="py-3 px-4">Worked Hours</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                  {currentPageLogs.map((log, idx) => {
+                    const logId = log.id || log._id || `log-${idx}`;
+                    const isSelected = selectedLogIds.includes(logId);
+                    const checkInFmt = log.checkIn ? new Date(log.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null;
+                    const checkOutFmt = log.checkOut ? new Date(log.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null;
+                    const initials = log.employeeName ? log.employeeName.split(' ').map((n) => n[0]).join('') : '?';
+                    const ac = avatarColor(log.employeeName, idx);
+                    const isAbsent = (log.status || '').toUpperCase() === 'ABSENT' || Number(log.workedHours) === 0;
+
+                    return (
+                      <tr
+                        key={logId}
+                        onClick={() => { setSelectedLog(log); setViewMode('form'); }}
+                        className={cn('hover:bg-slate-50/70 cursor-pointer transition-colors', isSelected && 'bg-slate-50/90')}
+                      >
+                        <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectLog(logId)}
+                            className="rounded border-slate-300 focus:ring-0 cursor-pointer"
+                          />
+                        </td>
 
                       {/* Employee */}
                       <td className="py-3.5 px-4">
@@ -707,7 +746,8 @@ export default function AttendanceFeature() {
               </tbody>
             </table>
           </div>
-        )}
+        );
+      })()}
 
         {/* Dynamic Interactive Pagination */}
         <Pagination

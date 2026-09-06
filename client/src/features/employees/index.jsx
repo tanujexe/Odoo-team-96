@@ -44,6 +44,7 @@ import {
   ChevronDown,
   MapPin,
   Phone,
+  Download,
 } from 'lucide-react';
 
 const getNextEmployeeCode = (employeeList = []) => {
@@ -113,6 +114,34 @@ export default function EmployeesFeature() {
   const [empPage, setEmpPage] = useState(1);
   const [empPageSize, setEmpPageSize] = useState(10);
   const [activeDetailTab, setActiveDetailTab] = useState('work');
+  const [selectedEmpIds, setSelectedEmpIds] = useState([]);
+
+  const handleExportEmployeesCSV = () => {
+    if (!finalEmployeesList || finalEmployeesList.length === 0) return;
+    const targetEmps = selectedEmpIds.length > 0
+      ? finalEmployeesList.filter((e) => selectedEmpIds.includes(e.id || e._id))
+      : finalEmployeesList;
+    if (targetEmps.length === 0) return;
+
+    const headers = ['Employee Name', 'Employee Code', 'Work Email', 'Job Position', 'Department', 'Status'];
+    const rows = targetEmps.map((emp) => {
+      const name = emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Employee';
+      const code = emp.employeeCode || '';
+      const email = emp.email || '';
+      const job = emp.jobTitle || 'Staff Member';
+      const dept = emp.department || 'Engineering';
+      const st = emp.status || 'ACTIVE';
+      return `"${name}","${code}","${email}","${job}","${dept}","${st}"`;
+    });
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `employees_directory_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const [formData, setFormData] = useState({
     name: '',
@@ -504,6 +533,14 @@ export default function EmployeesFeature() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportEmployeesCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs hover:bg-stone-50 text-slate-700 text-xs font-semibold transition-all cursor-pointer"
+          >
+            <Download className="w-4 h-4 text-slate-500" />
+            <span>{selectedEmpIds.length > 0 ? `Export CSV (${selectedEmpIds.length} Selected)` : 'Export CSV'}</span>
+          </button>
           <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/60 shrink-0">
             <button type="button" onClick={() => setViewMode('kanban')} className={cn('px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer', viewMode === 'kanban' ? 'bg-slate-900 text-white font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900')}>Kanban</button>
             <button type="button" onClick={() => setViewMode('list')} className={cn('px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer', viewMode === 'list' ? 'bg-slate-900 text-white font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900')}>List</button>
@@ -525,56 +562,91 @@ export default function EmployeesFeature() {
         <LoadingState message="Loading employee directory..." />
       ) : finalEmployeesList.length === 0 ? (
         <EmptyState title="No employees found" description="Try adjusting your search criteria or add a new employee profile." actionLabel="Add Employee" onAction={handleOpenCreateModal} />
-      ) : viewMode === 'list' ? (
-        <Card className="rounded-2xl border-slate-200/80 shadow-2xs overflow-hidden bg-white">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-50/70 border-b border-slate-200/80">
-                <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">EMPLOYEE</TableHead>
-                <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">WORK EMAIL</TableHead>
-                <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">JOB POSITION</TableHead>
-                <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">DEPARTMENT</TableHead>
-                <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">STATUS</TableHead>
-                <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider text-right">ACTIONS</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {finalEmployeesList.slice((empPage - 1) * empPageSize, empPage * empPageSize).map((emp, idx) => {
-                const empId = emp.id || emp._id || idx;
-                const name = emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Employee';
-                const initials = `${(emp.firstName?.[0] || emp.name?.[0] || 'E').toUpperCase()}${(emp.lastName?.[0] || (emp.name?.trim().split(/\s+/)?.[1]?.[0]) || '').toUpperCase()}`;
-                const workEmail = emp.email || `${name.toLowerCase().replace(/\s+/g, '.')}@oxp.com`;
-                const empCode = emp.employeeCode || `EMP-${1000 + idx}`;
-                return (
-                  <TableRow key={empId} isSelected={selectedEmployeeId === empId} className="hover:bg-slate-50/70 transition-colors">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
+      ) : viewMode === 'list' ? (() => {
+        const currentPageEmps = finalEmployeesList.slice((empPage - 1) * empPageSize, empPage * empPageSize);
+        const isAllCurrentSelected = currentPageEmps.length > 0 && currentPageEmps.every((e) => selectedEmpIds.includes(e.id || e._id));
 
-                        <div className={cn('w-9 h-9 rounded-full font-bold text-xs flex items-center justify-center shrink-0 border border-slate-200/60 shadow-2xs', getAvatarStyle(idx, name))}>{initials}</div>
-                        <div>
-                          <p className="font-bold text-slate-900 text-sm leading-tight hover:text-[#E0533C] transition-colors cursor-pointer" onClick={() => setSelectedEmployeeId(empId)}>{name}</p>
-                          <p className="text-xs text-slate-400 font-mono mt-0.5">{empCode}</p>
+        const toggleSelectAllEmps = () => {
+          if (isAllCurrentSelected) {
+            const currentIds = new Set(currentPageEmps.map((e) => e.id || e._id));
+            setSelectedEmpIds((prev) => prev.filter((id) => !currentIds.has(id)));
+          } else {
+            const currentIds = currentPageEmps.map((e) => e.id || e._id);
+            setSelectedEmpIds((prev) => Array.from(new Set([...prev, ...currentIds])));
+          }
+        };
+
+        const toggleSelectEmp = (id) => {
+          setSelectedEmpIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+        };
+
+        return (
+          <Card className="rounded-2xl border-slate-200/80 shadow-2xs overflow-hidden bg-white">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50/70 border-b border-slate-200/80">
+                  <TableHead className="w-10 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                    <input
+                      type="checkbox"
+                      checked={isAllCurrentSelected}
+                      onChange={toggleSelectAllEmps}
+                      className="rounded border-slate-300 focus:ring-0 cursor-pointer"
+                    />
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">EMPLOYEE</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">WORK EMAIL</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">JOB POSITION</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">DEPARTMENT</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">STATUS</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider text-right">ACTIONS</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentPageEmps.map((emp, idx) => {
+                  const empId = emp.id || emp._id || idx;
+                  const isSelected = selectedEmpIds.includes(empId);
+                  const name = emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Employee';
+                  const initials = `${(emp.firstName?.[0] || emp.name?.[0] || 'E').toUpperCase()}${(emp.lastName?.[0] || (emp.name?.trim().split(/\s+/)?.[1]?.[0]) || '').toUpperCase()}`;
+                  const workEmail = emp.email || `${name.toLowerCase().replace(/\s+/g, '.')}@oxp.com`;
+                  const empCode = emp.employeeCode || `EMP-${1000 + idx}`;
+                  return (
+                    <TableRow key={empId} isSelected={selectedEmployeeId === empId || isSelected} className={cn('hover:bg-slate-50/70 transition-colors', isSelected && 'bg-slate-50/90')}>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelectEmp(empId)}
+                          className="rounded border-slate-300 focus:ring-0 cursor-pointer"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className={cn('w-9 h-9 rounded-full font-bold text-xs flex items-center justify-center shrink-0 border border-slate-200/60 shadow-2xs', getAvatarStyle(idx, name))}>{initials}</div>
+                          <div>
+                            <p className="font-bold text-slate-900 text-sm leading-tight hover:text-[#E0533C] transition-colors cursor-pointer" onClick={() => setSelectedEmployeeId(empId)}>{name}</p>
+                            <p className="text-xs text-slate-400 font-mono mt-0.5">{empCode}</p>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-600 font-mono">{workEmail}</TableCell>
-                    <TableCell className="text-xs font-medium text-slate-800">{emp.jobTitle || 'Staff Member'}</TableCell>
-                    <TableCell><span className="px-3 py-1 rounded-lg text-xs font-medium bg-slate-100/80 text-slate-700 border border-slate-200/50">{emp.department || 'Engineering'}</span></TableCell>
-                    <TableCell><span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Active</span></TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button type="button" onClick={() => setSelectedEmployeeId(empId)} className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-stone-100 hover:bg-stone-200 text-slate-700 transition-colors cursor-pointer">Workspace</button>
-                        <button type="button" onClick={() => setSelectedEmployeeId(empId)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-stone-100 transition-colors cursor-pointer"><MoreVertical className="w-4 h-4" /></button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-          <Pagination currentPage={empPage} totalRecords={finalEmployeesList.length} pageSize={empPageSize} onPageChange={(p) => setEmpPage(p)} onPageSizeChange={(s) => { setEmpPageSize(s); setEmpPage(1); }} />
-        </Card>
-      ) : (
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-600 font-mono">{workEmail}</TableCell>
+                      <TableCell className="text-xs font-medium text-slate-800">{emp.jobTitle || 'Staff Member'}</TableCell>
+                      <TableCell><span className="px-3 py-1 rounded-lg text-xs font-medium bg-slate-100/80 text-slate-700 border border-slate-200/50">{emp.department || 'Engineering'}</span></TableCell>
+                      <TableCell><span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Active</span></TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button type="button" onClick={() => setSelectedEmployeeId(empId)} className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-stone-100 hover:bg-stone-200 text-slate-700 transition-colors cursor-pointer">Workspace</button>
+                          <button type="button" onClick={() => setSelectedEmployeeId(empId)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-stone-100 transition-colors cursor-pointer"><MoreVertical className="w-4 h-4" /></button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            <Pagination currentPage={empPage} totalRecords={finalEmployeesList.length} pageSize={empPageSize} onPageChange={(p) => setEmpPage(p)} onPageSizeChange={(s) => { setEmpPageSize(s); setEmpPage(1); }} />
+          </Card>
+        );
+      })() : (
         <div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {finalEmployeesList.slice((empPage - 1) * empPageSize, empPage * empPageSize).map((emp, idx) => {
