@@ -21,6 +21,7 @@ import {
   fetchPayslipsByPayrun,
 } from '../../lib/api/payroll';
 import { fetchEmployees } from '../../lib/api/employees';
+import { mockPayruns } from '../../lib/api/mockData';
 import { downloadPayslipPdf, bulkSendPayslipsApi } from '../../lib/api/dashboard';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -105,6 +106,8 @@ export default function PayrollFeature() {
     queryFn: () => fetchPayrunById(selectedPayrunId),
     enabled: !!selectedPayrunId,
   });
+
+  const activePayrun = currentPayrun || payruns.find((p) => p.id === selectedPayrunId) || mockPayruns[0];
 
   const currentPayrun = currentPayrunData?.payrun || currentPayrunData;
   const payslips = currentPayrunData?.payslips || [];
@@ -391,7 +394,7 @@ export default function PayrollFeature() {
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          Salary Rules
+          Salary Rules & Configuration
         </button>
       </div>
 
@@ -454,6 +457,14 @@ export default function PayrollFeature() {
                   <div className="p-12 text-center bg-white border border-slate-200 rounded-2xl">
                     <p className="text-slate-600 text-sm font-semibold">No payruns found.</p>
                     <p className="text-slate-400 text-xs mt-1">Click "NEW" above to start a new pay run batch.</p>
+          {activePayrun && (
+            <Card className="border-blue-200 bg-white">
+              <CardHeader
+                title={activePayrun.name}
+                subtitle={`${activePayrun.salaryStructureName} • Period: ${formatDate(activePayrun.periodStart)} – ${formatDate(activePayrun.periodEnd)}`}
+                action={
+                  <div className="flex items-center gap-2">
+                    <Badge status={activePayrun.status} className="text-sm px-3 py-1" />
                   </div>
                 ) : (
                   filteredPayruns.map((pr) => {
@@ -544,6 +555,40 @@ export default function PayrollFeature() {
                     Open one Payrun to compute and manage its payslips
                   </p>
                 </div>
+                }
+              />
+              <CardContent className="space-y-6">
+                {/* State Transition Flow Bar */}
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                        ['DRAFT', 'COMPUTED', 'VALIDATED', 'PAID'].includes(activePayrun.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
+                      }`}>1</span>
+                      <span className="text-xs font-bold text-slate-800">DRAFT</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-400" />
+                    <div className="flex items-center gap-2">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                        ['COMPUTED', 'VALIDATED', 'PAID'].includes(activePayrun.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
+                      }`}>2</span>
+                      <span className="text-xs font-bold text-slate-800">COMPUTED</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-400" />
+                    <div className="flex items-center gap-2">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                        ['VALIDATED', 'PAID'].includes(activePayrun.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
+                      }`}>3</span>
+                      <span className="text-xs font-bold text-slate-800">VALIDATED</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-400" />
+                    <div className="flex items-center gap-2">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                        activePayrun.status === 'PAID' ? 'bg-blue-600 text-white' : 'bg-slate-300'
+                      }`}>4</span>
+                      <span className="text-xs font-bold text-slate-800">PAID</span>
+                    </div>
+                  </div>
 
                 {/* Top Action Buttons matching Image 2 */}
                 <div className="flex flex-wrap items-center gap-2">
@@ -592,18 +637,84 @@ export default function PayrollFeature() {
                   <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Name</label>
                   <div className="mt-1 text-xs font-semibold text-slate-800 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-200">
                     {currentPayrun?.name || 'February 2026'}
+                  {/* Operational Action Bar */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      icon={Play}
+                      onClick={() => computeMutation.mutate()}
+                      disabled={activePayrun.status === 'PAID' || computeMutation.isPending}
+                    >
+                      {computeMutation.isPending ? 'Computing...' : 'Compute Salary Rules'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      icon={CheckCircle2}
+                      onClick={() => validateMutation.mutate()}
+                      disabled={activePayrun.status !== 'COMPUTED' || validateMutation.isPending}
+                    >
+                      {validateMutation.isPending ? 'Validating...' : 'Validate & Lock'}
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      icon={DollarSign}
+                      onClick={() => payMutation.mutate()}
+                      disabled={activePayrun.status !== 'VALIDATED' || payMutation.isPending}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
+                      {payMutation.isPending ? 'Processing...' : 'Mark as Paid'}
+                    </Button>
+                    {activePayrun.status === 'PAID' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        icon={Send}
+                        onClick={() => bulkSendMutation.mutate()}
+                        disabled={bulkSendMutation.isPending}
+                        className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                      >
+                        Bulk Send Payslips
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Salary Structure</label>
                   <div className="mt-1 text-xs font-semibold text-slate-800 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-200">
                     {currentPayrun?.salaryStructureId?.name || currentPayrun?.salaryStructureName || 'Regular Salary'}
+
+                {/* Warnings Banner */}
+                {activePayrun.warnings && activePayrun.warnings.length > 0 && (
+                  <WarningPanel warnings={activePayrun.warnings} />
+                )}
+
+                {/* Payrun Totals Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <p className="text-xs uppercase font-bold text-slate-500 tracking-wider">Total Gross Pay</p>
+                    <p className="text-2xl font-black text-slate-900 mt-1">
+                      {formatCurrency(activePayrun.totals?.totalGross || 0)}
+                    </p>
                   </div>
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Period</label>
                   <div className="mt-1 text-xs font-semibold text-slate-800 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-200">
                     {currentPayrun?.periodStart ? new Date(currentPayrun.periodStart).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '01-Feb'} — {currentPayrun?.periodEnd ? new Date(currentPayrun.periodEnd).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '28-Feb'}
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <p className="text-xs uppercase font-bold text-slate-500 tracking-wider">Total Deductions</p>
+                    <p className="text-2xl font-black text-rose-600 mt-1">
+                      -{formatCurrency(activePayrun.totals?.totalDeductions || 0)}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200">
+                    <p className="text-xs uppercase font-bold text-blue-800 tracking-wider">Total Net Disbursement</p>
+                    <p className="text-2xl font-black text-blue-700 mt-1">
+                      {formatCurrency(activePayrun.totals?.totalNet || 0)}
+                    </p>
                   </div>
                 </div>
                 <div>

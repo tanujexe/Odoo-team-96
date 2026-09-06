@@ -59,8 +59,11 @@ export function SalaryRuleForm({
         active: rule.active !== false,
       });
       setIsEditing(false);
-    } else {
-      setIsEditing(true);
+    } else if (!formData.salaryStructureId && structures.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        salaryStructureId: defaultStructureId || structures[0]?._id || structures[0]?.id || '',
+      }));
     }
   }, [rule, defaultStructureId, structures]);
 
@@ -113,7 +116,7 @@ export function SalaryRuleForm({
               <span className="text-blue-600">{formData.name || (isNew ? 'New Rule' : 'Untitled')}</span>
             </h2>
           </div>
-          <p className="text-xs text-slate-500 font-medium ml-7 mt-0.5">Form view</p>
+          <p className="text-xs text-slate-500 font-medium ml-7 mt-0.5">Configure formula, fixed, or percentage salary components</p>
         </div>
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
@@ -147,6 +150,7 @@ export function SalaryRuleForm({
               size="sm"
               icon={Save}
               onClick={handleSubmit}
+              aria-label="Save Salary Rule"
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
             >
               Save Rule
@@ -162,10 +166,11 @@ export function SalaryRuleForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
             {/* Left Column: Rule Name */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label htmlFor="rule-name" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Rule Name
               </label>
               <input
+                id="rule-name"
                 type="text"
                 placeholder="e.g. Basic Salary"
                 value={formData.name}
@@ -200,10 +205,11 @@ export function SalaryRuleForm({
 
             {/* Left Column: Code */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Code
+              <label htmlFor="rule-code" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Rule Code
               </label>
               <input
+                id="rule-code"
                 type="text"
                 placeholder="e.g. BASIC"
                 value={formData.code}
@@ -345,34 +351,33 @@ export function SalaryRuleForm({
                 </span>
               </div>
 
-              {/* Dynamic details based on computation type */}
-              {formData.computationType === 'FIXED' && (
-                <div className="space-y-3">
-                  <div className="max-w-xs">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Fixed Amount ($)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">
-                        $
-                      </span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={formData.fixedAmount}
-                        disabled={!isEditing}
-                        onChange={(e) => setFormData({ ...formData, fixedAmount: Number(e.target.value) })}
-                        className="w-full pl-8 pr-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono font-semibold"
-                      />
-                    </div>
+              {/* Details based on computation type */}
+              <div className="space-y-3">
+                <div className="max-w-xs">
+                  <label htmlFor="fixed-amount" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Fixed Amount
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">
+                      $
+                    </span>
+                    <input
+                      id="fixed-amount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={formData.fixedAmount}
+                      disabled={!isEditing}
+                      onChange={(e) => setFormData({ ...formData, fixedAmount: Number(e.target.value) })}
+                      className="w-full pl-8 pr-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono font-semibold"
+                    />
                   </div>
-                  <p className="text-xs text-slate-500">
-                    A static amount added or deducted uniformly per pay period.
-                  </p>
                 </div>
-              )}
+                <p className="text-xs text-slate-500">
+                  A static amount added or deducted uniformly per pay period.
+                </p>
+              </div>
 
               {formData.computationType === 'PERCENTAGE' && (
                 <div className="space-y-3">

@@ -3,8 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   body {
-    @apply min-h-screen text-slate-800 bg-slate-50 font-sans;
+    @apply min-h-screen text-slate-800 bg-[#F3EFE9] font-sans antialiased;
+    @apply min-h-screen text-slate-800 bg-slate-50 font-sans antialiased;
   }
 }
 
@@ -23,3 +27,128 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+.subtle-dots {
+  background-image: radial-gradient(rgba(175, 150, 130, 0.25) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Font Utilities */
+.font-inter {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.font-serif-garamond {
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+}
+
+
+/* Custom Animation Classes for Hero Page — Clean Inter Tempting Shimmer Text */
+.text-stroke-animate {
+  font-family: 'Inter', sans-serif;
+  color: #1C1613;
+  background: linear-gradient(110deg, #1C1613 0%, #3D2D24 25%, #B86B30 50%, #8A4B1F 75%, #1C1613 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmerFill 4s ease-in-out infinite alternate;
+  letter-spacing: -0.035em;
+  display: inline-block;
+}
+
+.text-stroke-light {
+  font-family: 'Inter', sans-serif;
+  color: #8A4B1F;
+}
+
+@keyframes shimmerFill {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+
+/* Native CSS Scroll-Driven Animation Timeline Utilities */
+@supports (animation-timeline: view()) {
+  .scroll-driven-reveal {
+    animation: scrollFadeIn linear both;
+    animation-timeline: view(block);
+    animation-range: entry 10% cover 40%;
+  }
+
+  .scroll-driven-expand {
+    animation: scrollScaleUp linear both;
+    animation-timeline: view(block);
+    animation-range: entry 0% cover 50%;
+  }
+
+  @keyframes scrollFadeIn {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes scrollScaleUp {
+    from { transform: scale(0.85); opacity: 0.4; }
+    to { transform: scale(1); opacity: 1; }
+  }
+}
+
+/* Glow & Shimmer utilities */
+.glow-amber {
+  box-shadow: 0 0 25px -5px rgba(184, 107, 48, 0.25);
+}
+
+.glow-card {
+  box-shadow: 0 20px 50px -10px rgba(30, 23, 20, 0.08), 0 0 30px -5px rgba(184, 107, 48, 0.06);
+}
+
+/* Infinite Curved Loop Marquee Ticker */
+@keyframes marqueeLoop {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee-loop {
+  display: flex;
+  width: max-content;
+  animation: marqueeLoop 22s linear infinite;
+}
+
+.animate-marquee-loop:hover {
+  animation-play-state: paused;
+}
+
+/* Animated Glowing Moving Stroke Line */
+@keyframes movingStrokeLine {
+  0% {
+    stroke-dashoffset: 1200;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-moving-line {
+  stroke-dasharray: 250 950;
+  animation: movingStrokeLine 5s linear infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.05); }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 4s ease-in-out infinite;
+}
+
+
+

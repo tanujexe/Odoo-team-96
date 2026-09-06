@@ -6,6 +6,7 @@ export const Input = React.forwardRef(({
   error,
   helperText,
   className,
+  labelClassName,
   id,
   type = 'text',
   ...props
@@ -13,9 +14,9 @@ export const Input = React.forwardRef(({
   const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
 
   return (
-    <div className="w-full space-y-1.5">
+    <div className="w-full space-y-1">
       {label && (
-        <label htmlFor={inputId} className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
+        <label htmlFor={inputId} className={cn("block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1", labelClassName)}>
           {label}
         </label>
       )}
@@ -24,8 +25,8 @@ export const Input = React.forwardRef(({
         id={inputId}
         type={type}
         className={cn(
-          'w-full px-3.5 py-2 text-sm bg-white border rounded-lg text-slate-900 placeholder:text-slate-400 transition-colors',
-          'focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500',
+          'w-full px-3.5 py-2 text-xs bg-white border rounded-lg text-slate-800 placeholder:text-slate-400 transition-colors',
+          'focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600',
           error ? 'border-rose-400 focus:ring-rose-400 focus:border-rose-400 bg-rose-50/20' : 'border-slate-300',
           className
         )}
@@ -45,6 +46,7 @@ export const Select = React.forwardRef(({
   helperText,
   options = [],
   className,
+  labelClassName,
   id,
   children,
   ...props
@@ -52,9 +54,9 @@ export const Select = React.forwardRef(({
   const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
 
   return (
-    <div className="w-full space-y-1.5">
+    <div className="w-full space-y-1">
       {label && (
-        <label htmlFor={selectId} className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
+        <label htmlFor={selectId} className={cn("block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1", labelClassName)}>
           {label}
         </label>
       )}
@@ -62,8 +64,8 @@ export const Select = React.forwardRef(({
         ref={ref}
         id={selectId}
         className={cn(
-          'w-full px-3.5 py-2 text-sm bg-white border rounded-lg text-slate-900 transition-colors',
-          'focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500',
+          'w-full px-3.5 py-2 text-xs bg-white border rounded-lg text-slate-800 transition-colors',
+          'focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600',
           error ? 'border-rose-400 focus:ring-rose-400' : 'border-slate-300',
           className
         )}

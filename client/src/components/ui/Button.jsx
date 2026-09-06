@@ -17,11 +17,12 @@ export const Button = React.forwardRef(({
 
   const variants = {
     primary: 'bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-emerald-500 shadow-sm',
-    secondary: 'bg-slate-800 hover:bg-slate-900 text-white focus:ring-slate-700 shadow-sm',
-    outline: 'border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 focus:ring-slate-400',
-    ghost: 'bg-transparent hover:bg-slate-100 text-slate-600 hover:text-slate-900 focus:ring-slate-300',
+    terracotta: 'bg-[#E0533C] hover:bg-[#CD442E] text-white font-bold focus:ring-red-400 shadow-sm shadow-red-900/10',
+    secondary: 'bg-[#1A1D20] hover:bg-black text-white focus:ring-slate-700 shadow-sm',
+    outline: 'border border-stone-200 bg-white hover:bg-stone-50 text-slate-700 focus:ring-slate-400',
+    ghost: 'bg-transparent hover:bg-stone-100 text-slate-600 hover:text-slate-900 focus:ring-slate-300',
     danger: 'bg-rose-600 hover:bg-rose-700 text-white focus:ring-rose-500 shadow-sm',
-    subtle: 'bg-slate-100 hover:bg-slate-200 text-slate-800 focus:ring-slate-300',
+    subtle: 'bg-stone-100 hover:bg-stone-200 text-slate-800 focus:ring-slate-300',
   };
 
   const sizes = {
