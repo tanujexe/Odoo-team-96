@@ -401,7 +401,6 @@ export default function PayrollFeature() {
       {/* 1. PAYRUNS TAB */}
       {activeTab === 'payruns' && (
         <div className="space-y-6">
-          {/* Modal wizard when open */}
           {isWizardOpen && (
             <Modal
               isOpen={isWizardOpen}
@@ -418,14 +417,12 @@ export default function PayrollFeature() {
           )}
 
           {payrunViewMode === 'list' ? (
-            /* SCREEN 1: PAYRUNS LIST VIEW (IMAGE 1) */
             <div className="space-y-6">
               <div>
                 <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Payruns</h1>
                 <p className="text-sm text-slate-500 mt-0.5">Payrun view for payroll periods</p>
               </div>
 
-              {/* Action Bar: NEW, Search, Year */}
               <div className="flex flex-wrap items-center gap-3">
                 <Button
                   variant="primary"
@@ -451,29 +448,18 @@ export default function PayrollFeature() {
                 </div>
               </div>
 
-              {/* Payruns List Cards */}
               <div className="space-y-4">
                 {filteredPayruns.length === 0 ? (
                   <div className="p-12 text-center bg-white border border-slate-200 rounded-2xl">
                     <p className="text-slate-600 text-sm font-semibold">No payruns found.</p>
                     <p className="text-slate-400 text-xs mt-1">Click "NEW" above to start a new pay run batch.</p>
-          {activePayrun && (
-            <Card className="border-blue-200 bg-white">
-              <CardHeader
-                title={activePayrun.name}
-                subtitle={`${activePayrun.salaryStructureName} • Period: ${formatDate(activePayrun.periodStart)} – ${formatDate(activePayrun.periodEnd)}`}
-                action={
-                  <div className="flex items-center gap-2">
-                    <Badge status={activePayrun.status} className="text-sm px-3 py-1" />
                   </div>
                 ) : (
                   filteredPayruns.map((pr) => {
                     const prId = pr.id || pr._id;
                     const isPaid = pr.status === 'PAID';
                     const isValidated = pr.status === 'VALIDATED';
-                    const isDraft = pr.status === 'DRAFT' || !pr.status;
                     const warningsCount = pr.warningsCount !== undefined ? pr.warningsCount : (pr.warnings?.length || 0);
-
                     const startFormatted = pr.periodStart ? new Date(pr.periodStart).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '—';
                     const endFormatted = pr.periodEnd ? new Date(pr.periodEnd).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-') : '—';
 
@@ -528,15 +514,12 @@ export default function PayrollFeature() {
                 )}
               </div>
 
-              {/* Useful note matching Image 1 */}
               <p className="text-xs text-slate-600 font-medium italic mt-8">
                 Useful note: each Payrun represents one payroll period and groups the payslips generated for that period.
               </p>
             </div>
           ) : (
-            /* SCREEN 2: PAYRUN DETAIL VIEW (IMAGE 2) */
             <div className="space-y-6">
-              {/* Header Title & Actions Bar */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
@@ -555,42 +538,7 @@ export default function PayrollFeature() {
                     Open one Payrun to compute and manage its payslips
                   </p>
                 </div>
-                }
-              />
-              <CardContent className="space-y-6">
-                {/* State Transition Flow Bar */}
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        ['DRAFT', 'COMPUTED', 'VALIDATED', 'PAID'].includes(activePayrun.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
-                      }`}>1</span>
-                      <span className="text-xs font-bold text-slate-800">DRAFT</span>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-slate-400" />
-                    <div className="flex items-center gap-2">
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        ['COMPUTED', 'VALIDATED', 'PAID'].includes(activePayrun.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
-                      }`}>2</span>
-                      <span className="text-xs font-bold text-slate-800">COMPUTED</span>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-slate-400" />
-                    <div className="flex items-center gap-2">
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        ['VALIDATED', 'PAID'].includes(activePayrun.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
-                      }`}>3</span>
-                      <span className="text-xs font-bold text-slate-800">VALIDATED</span>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-slate-400" />
-                    <div className="flex items-center gap-2">
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        activePayrun.status === 'PAID' ? 'bg-blue-600 text-white' : 'bg-slate-300'
-                      }`}>4</span>
-                      <span className="text-xs font-bold text-slate-800">PAID</span>
-                    </div>
-                  </div>
 
-                {/* Top Action Buttons matching Image 2 */}
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
                     variant="primary"
@@ -624,197 +572,185 @@ export default function PayrollFeature() {
                     size="sm"
                     onClick={() => bulkSendMutation.mutate()}
                     disabled={bulkSendMutation.isPending}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 text-xs uppercase tracking-wider ml-auto md:ml-4 shadow-sm"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 text-xs uppercase tracking-wider shadow-sm"
                   >
                     {bulkSendMutation.isPending ? 'Sending...' : 'SEND PAYSLIPS'}
                   </Button>
                 </div>
               </div>
 
-              {/* Form Metadata Card matching Image 2 */}
-              <div className="p-5 bg-white rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 shadow-sm">
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Name</label>
-                  <div className="mt-1 text-xs font-semibold text-slate-800 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-200">
-                    {currentPayrun?.name || 'February 2026'}
-                  {/* Operational Action Bar */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      icon={Play}
-                      onClick={() => computeMutation.mutate()}
-                      disabled={activePayrun.status === 'PAID' || computeMutation.isPending}
-                    >
-                      {computeMutation.isPending ? 'Computing...' : 'Compute Salary Rules'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      icon={CheckCircle2}
-                      onClick={() => validateMutation.mutate()}
-                      disabled={activePayrun.status !== 'COMPUTED' || validateMutation.isPending}
-                    >
-                      {validateMutation.isPending ? 'Validating...' : 'Validate & Lock'}
-                    </Button>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      icon={DollarSign}
-                      onClick={() => payMutation.mutate()}
-                      disabled={activePayrun.status !== 'VALIDATED' || payMutation.isPending}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                    >
-                      {payMutation.isPending ? 'Processing...' : 'Mark as Paid'}
-                    </Button>
-                    {activePayrun.status === 'PAID' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        icon={Send}
-                        onClick={() => bulkSendMutation.mutate()}
-                        disabled={bulkSendMutation.isPending}
-                        className="border-blue-200 text-blue-700 hover:bg-blue-50"
-                      >
-                        Bulk Send Payslips
-                      </Button>
-                    )}
+              <Card className="border-slate-200 bg-white">
+                <CardContent className="space-y-6">
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                          ['DRAFT', 'COMPUTED', 'VALIDATED', 'PAID'].includes(activePayrun?.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
+                        }`}>1</span>
+                        <span className="text-xs font-bold text-slate-800">DRAFT</span>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-slate-400" />
+                      <div className="flex items-center gap-2">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                          ['COMPUTED', 'VALIDATED', 'PAID'].includes(activePayrun?.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
+                        }`}>2</span>
+                        <span className="text-xs font-bold text-slate-800">COMPUTED</span>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-slate-400" />
+                      <div className="flex items-center gap-2">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                          ['VALIDATED', 'PAID'].includes(activePayrun?.status) ? 'bg-blue-600 text-white' : 'bg-slate-300'
+                        }`}>3</span>
+                        <span className="text-xs font-bold text-slate-800">VALIDATED</span>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-slate-400" />
+                      <div className="flex items-center gap-2">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                          activePayrun?.status === 'PAID' ? 'bg-blue-600 text-white' : 'bg-slate-300'
+                        }`}>4</span>
+                        <span className="text-xs font-bold text-slate-800">PAID</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Salary Structure</label>
-                  <div className="mt-1 text-xs font-semibold text-slate-800 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-200">
-                    {currentPayrun?.salaryStructureId?.name || currentPayrun?.salaryStructureName || 'Regular Salary'}
 
-                {/* Warnings Banner */}
-                {activePayrun.warnings && activePayrun.warnings.length > 0 && (
-                  <WarningPanel warnings={activePayrun.warnings} />
-                )}
+                  <div className="p-5 bg-white rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 shadow-sm">
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Name</label>
+                      <div className="mt-1 text-xs font-semibold text-slate-800 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-200">
+                        {currentPayrun?.name || 'February 2026'}
+                      </div>
+                    </div>
 
-                {/* Payrun Totals Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                    <p className="text-xs uppercase font-bold text-slate-500 tracking-wider">Total Gross Pay</p>
-                    <p className="text-2xl font-black text-slate-900 mt-1">
-                      {formatCurrency(activePayrun.totals?.totalGross || 0)}
-                    </p>
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Salary Structure</label>
+                      <div className="mt-1 text-xs font-semibold text-slate-800 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-200">
+                        {currentPayrun?.salaryStructureId?.name || currentPayrun?.salaryStructureName || 'Regular Salary'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Period</label>
+                      <div className="mt-1 text-xs font-semibold text-slate-800 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-200">
+                        {currentPayrun?.periodStart ? new Date(currentPayrun.periodStart).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '01-Feb'} — {currentPayrun?.periodEnd ? new Date(currentPayrun.periodEnd).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '28-Feb'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Status</label>
+                      <div className="mt-1 text-xs font-semibold text-slate-800 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-200 flex items-center justify-between">
+                        <span>{currentPayrun?.status === 'PAID' ? 'Paid' : currentPayrun?.status === 'VALIDATED' ? 'Validated' : currentPayrun?.status === 'COMPUTED' ? 'Computed' : 'Draft'}</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Period</label>
-                  <div className="mt-1 text-xs font-semibold text-slate-800 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-200">
-                    {currentPayrun?.periodStart ? new Date(currentPayrun.periodStart).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '01-Feb'} — {currentPayrun?.periodEnd ? new Date(currentPayrun.periodEnd).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '28-Feb'}
-                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                    <p className="text-xs uppercase font-bold text-slate-500 tracking-wider">Total Deductions</p>
-                    <p className="text-2xl font-black text-rose-600 mt-1">
-                      -{formatCurrency(activePayrun.totals?.totalDeductions || 0)}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200">
-                    <p className="text-xs uppercase font-bold text-blue-800 tracking-wider">Total Net Disbursement</p>
-                    <p className="text-2xl font-black text-blue-700 mt-1">
-                      {formatCurrency(activePayrun.totals?.totalNet || 0)}
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Status</label>
-                  <div className="mt-1 text-xs font-semibold text-slate-800 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-200 flex items-center justify-between">
-                    <span>{currentPayrun?.status === 'PAID' ? 'Paid' : currentPayrun?.status === 'VALIDATED' ? 'Validated' : currentPayrun?.status === 'COMPUTED' ? 'Computed' : 'Draft'}</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Warning Banner if blocking */}
-              {currentPayrun?.warnings && currentPayrun.warnings.length > 0 && (
-                <WarningPanel warnings={currentPayrun.warnings} />
-              )}
+                  {activePayrun?.warnings?.length > 0 && (
+                    <WarningPanel warnings={activePayrun.warnings} />
+                  )}
 
-              {/* Payslips in this Payrun Table (matching Image 2) */}
-              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-slate-900">
-                    Payslips in this Payrun
-                  </h3>
-                  <span className="text-xs text-slate-500 font-medium">
-                    {payslips.length} payslip{payslips.length === 1 ? '' : 's'}
-                  </span>
-                </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                      <p className="text-xs uppercase font-bold text-slate-500 tracking-wider">Total Gross Pay</p>
+                      <p className="text-2xl font-black text-slate-900 mt-1">
+                        {formatCurrency(activePayrun?.totals?.totalGross || 0)}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                      <p className="text-xs uppercase font-bold text-slate-500 tracking-wider">Total Deductions</p>
+                      <p className="text-2xl font-black text-rose-600 mt-1">
+                        -{formatCurrency(activePayrun?.totals?.totalDeductions || 0)}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200">
+                      <p className="text-xs uppercase font-bold text-blue-800 tracking-wider">Total Net Disbursement</p>
+                      <p className="text-2xl font-black text-blue-700 mt-1">
+                        {formatCurrency(activePayrun?.totals?.totalNet || 0)}
+                      </p>
+                    </div>
+                  </div>
 
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50">
-                      <TableHead className="py-3 px-5 font-semibold text-slate-700">Employee</TableHead>
-                      <TableHead className="py-3 px-4 font-semibold text-slate-700">Warning</TableHead>
-                      <TableHead className="py-3 px-4 font-semibold text-slate-700">Worked</TableHead>
-                      <TableHead className="py-3 px-4 font-semibold text-slate-700">Basic</TableHead>
-                      <TableHead className="py-3 px-4 font-semibold text-slate-700">Gross</TableHead>
-                      <TableHead className="py-3 px-4 font-semibold text-slate-700">Net</TableHead>
-                      <TableHead className="py-3 px-4 font-semibold text-slate-700">Status</TableHead>
-                      <TableHead className="py-3 px-5 font-semibold text-slate-700 text-right">PDF</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payslips.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="py-12 text-center text-slate-500 text-sm">
-                          No payslips generated yet. Click <span className="font-bold text-blue-600">COMPUTE</span> above to calculate payslips for eligible employees.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      payslips.map((ps) => (
-                        <TableRow key={ps.id || ps._id} className="hover:bg-slate-50/80 transition-colors">
-                          <TableCell className="py-3.5 px-5 font-semibold text-slate-900">
-                            {ps.employeeName || ps.employeeId?.name || 'Employee'}
-                          </TableCell>
-                          <TableCell className="py-3.5 px-4">
-                            {ps.warningLabel && ps.warningLabel !== '—' ? (
-                              <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                                {ps.warningLabel}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 text-xs">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="py-3.5 px-4 text-slate-700 font-medium">
-                            {ps.workedDays ?? 0}
-                          </TableCell>
-                          <TableCell className="py-3.5 px-4 font-mono text-slate-800">
-                            {formatCurrency(ps.basic || 0)}
-                          </TableCell>
-                          <TableCell className="py-3.5 px-4 font-mono font-semibold text-slate-900">
-                            {formatCurrency(ps.gross || 0)}
-                          </TableCell>
-                          <TableCell className="py-3.5 px-4 font-mono font-bold text-slate-900">
-                            {formatCurrency(ps.net || 0)}
-                          </TableCell>
-                          <TableCell className="py-3.5 px-4">
-                            <span className={`text-xs font-bold ${
-                              ps.status === 'Done' || ps.status === 'PAID' ? 'text-emerald-600' : 'text-slate-500'
-                            }`}>
-                              {ps.status === 'Done' || ps.status === 'PAID' ? 'Done' : (ps.status || 'Draft')}
-                            </span>
-                          </TableCell>
-                          <TableCell className="py-3.5 px-5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleDownloadPdf(ps)}
-                              className="text-blue-600 hover:text-blue-800 text-xs font-bold hover:underline"
-                            >
-                              PDF
-                            </button>
-                          </TableCell>
+                  <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                    <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-slate-900">Payslips in this Payrun</h3>
+                      <span className="text-xs text-slate-500 font-medium">
+                        {payslips.length} payslip{payslips.length === 1 ? '' : 's'}
+                      </span>
+                    </div>
+
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50">
+                          <TableHead className="py-3 px-5 font-semibold text-slate-700">Employee</TableHead>
+                          <TableHead className="py-3 px-4 font-semibold text-slate-700">Warning</TableHead>
+                          <TableHead className="py-3 px-4 font-semibold text-slate-700">Worked</TableHead>
+                          <TableHead className="py-3 px-4 font-semibold text-slate-700">Basic</TableHead>
+                          <TableHead className="py-3 px-4 font-semibold text-slate-700">Gross</TableHead>
+                          <TableHead className="py-3 px-4 font-semibold text-slate-700">Net</TableHead>
+                          <TableHead className="py-3 px-4 font-semibold text-slate-700">Status</TableHead>
+                          <TableHead className="py-3 px-5 font-semibold text-slate-700 text-right">PDF</TableHead>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                      </TableHeader>
+                      <TableBody>
+                        {payslips.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={8} className="py-12 text-center text-slate-500 text-sm">
+                              No payslips generated yet. Click <span className="font-bold text-blue-600">COMPUTE</span> above to calculate payslips for eligible employees.
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          payslips.map((ps) => (
+                            <TableRow key={ps.id || ps._id} className="hover:bg-slate-50/80 transition-colors">
+                              <TableCell className="py-3.5 px-5 font-semibold text-slate-900">
+                                {ps.employeeName || ps.employeeId?.name || 'Employee'}
+                              </TableCell>
+                              <TableCell className="py-3.5 px-4">
+                                {ps.warningLabel && ps.warningLabel !== '—' ? (
+                                  <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                    {ps.warningLabel}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 text-xs">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="py-3.5 px-4 text-slate-700 font-medium">
+                                {ps.workedDays ?? 0}
+                              </TableCell>
+                              <TableCell className="py-3.5 px-4 font-mono text-slate-800">
+                                {formatCurrency(ps.basic || 0)}
+                              </TableCell>
+                              <TableCell className="py-3.5 px-4 font-mono font-semibold text-slate-900">
+                                {formatCurrency(ps.gross || 0)}
+                              </TableCell>
+                              <TableCell className="py-3.5 px-4 font-mono font-bold text-slate-900">
+                                {formatCurrency(ps.net || 0)}
+                              </TableCell>
+                              <TableCell className="py-3.5 px-4">
+                                <span className={`text-xs font-bold ${
+                                  ps.status === 'Done' || ps.status === 'PAID' ? 'text-emerald-600' : 'text-slate-500'
+                                }`}>
+                                  {ps.status === 'Done' || ps.status === 'PAID' ? 'Done' : (ps.status || 'Draft')}
+                                </span>
+                              </TableCell>
+                              <TableCell className="py-3.5 px-5 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadPdf(ps)}
+                                  className="text-blue-600 hover:text-blue-800 text-xs font-bold hover:underline"
+                                >
+                                  PDF
+                                </button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
 
-              {/* Useful note matching Image 2 */}
-              <p className="text-xs text-slate-600 font-medium italic mt-8">
-                Useful note: warnings such as missing account data or duplicate payslips should be visible before payroll is finalized.
-              </p>
+                  <p className="text-xs text-slate-600 font-medium italic mt-8">
+                    Useful note: warnings such as missing account data or duplicate payslips should be visible before payroll is finalized.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>
