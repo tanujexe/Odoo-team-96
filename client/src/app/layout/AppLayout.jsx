@@ -101,6 +101,25 @@ export function AppLayout() {
         return 'HR Payroll Lead';
     }
   };
+    }
+  };
+
+  const SidebarContent = () => (
+    <div className="flex flex-col justify-between h-full p-5 overflow-y-auto no-scrollbar">
+      <div>
+        {/* Brand Header with Uploaded Logo */}
+        <div className="flex items-center justify-between px-1 py-1">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="PeoplePay Logo" className="h-10 sm:h-12 w-auto object-contain max-w-[170px]" />
+          </div>
+          {/* Close button for mobile drawer */}
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="md:hidden p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-stone-200/60 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full p-4">
@@ -198,17 +217,9 @@ export function AppLayout() {
   return (
     <div className="h-screen w-screen bg-[#FAF8F5] flex flex-col md:flex-row font-sans text-slate-800 overflow-hidden">
       {/* Mobile Top Header Bar */}
-      <header className="md:hidden bg-[#F8F6F1] border-b border-stone-200/80 px-4 py-3 flex items-center justify-between shrink-0 shadow-2xs">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-white p-1 grid grid-cols-2 gap-0.5 shadow-xs border border-stone-200/60 shrink-0">
-            <span className="bg-[#E0533C] rounded-full" />
-            <span className="bg-[#22C55E] rounded-full" />
-            <span className="bg-[#3B82F6] rounded-full" />
-            <span className="bg-[#EAB308] rounded-full" />
-          </div>
-          <span className="font-extrabold text-slate-900 text-base tracking-tight">
-            PeoplePay<span className="text-slate-700">360</span>
-          </span>
+      <header className="md:hidden bg-[#F8F6F1] border-b border-stone-200/80 px-4 py-2.5 flex items-center justify-between shrink-0 shadow-2xs">
+        <div className="flex items-center gap-2">
+          <img src="/logo.png" alt="PeoplePay Logo" className="h-8 w-auto object-contain" />
         </div>
 
         <div className="flex items-center gap-2">

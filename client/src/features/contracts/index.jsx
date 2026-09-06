@@ -359,7 +359,7 @@ export default function ContractsFeature() {
                 className="px-4 py-2 rounded-full bg-[#E0533C] hover:bg-[#CD442E] text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
               >
                 <span className="font-extrabold text-sm">+</span>
-                <span>+ New Contract</span>
+                <span>New Contract</span>
               </button>
             </div>
 
@@ -401,8 +401,8 @@ export default function ContractsFeature() {
             </div>
           </div>
 
-          {/* Search, Filter & Export Row */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          {/* Search Row */}
+          <div className="flex items-center justify-between gap-3">
             <div className="relative w-full sm:w-80">
               <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
               <input
@@ -468,6 +468,7 @@ export default function ContractsFeature() {
               </button>
             </div>
           </div>
+
 
           {/* Table or Form Subview */}
           {contractSubView === 'list' ? (

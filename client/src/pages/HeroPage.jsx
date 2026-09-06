@@ -123,15 +123,9 @@ export default function HeroPage() {
       >
         <header className="pointer-events-auto w-full max-w-5xl rounded-full bg-white/90 backdrop-blur-xl border border-[#E8DFD1]/90 shadow-pill py-2 px-3 sm:py-2.5 sm:px-6 flex items-center justify-between transition-all">
           <a className="flex items-center group py-0.5" href="#">
-            <div className="flex items-baseline tracking-tight leading-none select-none">
-              {/* "People" - Clean serif black */}
-              <span className="font-logo-serif text-[#1C1613] text-xl sm:text-2xl font-bold tracking-tight">People</span>
-              {/* "P" - Orange script */}
-              <span className="font-logo-script text-[#FF7A00] text-2xl sm:text-3xl font-normal leading-none -ml-0.5 -mr-1 -mt-1 inline-block">P</span>
-              {/* "ay" - Clean serif black */}
-              <span className="font-logo-serif text-[#1C1613] text-xl sm:text-2xl font-bold tracking-tight">ay</span>
-            </div>
+            <img src="/logo.png" alt="PeoplePay Logo" className="h-8 sm:h-9 w-auto object-contain" />
           </a>
+
           <nav className="hidden lg:flex items-center gap-1 text-[13px] font-medium text-[#70655D]">
             <a onClick={(e) => scrollToSection(e, 'connected-system')} className="px-3 py-1.5 rounded-full hover:text-[#1E1714] hover:bg-[#F4EFEA] transition cursor-pointer" href="#connected-system">Overview</a>
             <a onClick={(e) => scrollToSection(e, 'core-platform')} className="px-3 py-1.5 rounded-full hover:text-[#1E1714] hover:bg-[#F4EFEA] transition cursor-pointer" href="#core-platform">Platform</a>

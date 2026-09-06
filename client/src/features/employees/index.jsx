@@ -530,7 +530,6 @@ export default function EmployeesFeature() {
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50/70 border-b border-slate-200/80">
-                <TableHead className="w-10 px-4"><input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" /></TableHead>
                 <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">EMPLOYEE</TableHead>
                 <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">WORK EMAIL</TableHead>
                 <TableHead className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">JOB POSITION</TableHead>
@@ -548,9 +547,9 @@ export default function EmployeesFeature() {
                 const empCode = emp.employeeCode || `EMP-${1000 + idx}`;
                 return (
                   <TableRow key={empId} isSelected={selectedEmployeeId === empId} className="hover:bg-slate-50/70 transition-colors">
-                    <TableCell className="px-4"><input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" /></TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
+
                         <div className={cn('w-9 h-9 rounded-full font-bold text-xs flex items-center justify-center shrink-0 border border-slate-200/60 shadow-2xs', getAvatarStyle(idx, name))}>{initials}</div>
                         <div>
                           <p className="font-bold text-slate-900 text-sm leading-tight hover:text-[#E0533C] transition-colors cursor-pointer" onClick={() => setSelectedEmployeeId(empId)}>{name}</p>
