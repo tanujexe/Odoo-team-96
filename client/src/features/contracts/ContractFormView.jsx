@@ -345,17 +345,26 @@ export function ContractFormView({
               )}
             </div>
 
-              <Select
-                label="Working Schedule (Database)"
-                value={formData.workingSchedule || (schedules[0]?.name || '40 Hours / Week')}
-                onChange={(e) => setFormData({ ...formData, workingSchedule: e.target.value })}
-              >
-                {schedules.map((s) => (
-                  <option key={s.id || s._id} value={s.name}>
-                    {s.name} ({s.hoursPerWeek || '40h'})
-                  </option>
-                ))}
-              </Select>
+            {/* Working Schedule */}
+            <div className="space-y-1">
+              <label className="text-slate-600 font-semibold text-xs">Working Schedule *</label>
+              {isEditing ? (
+                <Select
+                  value={formData.workingSchedule || (schedules[0]?.name || '40 Hours / Week')}
+                  onChange={(e) => setFormData({ ...formData, workingSchedule: e.target.value })}
+                >
+                  {schedules.map((s) => (
+                    <option key={s.id || s._id} value={s.name}>
+                      {s.name} ({s.hoursPerWeek || '40h'})
+                    </option>
+                  ))}
+                </Select>
+              ) : (
+                <div className="p-3 bg-slate-50/80 border border-slate-200/60 rounded-xl flex items-center justify-between text-xs font-semibold text-slate-800">
+                  <span>{formData.workingSchedule}</span>
+                  <Clock className="w-4 h-4 text-slate-400" />
+                </div>
+              )}
             </div>
           </div>
 
@@ -403,24 +412,6 @@ export function ContractFormView({
                   className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-700 leading-relaxed focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
-            {/* Working Schedule */}
-            <div className="space-y-1">
-              <label className="text-slate-600 font-semibold text-xs">Working Schedule *</label>
-              {isEditing ? (
-                <Select value={formData.workingSchedule} onChange={(e) => setFormData({ ...formData, workingSchedule: e.target.value })}>
-                  <option value="40 Hours / Week">40 Hours / Week</option>
-                  <option value="Night Shift">Night Shift</option>
-                  <option value="Flexible Hybrid">Flexible Hybrid</option>
-                  {schedules.map((s) => (
-                    <option key={s.id} value={s.name}>{s.name}</option>
-                  ))}
-                </Select>
-              ) : (
-                <div className="p-3 bg-slate-50/80 border border-slate-200/60 rounded-xl flex items-center justify-between text-xs font-semibold text-slate-800">
-                  <span>{formData.workingSchedule}</span>
-                  <Clock className="w-4 h-4 text-slate-400" />
-                </div>
-              )}
             </div>
           </div>
 

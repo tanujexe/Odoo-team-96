@@ -18,7 +18,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '.
 import { ScheduleEditor } from '../schedules/ScheduleEditor';
 import { ContractFormView } from './ContractFormView';
 import { ContractFormViewModal } from './ContractFormViewModal';
-import { formatCurrency } from '../../lib/utils';
+import { formatCurrency, formatDate } from '../../lib/utils';
 import {
   Plus,
   Search,
