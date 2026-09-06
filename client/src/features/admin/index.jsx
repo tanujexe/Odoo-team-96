@@ -333,7 +333,7 @@ export default function AdminFeature() {
                           title="System Super Admin role is protected and cannot be modified"
                         >
                           <ShieldCheck className="w-3 h-3 text-purple-700 shrink-0" />
-                          <span>{u.role === ROLES.SUPER_ADMIN ? 'SUPER_ADMIN' : 'ADMIN'}</span>
+                          <span>{u.role === ROLES.SUPER_ADMIN ? 'Super Admin' : 'Admin'}</span>
                         </div>
                       ) : (
                         <select
@@ -353,13 +353,14 @@ export default function AdminFeature() {
                                     : 'bg-slate-50 border-slate-300 text-slate-800'
                           }`}
                         >
-                          <option value={ROLES.EMPLOYEE}>EMPLOYEE</option>
-                          <option value={ROLES.HR_MANAGER}>HR_MANAGER</option>
-                          <option value={ROLES.HR_PAYROLL_USER}>HR_PAYROLL_USER</option>
-                          <option value={ROLES.HR_PAYROLL_MANAGER}>HR_PAYROLL_MANAGER</option>
-                          <option value={ROLES.ADMIN}>ADMIN</option>
+                          <option value={ROLES.EMPLOYEE}>Employee</option>
+                          <option value={ROLES.HR_MANAGER}>HR Manager</option>
+                          <option value={ROLES.HR_PAYROLL_USER}>HR Payroll User</option>
+                          <option value={ROLES.HR_PAYROLL_MANAGER}>HR Payroll Manager</option>
+                          <option value={ROLES.ADMIN}>Admin</option>
                         </select>
                       )}
+
                     </TableCell>
 
                     {/* Employee Code */}
@@ -518,11 +519,12 @@ export default function AdminFeature() {
                 value={newUserForm.role}
                 onChange={(e) => setNewUserForm((prev) => ({ ...prev, role: e.target.value }))}
               >
-                <option value={ROLES.EMPLOYEE}>EMPLOYEE (Self-Service View)</option>
-                <option value={ROLES.HR_MANAGER}>HR_MANAGER (Human Resources)</option>
-                <option value={ROLES.HR_PAYROLL_USER}>HR_PAYROLL_USER (Payroll Specialist)</option>
-                <option value={ROLES.HR_PAYROLL_MANAGER}>HR_PAYROLL_MANAGER (Payroll Lead)</option>
-                <option value={ROLES.ADMIN}>ADMIN (System Governance)</option>
+                <option value={ROLES.EMPLOYEE}>Employee (Self-Service View)</option>
+                <option value={ROLES.HR_MANAGER}>HR Manager (Human Resources)</option>
+                <option value={ROLES.HR_PAYROLL_USER}>HR Payroll User (Payroll Specialist)</option>
+                <option value={ROLES.HR_PAYROLL_MANAGER}>HR Payroll Manager (Payroll Lead)</option>
+                <option value={ROLES.ADMIN}>Admin (System Governance)</option>
+
               </Select>
             </div>
 

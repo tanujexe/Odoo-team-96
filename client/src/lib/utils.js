@@ -21,3 +21,22 @@ export function formatDate(dateString) {
     day: 'numeric',
   });
 }
+export function formatRoleLabel(role) {
+  if (!role) return '';
+  switch (role) {
+    case 'EMPLOYEE':
+      return 'Employee';
+    case 'HR_MANAGER':
+      return 'HR Manager';
+    case 'HR_PAYROLL_USER':
+      return 'HR Payroll User';
+    case 'HR_PAYROLL_MANAGER':
+      return 'HR Payroll Manager';
+    case 'ADMIN':
+      return 'Admin';
+    case 'SUPER_ADMIN':
+      return 'Super Admin';
+    default:
+      return String(role).replace(/_/g, ' ');
+  }
+}
