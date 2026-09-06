@@ -102,7 +102,7 @@ export function AppLayout() {
   return (
     <div className="h-screen w-screen bg-[#FAF8F5] flex flex-col md:flex-row font-sans text-slate-800 overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-[#F8F6F1] flex flex-col shrink-0 border-b md:border-b-0 md:border-r border-stone-200/80 p-5 justify-between overflow-y-auto h-full">
+      <aside className="w-full md:w-64 bg-[#F8F6F1] flex flex-col shrink-0 border-b md:border-b-0 md:border-r border-stone-200/80 p-5 justify-between overflow-y-auto no-scrollbar h-full">
         <div>
           {/* Brand Header with 4-dot mark */}
           <div className="flex items-center gap-3 px-2 py-1">
