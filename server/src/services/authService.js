@@ -3,7 +3,15 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { User } from '../models/User.js';
 import { Employee } from '../models/Employee.js';
+import { Attendance } from '../models/Attendance.js';
+import { Contract } from '../models/Contract.js';
+import { Payslip } from '../models/Payslip.js';
+import { Payrun } from '../models/Payrun.js';
+import { TimeOffRequest } from '../models/TimeOffRequest.js';
+import { TimeOffAllocation } from '../models/TimeOffAllocation.js';
+import { AllocationConsumption } from '../models/AllocationConsumption.js';
 import { config } from '../config/env.js';
+
 
 export async function hashPassword(password) {
   const salt = await bcrypt.genSalt(10);
@@ -271,6 +279,98 @@ export async function updateUserAccount(userId, data) {
     employeeName: empObj?.name || null,
   };
 }
+
+export async function deleteUser(userId) {
+  // ── 1. Load user (fail fast if not found or protected) ──────────────────────
+  const user = await User.findById(userId).populate('employeeId');
+  if (!user) {
+    const err = new Error('User account not found');
+    err.code = 'USER_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (user.email.toLowerCase() === 'admin@peoplepay.com' || user.role === 'SUPER_ADMIN') {
+    const err = new Error('The System Super Admin account is protected and cannot be deleted.');
+    err.code = 'SUPER_ADMIN_PROTECTED';
+    err.statusCode = 403;
+    throw err;
+  }
+
+  const snapshot = {
+    id: user._id.toString(),
+    name: user.name,
+    email: user.email,
+  };
+
+  // Resolve the linked employee ObjectId (if any)
+  const empObj = typeof user.employeeId === 'object' && user.employeeId !== null
+    ? user.employeeId
+    : null;
+  const employeeMongoId = empObj ? empObj._id : null;
+
+  // Helper function to execute all cascade step operations
+  const executeCascade = async (sessionOptions = {}) => {
+    // ── Nullify references to this User ID across system records ──────────
+    await Attendance.updateMany({ correctedBy: userId }, { correctedBy: null }, sessionOptions);
+    await TimeOffRequest.updateMany({ approvedBy: userId }, { approvedBy: null }, sessionOptions);
+
+    if (employeeMongoId) {
+      // Nullify manager reference in other employees if this employee was a manager
+      await Employee.updateMany({ managerId: employeeMongoId }, { managerId: null }, sessionOptions);
+
+      // Find all TimeOffRequests for this employee (for AllocationConsumption cleanup)
+      const timeOffRequests = await TimeOffRequest.find(
+        { employeeId: employeeMongoId },
+        { _id: 1 },
+        sessionOptions
+      );
+      const requestIds = timeOffRequests.map((r) => r._id);
+
+      if (requestIds.length > 0) {
+        await AllocationConsumption.deleteMany({ requestId: { $in: requestIds } }, sessionOptions);
+      }
+
+      // Delete employee-specific records
+      await TimeOffRequest.deleteMany({ employeeId: employeeMongoId }, sessionOptions);
+      await TimeOffAllocation.deleteMany({ employeeId: employeeMongoId }, sessionOptions);
+      await Attendance.deleteMany({ employeeId: employeeMongoId }, sessionOptions);
+      await Payslip.deleteMany({ employeeId: employeeMongoId }, sessionOptions);
+      await Contract.deleteMany({ employeeId: employeeMongoId }, sessionOptions);
+
+      // Pull employee from Payrun arrays
+      await Payrun.updateMany(
+        { employeeIds: employeeMongoId },
+        { $pull: { employeeIds: employeeMongoId } },
+        sessionOptions
+      );
+
+      // Delete Employee master profile
+      await Employee.findByIdAndDelete(employeeMongoId, sessionOptions);
+    }
+
+    // Delete User account document from DB
+    await User.findByIdAndDelete(userId, sessionOptions);
+  };
+
+  // ── 2. Run cascade (with fallback for standalone MongoDB instances without Replica Set)
+  try {
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        await executeCascade({ session });
+      });
+    } finally {
+      await session.endSession();
+    }
+  } catch (txErr) {
+    // Fallback if standalone MongoDB does not support transactions
+    await executeCascade();
+  }
+
+  return snapshot;
+}
+
 
 export async function adminCreateUser(params) {
   const { name, email, password, role, employeeCode, employeeId, jobPosition, jobTitle, departmentId } = params;

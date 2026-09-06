@@ -5,12 +5,28 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    /* Tabular lining numbers: fixed-width (tnum) + lining (lnum) for all digits */
+    font-feature-settings: "tnum" 1, "lnum" 1, "kern" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
   body {
-    @apply min-h-screen text-slate-800 bg-[#F3EFE9] font-sans antialiased;
     @apply min-h-screen text-slate-800 bg-slate-50 font-sans antialiased;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: "tnum" 1, "lnum" 1, "kern" 1;
+  }
+
+  /* Enforce tabular lining numbers on all numeric/mono contexts */
+  input[type="number"],
+  .font-mono,
+  [class*="tabular"] {
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
   }
 }
+
 
 /* Custom scrollbars */
 ::-webkit-scrollbar {

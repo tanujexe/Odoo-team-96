@@ -2,42 +2,83 @@ import mongoose from 'mongoose';
 import { Payslip } from '../models/Payslip.js';
 import { ROLES } from '../models/User.js';
 import { generatePayslipPDFBuffer } from '../services/payslipDocumentService.js';
+import {
+  getPayslipsList,
+  getPayslipById,
+  createSinglePayslip,
+  recomputeSinglePayslip,
+  markSinglePayslipPaid,
+} from '../services/payrollService.js';
 
 export async function listPayslips(req, res, next) {
   try {
-    const page = parseInt(req.query.page || 1, 10);
-    const pageSize = parseInt(req.query.pageSize || 20, 10);
-    const skip = (page - 1) * pageSize;
+    const query = { ...req.query };
+    if (req.actor?.role === ROLES.EMPLOYEE && req.actor?.employeeId) {
+      query.employeeId = req.actor.employeeId;
+    }
 
-    const filter = {};
-    if (req.query.employeeId && mongoose.isValidObjectId(req.query.employeeId)) filter.employeeId = req.query.employeeId;
-    if (req.query.payrunId && mongoose.isValidObjectId(req.query.payrunId)) filter.payrunId = req.query.payrunId;
-    if (req.query.status) filter.status = req.query.status;
-
-    const [payslips, total] = await Promise.all([
-      Payslip.find(filter)
-        .populate('employeeId contractId salaryStructureId payrunId')
-        .skip(skip)
-        .limit(pageSize)
-        .sort({ createdAt: -1 }),
-      Payslip.countDocuments(filter),
-    ]);
-
-    return res.success(payslips, { page, pageSize, total });
+    const result = await getPayslipsList(query);
+    return res.success(result.payslips, result.meta);
   } catch (error) {
     next(error);
   }
 }
 
-
 export async function getPayslip(req, res, next) {
   try {
-    const payslip = await Payslip.findById(req.params.id).populate(
-      'employeeId contractId salaryStructureId payrunId'
-    );
+    const payslip = await getPayslipById(req.params.id);
     if (!payslip) {
       return res.fail('PAYSLIP_NOT_FOUND', 'Payslip not found', 404);
     }
+    if (
+      req.actor?.role === ROLES.EMPLOYEE &&
+      req.actor?.employeeId &&
+      payslip.employeeId &&
+      String(payslip.employeeId) !== String(req.actor.employeeId)
+    ) {
+      return res.fail('FORBIDDEN', 'Access denied', 403);
+    }
+    return res.success(payslip);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createPayslip(req, res, next) {
+  try {
+    const { employeeId, salaryStructureId, periodStart, periodEnd, workedDays, payrunId } = req.body;
+    if (!employeeId) {
+      return res.fail('EMPLOYEE_REQUIRED', 'Employee ID is required', 400);
+    }
+
+    const payslip = await createSinglePayslip({
+      employeeId,
+      salaryStructureId,
+      periodStart,
+      periodEnd,
+      workedDays,
+      payrunId,
+      actorId: req.actor?.userId,
+    });
+
+    return res.success(payslip, undefined, 201);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function computePayslip(req, res, next) {
+  try {
+    const payslip = await recomputeSinglePayslip(req.params.id, req.actor?.userId);
+    return res.success(payslip);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function markPayslipPaid(req, res, next) {
+  try {
+    const payslip = await markSinglePayslipPaid(req.params.id, req.actor?.userId);
     return res.success(payslip);
   } catch (error) {
     next(error);
@@ -46,7 +87,10 @@ export async function getPayslip(req, res, next) {
 
 export async function downloadPayslipPDF(req, res, next) {
   try {
-    const payslip = await Payslip.findById(req.params.id).populate('employeeId');
+    const payslip = await Payslip.findById(req.params.id).populate({
+      path: 'employeeId',
+      populate: { path: 'departmentId' },
+    });
     if (!payslip) {
       return res.fail('PAYSLIP_NOT_FOUND', 'Payslip not found', 404);
     }
@@ -69,4 +113,5 @@ export async function downloadPayslipPDF(req, res, next) {
     next(error);
   }
 }
+
 
