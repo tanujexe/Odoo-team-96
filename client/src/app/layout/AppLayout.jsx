@@ -101,12 +101,11 @@ export function AppLayout() {
         return 'HR Payroll Lead';
     }
   };
-    }
-  };
 
   const SidebarContent = () => (
-    <div className="flex flex-col justify-between h-full p-5 overflow-y-auto no-scrollbar">
-      <div>
+    <div className="flex flex-col h-full bg-[#F8F6F1]">
+      {/* Top Scrollable Area */}
+      <div className="flex-1 p-5 overflow-y-auto no-scrollbar">
         {/* Brand Header with Uploaded Logo */}
         <div className="flex items-center justify-between px-1 py-1">
           <div className="flex items-center gap-2">
@@ -121,8 +120,6 @@ export function AppLayout() {
           </button>
         </div>
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full p-4">
         {/* Profile Card Widget */}
         <div className="bg-[#EFECE5] rounded-2xl p-4 my-5 flex flex-col items-center text-center relative border border-stone-200/60 shadow-2xs">
           <div className="relative">
@@ -176,9 +173,10 @@ export function AppLayout() {
             );
           })}
         </nav>
+      </div>
 
-      {/* Bottom Section: Role Switcher Demo Widget & Log Out */}
-      <div className="pt-4 border-t border-stone-200/80 space-y-3 mt-4">
+      {/* Pinned Sticky Bottom Section: Role Switcher & Light Red Logout Button */}
+      <div className="p-4 border-t border-stone-200/80 bg-[#F8F6F1] shrink-0 space-y-3">
         {/* Role Tester */}
         <div className="bg-[#EFECE5]/80 p-2.5 rounded-xl border border-stone-200/50">
           <label className="block text-[9px] uppercase font-bold tracking-wider text-slate-500 mb-1 flex items-center gap-1">
@@ -202,12 +200,12 @@ export function AppLayout() {
           </div>
         </div>
 
-        {/* Logout button */}
+        {/* Sticky Light Red Logout Button */}
         <button
           onClick={logout}
-          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-600 hover:text-rose-700 hover:bg-rose-50/70 rounded-xl transition-all"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100/90 active:bg-rose-200 border border-rose-200/90 rounded-xl transition-all shadow-2xs cursor-pointer group"
         >
-          <LogOut className="w-4 h-4 text-slate-400 group-hover:text-rose-600" />
+          <LogOut className="w-4 h-4 text-rose-600 group-hover:scale-110 transition-transform" />
           <span>Log out</span>
         </button>
       </div>
