@@ -204,8 +204,8 @@ export default function AdminFeature() {
 
   const handleRoleChange = (userId, newRole) => {
     const userToUpdate = users.find((u) => u.id === userId);
-    if (userToUpdate?.email?.toLowerCase() === 'admin@peoplepay.com' || userToUpdate?.role === ROLES.SUPER_ADMIN) {
-      setErrorMsg('System Super Admin role is protected and cannot be modified.');
+    if (userToUpdate?.email?.toLowerCase() === 'admin@peoplepay.com') {
+      setErrorMsg('System Admin role is protected and cannot be modified.');
       return;
     }
     updateUserMutation.mutate({ userId, data: { role: newRole } });
@@ -327,13 +327,13 @@ export default function AdminFeature() {
 
                     {/* Role Selector */}
                     <TableCell className="w-[190px]">
-                      {u.email?.toLowerCase() === 'admin@peoplepay.com' || u.role === ROLES.SUPER_ADMIN ? (
+                      {u.email?.toLowerCase() === 'admin@peoplepay.com' ? (
                         <div
                           className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-100 border border-purple-300 text-purple-900 text-[11px] font-bold cursor-not-allowed"
-                          title="System Super Admin role is protected and cannot be modified"
+                          title="System Admin role is protected and cannot be modified"
                         >
                           <ShieldCheck className="w-3 h-3 text-purple-700 shrink-0" />
-                          <span>{u.role === ROLES.SUPER_ADMIN ? 'Super Admin' : 'Admin'}</span>
+                          <span>Admin</span>
                         </div>
                       ) : (
                         <select
@@ -448,7 +448,7 @@ export default function AdminFeature() {
 
                     {/* Delete Action */}
                     <TableCell className="w-[60px]">
-                      {u.email?.toLowerCase() === 'admin@peoplepay.com' || u.role === ROLES.SUPER_ADMIN ? (
+                      {u.email?.toLowerCase() === 'admin@peoplepay.com' ? (
                         <span className="text-[10px] text-slate-400 italic">—</span>
                       ) : (
                         <button

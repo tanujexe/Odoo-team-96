@@ -106,15 +106,13 @@ export function AppLayout() {
     <div className="flex flex-col h-full bg-[#F8F6F1]">
       {/* Top Scrollable Area */}
       <div className="flex-1 p-4 overflow-y-auto no-scrollbar">
-        {/* Brand Header with Uploaded Logo */}
-        <div className="flex items-center justify-between px-1 py-1">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="PeoplePay Logo" className="h-14 sm:h-16 w-auto object-contain max-w-[210px]" />
-          </div>
+        {/* Brand Header with Uploaded Logo Centered */}
+        <div className="relative flex items-center justify-center w-full px-1 py-1">
+          <img src="/logo.png" alt="PeoplePay Logo" className="h-14 sm:h-16 w-auto object-contain max-w-[210px] mx-auto" />
           {/* Close button for mobile drawer */}
           <button
             onClick={() => setIsMobileMenuOpen(false)}
-            className="md:hidden p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-stone-200/60 transition-colors"
+            className="md:hidden absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-stone-200/60 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>

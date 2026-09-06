@@ -23,14 +23,24 @@ function normalizeEmployee(emp) {
 
 export async function fetchEmployees(params = {}) {
   let result = [];
+  const cleanParams = {};
+  if (params && typeof params === 'object') {
+    if (typeof params.search === 'string' && params.search) cleanParams.search = params.search;
+    if (typeof params.departmentId === 'string' && params.departmentId) cleanParams.departmentId = params.departmentId;
+    if (typeof params.status === 'string' && params.status) cleanParams.status = params.status;
+  }
+
   try {
-    const query = new URLSearchParams(params).toString();
+    const query = new URLSearchParams(cleanParams).toString();
     const response = await apiClient(`/employees${query ? `?${query}` : ''}`);
-    const list = Array.isArray(response.data) ? response.data : [];
+    const list = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
     const normalizedList = list.map(normalizeEmployee);
-    const serverIds = new Set(normalizedList.map((e) => e.id));
-    const extraMocks = mockEmployees.filter((m) => !serverIds.has(m.id)).map(normalizeEmployee);
-    result = [...normalizedList, ...extraMocks];
+    
+    if (normalizedList.length > 0) {
+      result = normalizedList;
+    } else {
+      result = mockEmployees.map(normalizeEmployee);
+    }
   } catch (err) {
     console.warn('[Employees API] Using fallback mock data:', err);
     result = mockEmployees.map(normalizeEmployee);

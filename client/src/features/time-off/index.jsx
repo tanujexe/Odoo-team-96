@@ -803,7 +803,7 @@ export default function TimeOffFeature() {
               </span>
             </div>
             <div className="text-3xl font-extrabold text-slate-900">182 <span className="text-sm font-bold text-slate-500">Days</span></div>
-            <p className="text-[11px] text-slate-400 mt-1">Distributed across 226 staff members</p>
+            <p className="text-[11px] text-slate-400 mt-1">Distributed across active staff members</p>
           </div>
 
           {/* Balance Utilized */}

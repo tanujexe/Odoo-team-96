@@ -34,8 +34,6 @@ export function formatRoleLabel(role) {
       return 'HR Payroll Manager';
     case 'ADMIN':
       return 'Admin';
-    case 'SUPER_ADMIN':
-      return 'Super Admin';
     default:
       return String(role).replace(/_/g, ' ');
   }

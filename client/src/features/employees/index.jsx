@@ -582,9 +582,9 @@ export default function EmployeesFeature() {
               const name = emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Employee';
               const initials = `${(emp.firstName?.[0] || emp.name?.[0] || 'E').toUpperCase()}${(emp.lastName?.[0] || (emp.name?.trim().split(/\s+/)?.[1]?.[0]) || '').toUpperCase()}`;
               const empContracts = contracts.filter((c) => c.employeeId === empId || c.employee === empId || c.employeeCode === emp.employeeCode);
-              const contractsCount = empContracts.length > 0 ? empContracts.length : (idx % 2 === 0 ? 2 : 1);
-              const attendanceRate = idx % 3 === 0 ? '100%' : idx % 2 === 0 ? '98.2%' : '96.5%';
-              const leaveBal = idx % 3 === 0 ? '14 Days' : idx % 2 === 0 ? '8 Days' : '12 Days';
+              const contractsCount = empContracts.length > 0 ? empContracts.length : 1;
+              const attendanceRate = '100%';
+              const leaveBal = '12 Days';
 
               return (
                 <div key={empId} onClick={() => setSelectedEmployeeId(empId)} className="bg-white rounded-2xl p-5 border border-stone-200/80 shadow-2xs hover:shadow-md hover:border-stone-300 transition-all cursor-pointer group relative flex flex-col justify-between">

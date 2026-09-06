@@ -35,7 +35,7 @@ import { formatDate } from '../../lib/utils';
 export default function AttendanceFeature() {
   const queryClient = useQueryClient();
   const { user, role, hasAccess } = useAuth();
-  const isAdminRole = role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
+  const isAdminRole = role === ROLES.ADMIN;
   const [searchParams] = useSearchParams();
   const queryEmpId = searchParams.get('employeeId');
 
@@ -709,19 +709,17 @@ export default function AttendanceFeature() {
           </div>
         )}
 
-        {/* Pagination */}
-        <div className="px-4 py-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-slate-500">Showing <strong>1</strong> to <strong>{Math.min(filteredLogs.length, 5)}</strong> of <strong>226</strong> records</p>
-          <div className="flex items-center gap-1">
-            <button type="button" disabled className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-400 cursor-not-allowed">Previous</button>
-            {[1, 2, 3].map((n) => (
-              <button key={n} type="button" className={'w-8 h-8 rounded-lg text-xs font-semibold transition-colors ' + (n === 1 ? 'bg-slate-900 text-white font-bold' : 'text-slate-600 hover:bg-slate-100 border border-slate-200 bg-white')}>{n}</button>
-            ))}
-            <span className="px-1 text-slate-400 text-xs">&hellip;</span>
-            <button type="button" className="w-8 h-8 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 bg-white">46</button>
-            <button type="button" className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">Next</button>
-          </div>
-        </div>
+        {/* Dynamic Interactive Pagination */}
+        <Pagination
+          currentPage={attPage}
+          totalRecords={filteredLogs.length}
+          pageSize={attPageSize}
+          onPageChange={(p) => setAttPage(p)}
+          onPageSizeChange={(s) => {
+            setAttPageSize(s);
+            setAttPage(1);
+          }}
+        />
       </div>
 
 

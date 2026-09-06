@@ -12,7 +12,6 @@ import { loginApi, fetchMeApi } from '../../lib/api/auth';
 
 export const ROLES = {
   ADMIN: 'ADMIN',
-  SUPER_ADMIN: 'SUPER_ADMIN',
   HR_PAYROLL_MANAGER: 'HR_PAYROLL_MANAGER',
   HR_PAYROLL_USER: 'HR_PAYROLL_USER',
   HR_MANAGER: 'HR_MANAGER',
@@ -163,12 +162,12 @@ export function AuthProvider({ children, initialUser, initialToken }) {
   };
 
   /**
-   * Permission Helper checking role access (ADMIN and SUPER_ADMIN have universal access)
+   * Permission Helper checking role access (ADMIN has universal access)
    */
   const hasAccess = (allowedRoles = []) => {
     if (!currentUser) return false;
     if (allowedRoles.length === 0) return true;
-    if (currentUser.role === ROLES.ADMIN || currentUser.role === ROLES.SUPER_ADMIN) return true;
+    if (currentUser.role === ROLES.ADMIN) return true;
     return allowedRoles.includes(currentUser.role);
   };
 
