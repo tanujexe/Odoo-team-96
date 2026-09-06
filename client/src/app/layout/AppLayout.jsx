@@ -28,49 +28,49 @@ export function AppLayout() {
   const navItems = [
     {
       label: 'Dashboard',
-      path: '/',
+      path: '/app/dashboard',
       icon: LayoutDashboard,
       roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_MANAGER, ROLES.EMPLOYEE],
     },
     {
       label: 'Employees',
-      path: '/employees',
+      path: '/app/employees',
       icon: Users,
       roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_MANAGER],
     },
     {
       label: 'Contracts & Schedules',
-      path: '/contracts',
+      path: '/app/contracts',
       icon: FileSignature,
       roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_MANAGER],
     },
     {
       label: 'Attendance',
-      path: '/attendance',
+      path: '/app/attendance',
       icon: Clock,
       roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_MANAGER, ROLES.EMPLOYEE],
     },
     {
       label: 'Time Off',
-      path: '/time-off',
+      path: '/app/time-off',
       icon: CalendarDays,
       roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_MANAGER, ROLES.EMPLOYEE],
     },
     {
       label: 'Payroll & Payslips',
-      path: '/payroll',
+      path: '/app/payroll',
       icon: Calculator,
       roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER],
     },
     {
       label: 'Reports & Analytics',
-      path: '/reports',
+      path: '/app/reports',
       icon: BarChart3,
       roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER],
     },
     {
       label: 'Administration',
-      path: '/admin',
+      path: '/app/admin',
       icon: ShieldCheck,
       roles: [ROLES.ADMIN],
     },
@@ -108,7 +108,9 @@ export function AppLayout() {
       <div className="flex-1 p-4 overflow-y-auto no-scrollbar">
         {/* Brand Header with Uploaded Logo Centered */}
         <div className="relative flex items-center justify-center w-full px-1 py-1">
-          <img src="/logo.png" alt="PeoplePay Logo" className="h-14 sm:h-16 w-auto object-contain max-w-[210px] mx-auto" />
+          <NavLink to="/app" className="block cursor-pointer">
+            <img src="/logo.png" alt="PeoplePay Logo" className="h-14 sm:h-16 w-auto object-contain max-w-[210px] mx-auto" />
+          </NavLink>
           {/* Close button for mobile drawer */}
           <button
             onClick={() => setIsMobileMenuOpen(false)}
@@ -140,7 +142,7 @@ export function AppLayout() {
             const Icon = item.icon;
             const isActive =
               location.pathname === item.path ||
-              (item.path !== '/' && location.pathname.startsWith(item.path));
+              (item.path !== '/app' && location.pathname.startsWith(item.path));
 
             return (
               <NavLink
@@ -164,7 +166,7 @@ export function AppLayout() {
                   <span>{item.label}</span>
                 </div>
 
-                {item.path === '/payroll' && !isActive && (
+                {item.path === '/app/payroll' && !isActive && (
                   <span className="w-2 h-2 rounded-full bg-amber-500" />
                 )}
               </NavLink>
@@ -215,7 +217,9 @@ export function AppLayout() {
       {/* Mobile Top Header Bar */}
       <header className="md:hidden bg-[#F8F6F1] border-b border-stone-200/80 px-4 py-2.5 flex items-center justify-between shrink-0 shadow-2xs">
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="PeoplePay Logo" className="h-8 w-auto object-contain" />
+          <NavLink to="/app" className="block">
+            <img src="/logo.png" alt="PeoplePay Logo" className="h-8 w-auto object-contain" />
+          </NavLink>
         </div>
 
         <div className="flex items-center gap-2">
