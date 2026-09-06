@@ -107,10 +107,9 @@ export default function PayrollFeature() {
     enabled: !!selectedPayrunId,
   });
 
-  const activePayrun = currentPayrun || payruns.find((p) => p.id === selectedPayrunId) || mockPayruns[0];
-
   const currentPayrun = currentPayrunData?.payrun || currentPayrunData;
   const payslips = currentPayrunData?.payslips || [];
+  const activePayrun = currentPayrun || payruns.find((p) => p.id === selectedPayrunId) || mockPayruns[0];
 
   const { data: employees = [] } = useQuery({
     queryKey: ['employees'],

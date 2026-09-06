@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth, ROLES } from '../auth/AuthContext';
-import { fetchEmployees } from '../../lib/api/employees';
 import {
   LayoutDashboard,
   Users,
@@ -21,19 +20,6 @@ import { Badge } from '../../components/ui/Badge';
 export function AppLayout() {
   const { user, role, switchRole, logout, availableRoles } = useAuth();
   const location = useLocation();
-  const [employeeCount, setEmployeeCount] = useState(0);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    fetchEmployees().then((employees) => {
-      if (isMounted) setEmployeeCount(employees.length);
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   // Role-aware navigation definitions
   const navItems = [
@@ -77,7 +63,7 @@ export function AppLayout() {
       label: 'Reports & Analytics',
       path: '/reports',
       icon: BarChart3,
-      roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_MANAGER],
+      roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER],
     },
     {
       label: 'Administration',
@@ -175,20 +161,6 @@ export function AppLayout() {
                     />
                     <span>{item.label}</span>
                   </div>
-
-                    {/* Navigation Pills / Indicators matching reference UI */}
-                    {item.path === '/employees' && (
-                      <span
-                        className={cn(
-                          'text-[10px] font-bold px-2 py-0.5 rounded-full',
-                          isActive
-                            ? 'bg-slate-700/80 text-white'
-                            : 'bg-stone-200 text-slate-700'
-                        )}
-                      >
-                        {employeeCount}
-                      </span>
-                    )}
 
                   {item.path === '/payroll' && !isActive && (
                     <span className="w-2 h-2 rounded-full bg-amber-500" />

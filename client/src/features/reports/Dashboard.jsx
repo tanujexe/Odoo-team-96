@@ -27,12 +27,20 @@ import {
 } from 'lucide-react';
 
 import EmployeeDashboard from './EmployeeDashboard';
+import { fetchEmployees } from '../../lib/api/employees';
+import { fetchAttendance } from '../../lib/api/attendance';
+import { fetchTimeOffRequests } from '../../lib/api/timeOff';
+import { fetchContracts } from '../../lib/api/contracts';
 
 export default function DashboardFeature() {
   const { user, role } = useAuth();
 
   if (role === ROLES.EMPLOYEE) {
     return <EmployeeDashboard />;
+  }
+
+  if (role === ROLES.HR_MANAGER) {
+    return <HrManagerDashboard />;
   }
 
   return <ExecutiveDashboard />;
@@ -711,6 +719,240 @@ export function ExecutiveDashboard() {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+export function HrManagerDashboard() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const { data: employees = [], isLoading: isEmpLoading } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => fetchEmployees(),
+  });
+
+  const { data: attendanceLogs = [], isLoading: isAttLoading } = useQuery({
+    queryKey: ['attendance'],
+    queryFn: () => fetchAttendance(),
+  });
+
+  const { data: timeOffRequests = [], isLoading: isLeaveLoading } = useQuery({
+    queryKey: ['timeOffRequests'],
+    queryFn: () => fetchTimeOffRequests(),
+  });
+
+  const { data: contracts = [] } = useQuery({
+    queryKey: ['contracts'],
+    queryFn: () => fetchContracts(),
+  });
+
+  const activeStaffCount = employees.length;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const presentToday = attendanceLogs.filter(l => l.status === 'PRESENT' || l.checkIn).length;
+  const pendingLeaves = timeOffRequests.filter(r => r.status === 'PENDING');
+  const runningContracts = contracts.filter(c => (c.status || '').toUpperCase() === 'ACTIVE' || (c.status || '').toUpperCase() === 'RUNNING');
+
+  return (
+    <div className="space-y-6 max-w-[1400px] mx-auto pb-10">
+      {/* 1. Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">HR Management Dashboard</h1>
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
+              Live HR Telemetry
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 max-w-3xl leading-relaxed">
+            Human Resources Workspace — Real-time tracking for active staff, attendance health, contract management, and leave approvals.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>HR Workspace Active</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Top Row Metric Cards (Dynamic Live Data from Database) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Total Active Staff */}
+        <div
+          onClick={() => navigate('/employees')}
+          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between hover:shadow-md transition-all cursor-pointer"
+        >
+          <div>
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+              TOTAL ACTIVE STAFF
+            </span>
+            <h3 className="text-3xl font-black text-slate-900 tracking-tight">{activeStaffCount}</h3>
+            <p className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1 mt-1">
+              <span>✓</span> Live Employee Directory
+            </p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <Users className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* Card 2: Attendance Present Today */}
+        <div
+          onClick={() => navigate('/attendance')}
+          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between hover:shadow-md transition-all cursor-pointer"
+        >
+          <div>
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+              PRESENT TODAY
+            </span>
+            <h3 className="text-3xl font-black text-slate-900 tracking-tight">{presentToday}</h3>
+            <p className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1 mt-1">
+              <span>{activeStaffCount > 0 ? Math.round((presentToday / activeStaffCount) * 100) : 100}%</span> Coverage
+            </p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <UserCheck className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* Card 3: Running Contracts */}
+        <div
+          onClick={() => navigate('/contracts')}
+          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between hover:shadow-md transition-all cursor-pointer"
+        >
+          <div>
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+              ACTIVE CONTRACTS
+            </span>
+            <h3 className="text-3xl font-black text-slate-900 tracking-tight">{runningContracts.length}</h3>
+            <p className="text-[11px] font-medium text-slate-400 mt-1">Running Employee Contracts</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+            <FileSignature className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* Card 4: Pending Time Off Approvals */}
+        <div
+          onClick={() => navigate('/time-off')}
+          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between hover:shadow-md transition-all cursor-pointer"
+        >
+          <div>
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+              LEAVE APPROVALS
+            </span>
+            <h3 className="text-3xl font-black text-[#E0533C] tracking-tight">{pendingLeaves.length}</h3>
+            <p className="text-[11px] font-semibold text-amber-600 mt-1">Awaiting Manager Action</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-rose-50 text-[#E0533C] flex items-center justify-center shrink-0">
+            <CalendarCheck className="w-6 h-6" />
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Middle Section: Direct HR Actions & Pending Leave Approval Queue */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Pending Time Off Queue */}
+        <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900">Pending Leave Approval Requests</h3>
+              <p className="text-xs text-slate-400">Time Off requests requiring HR Manager sign-off</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/time-off')}
+              className="text-xs font-bold text-[#E0533C] hover:underline"
+            >
+              View All ({timeOffRequests.length}) →
+            </button>
+          </div>
+
+          <div className="divide-y divide-slate-100 mt-2">
+            {pendingLeaves.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 text-xs italic">
+                No pending leave requests awaiting approval.
+              </div>
+            ) : (
+              pendingLeaves.slice(0, 5).map((req) => (
+                <div key={req._id || req.id} className="py-3 flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-slate-900 text-xs">
+                      {req.employeeName || 'Staff Member'}
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      {req.leaveTypeName || 'Paid Time Off'} • {req.days || req.duration || 1} day(s) • {req.reason || 'Personal'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/time-off')}
+                    className="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-colors"
+                  >
+                    Review Request
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* HR Operations Quick Launch */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+          <h3 className="text-base font-extrabold text-slate-900 pb-2 border-b border-slate-100">
+            HR Module Shortcuts
+          </h3>
+
+          <div className="space-y-2.5">
+            <button
+              type="button"
+              onClick={() => navigate('/employees')}
+              className="w-full p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 text-left transition-all flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <Users className="w-5 h-5 text-blue-600" />
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">Employee Directory</h4>
+                  <p className="text-[10px] text-slate-500">Manage staff profiles & workspace</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/contracts')}
+              className="w-full p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 text-left transition-all flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <FileSignature className="w-5 h-5 text-amber-600" />
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">Contracts & Schedules</h4>
+                  <p className="text-[10px] text-slate-500">Working shifts & contract details</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/attendance')}
+              className="w-full p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 text-left transition-all flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-emerald-600" />
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">Attendance Terminal</h4>
+                  <p className="text-[10px] text-slate-500">Monitor check-in & exceptions</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
