@@ -97,15 +97,11 @@ export function AppLayout() {
         return 'HR Manager';
       case ROLES.EMPLOYEE:
         return 'Staff Member';
-      default:
-        return 'HR Payroll Lead';
-    }
-  };
     }
   };
 
   const SidebarContent = () => (
-    <div className="flex flex-col justify-between h-full p-5 overflow-y-auto no-scrollbar">
+    <div className="flex flex-col justify-between h-full p-4 overflow-y-auto no-scrollbar">
       <div>
         {/* Brand Header with Uploaded Logo */}
         <div className="flex items-center justify-between px-1 py-1">
@@ -120,9 +116,6 @@ export function AppLayout() {
             <X className="w-5 h-5" />
           </button>
         </div>
-
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full p-4">
         {/* Profile Card Widget */}
         <div className="bg-[#EFECE5] rounded-2xl p-4 my-5 flex flex-col items-center text-center relative border border-stone-200/60 shadow-2xs">
           <div className="relative">
@@ -176,6 +169,7 @@ export function AppLayout() {
             );
           })}
         </nav>
+      </div>
 
       {/* Bottom Section: Role Switcher Demo Widget & Log Out */}
       <div className="pt-4 border-t border-stone-200/80 space-y-3 mt-4">
