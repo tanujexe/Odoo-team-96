@@ -101,6 +101,8 @@ export function AppLayout() {
         return 'HR Payroll Lead';
     }
   };
+    }
+  };
 
   const SidebarContent = () => (
     <div className="flex flex-col justify-between h-full p-5 overflow-y-auto no-scrollbar">
@@ -119,6 +121,8 @@ export function AppLayout() {
           </button>
         </div>
 
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full p-4">
         {/* Profile Card Widget */}
         <div className="bg-[#EFECE5] rounded-2xl p-4 my-5 flex flex-col items-center text-center relative border border-stone-200/60 shadow-2xs">
           <div className="relative">
@@ -172,7 +176,6 @@ export function AppLayout() {
             );
           })}
         </nav>
-      </div>
 
       {/* Bottom Section: Role Switcher Demo Widget & Log Out */}
       <div className="pt-4 border-t border-stone-200/80 space-y-3 mt-4">

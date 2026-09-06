@@ -19,7 +19,6 @@ import {
   Clock,
   LogIn,
   LogOut,
-  Plus,
   Search,
   Edit2,
   Save,
@@ -387,13 +386,6 @@ export default function AttendanceFeature() {
           <p className="text-xs text-slate-500 mt-0.5">List view of employee attendance records and punch exceptions</p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          {isHrOrAdmin && (
-            <button type="button" onClick={() => setIsNewModalOpen(true)} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#E0533C] hover:bg-[#cc4535] text-white text-xs font-bold transition-colors shadow-sm">
-              <Plus className="w-3.5 h-3.5" />+ Record Attendance
-            </button>
-          )}
-        </div>
       </div>
 
       {/* ── Self-Service Terminal (compact, for check-in/out) ── */}

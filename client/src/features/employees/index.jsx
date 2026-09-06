@@ -206,6 +206,8 @@ export default function EmployeesFeature() {
     ? finalEmployeesList.find((emp) => (emp.id || emp._id) === selectedEmployeeId) || detailData?.employee || detailData || {}
     : {};
 
+  const employeeDetail = detailData?.employee || detailData || selectedEmployee;
+
   const handleOpenCreateModal = () => {
     const nextCode = getNextEmployeeCode(employees);
     const nextContractCode = getNextContractCode(contracts);
@@ -554,9 +556,8 @@ export default function EmployeesFeature() {
                 return (
                   <TableRow key={empId} isSelected={selectedEmployeeId === empId} className="hover:bg-slate-50/70 transition-colors">
                     <TableCell>
-
-                    <TableCell>
                       <div className="flex items-center gap-3">
+
                         <div className={cn('w-9 h-9 rounded-full font-bold text-xs flex items-center justify-center shrink-0 border border-slate-200/60 shadow-2xs', getAvatarStyle(idx, name))}>{initials}</div>
                         <div>
                           <p className="font-bold text-slate-900 text-sm leading-tight hover:text-[#E0533C] transition-colors cursor-pointer" onClick={() => setSelectedEmployeeId(empId)}>{name}</p>
