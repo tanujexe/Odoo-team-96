@@ -259,6 +259,32 @@ export default function ContractsFeature() {
     setResolvedResult(res);
   };
 
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const handleExportContractsCSV = () => {
+    if (!filteredContractsList || filteredContractsList.length === 0) return;
+    const headers = ['Contract Code', 'Employee Name', 'Employee Code', 'Monthly Wage', 'Start Date', 'End Date', 'Status', 'Working Schedule'];
+    const rows = filteredContractsList.map((c) => {
+      const code = c.contractCode || (c.id ? `CON/2026/00${String(c.id).slice(-2)}` : 'CON/2026/0042');
+      const empName = (c.employeeName || 'Unassigned Employee').replace(/"/g, '""');
+      const empCode = c.employeeCode || '';
+      const wageVal = Number(c.wage || 85000);
+      const stDate = c.startDate ? formatDate(c.startDate) : '2026-01-01';
+      const endDate = c.endDate ? formatDate(c.endDate) : 'Indefinite';
+      const st = c.status || 'ACTIVE';
+      const sch = (c.workingSchedule || '40 Hours / Week').replace(/"/g, '""');
+      return `"${code}","${empName}","${empCode}","${wageVal}","${stDate}","${endDate}","${st}","${sch}"`;
+    });
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `contracts_registry_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Row */}
@@ -283,22 +309,6 @@ export default function ContractsFeature() {
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span>Jan 2026 Cycle</span>
           </div>
-
-          <button
-            type="button"
-            className="px-3 py-1.5 rounded-full bg-white border border-slate-200/80 text-xs font-semibold text-slate-700 flex items-center gap-1.5 shadow-2xs hover:bg-slate-50 cursor-pointer"
-          >
-            <Bell className="w-3.5 h-3.5 text-slate-500" />
-            <span>Alerts</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-[#E0533C] text-white text-[10px] font-bold">2</span>
-          </button>
-
-          <button
-            type="button"
-            className="p-2 rounded-full bg-white border border-slate-200/80 text-slate-600 shadow-2xs hover:bg-slate-50 cursor-pointer"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
@@ -405,17 +415,53 @@ export default function ContractsFeature() {
               <span className="absolute right-3 top-2.5 text-[10px] font-mono text-slate-400 border border-slate-200 px-1 rounded">⌘K</span>
             </div>
 
-            <div className="flex items-center gap-2 self-end sm:self-auto">
+            <div className="flex items-center gap-2 self-end sm:self-auto relative">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  className={`px-3.5 py-1.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors ${
+                    contractStatusFilter !== 'ALL'
+                      ? 'bg-blue-50 text-blue-700 border-blue-300 font-bold'
+                      : 'bg-white text-slate-700 border-slate-200/80 hover:bg-slate-50'
+                  }`}
+                >
+                  <Filter className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Filter</span>
+                  {contractStatusFilter !== 'ALL' && <span className="w-2 h-2 rounded-full bg-blue-600" />}
+                </button>
+
+                {isFilterOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-3">
+                    <div>
+                      <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Contract Status</label>
+                      <select
+                        value={contractStatusFilter}
+                        onChange={(e) => { setContractStatusFilter(e.target.value); setIsFilterOpen(false); }}
+                        className="w-full text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl p-2 focus:outline-none cursor-pointer"
+                      >
+                        <option value="ALL">All Statuses</option>
+                        <option value="ACTIVE">Active / Running</option>
+                        <option value="EXPIRED">Expired / Prior</option>
+                      </select>
+                    </div>
+                    {contractStatusFilter !== 'ALL' && (
+                      <button
+                        type="button"
+                        onClick={() => { setContractStatusFilter('ALL'); setIsFilterOpen(false); }}
+                        className="w-full text-center text-xs font-bold text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                      >
+                        Reset Filter
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <button
                 type="button"
-                className="px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 text-xs font-semibold text-slate-700 flex items-center gap-1.5 hover:bg-slate-50 shadow-2xs cursor-pointer"
-              >
-                <Filter className="w-3.5 h-3.5 text-slate-500" />
-                <span>Filter</span>
-              </button>
-              <button
-                type="button"
-                className="px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 text-xs font-semibold text-slate-700 flex items-center gap-1.5 hover:bg-slate-50 shadow-2xs cursor-pointer"
+                onClick={handleExportContractsCSV}
+                className="px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 text-xs font-semibold text-slate-700 flex items-center gap-1.5 hover:bg-slate-50 shadow-2xs cursor-pointer transition-colors"
               >
                 <Download className="w-3.5 h-3.5 text-slate-500" />
                 <span>Export CSV</span>

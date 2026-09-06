@@ -181,6 +181,33 @@ export default function AttendanceFeature() {
     setIsNewModalOpen(false);
   };
 
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+
+  const handleExportAttendanceCSV = () => {
+    if (!filteredLogs || filteredLogs.length === 0) return;
+    const headers = ['Employee Name', 'Employee Code', 'Department', 'Date', 'Check In', 'Check Out', 'Worked Hours', 'Status'];
+    const rows = filteredLogs.map((log) => {
+      const empName = log.employeeName || 'Employee';
+      const empCode = log.employeeCode || '';
+      const deptName = log.department || '';
+      const dateStr = log.date || '';
+      const checkInFmt = log.checkIn ? new Date(log.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+      const checkOutFmt = log.checkOut ? new Date(log.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+      const worked = Number(log.workedHours || 0).toFixed(2);
+      const st = (log.status || 'PRESENT').toUpperCase();
+      return `"${empName}","${empCode}","${deptName}","${dateStr}","${checkInFmt}","${checkOutFmt}","${worked}","${st}"`;
+    });
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `attendance_report_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const filteredLogs = logs.filter((log) => {
     if (!isHrOrAdmin) {
       const isSelf =
@@ -199,7 +226,8 @@ export default function AttendanceFeature() {
       log.employeeId === selectedFilterEmp ||
       log.employeeCode === selectedFilterEmp;
     const matchesToday = !isTodayFilterOnly || log.date === todayDateStr;
-    return matchesSearch && matchesEmp && matchesToday;
+    const matchesStatus = statusFilter === 'ALL' || (log.status || 'PRESENT').toUpperCase() === statusFilter;
+    return matchesSearch && matchesEmp && matchesToday && matchesStatus;
   });
 
   // Avatar colour palette (cycles through)
@@ -515,7 +543,7 @@ export default function AttendanceFeature() {
               aria-label="Filter attendance by employee"
               value={selectedFilterEmp}
               onChange={(e) => setSelectedFilterEmp(e.target.value)}
-              className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none shadow-sm"
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none shadow-sm cursor-pointer"
             >
               <option value="">Employees: All</option>
               {employees.map((emp) => (
@@ -523,10 +551,55 @@ export default function AttendanceFeature() {
               ))}
             </select>
           )}
-          <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors">
-            <Filter className="w-3.5 h-3.5 text-slate-500" />Filter
-          </button>
-          <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors">
+
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold shadow-sm transition-colors cursor-pointer ${
+                statusFilter !== 'ALL' ? 'bg-blue-50 text-blue-700 border-blue-300 font-bold' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <Filter className="w-3.5 h-3.5 text-slate-500" />
+              <span>Filter</span>
+              {statusFilter !== 'ALL' && <span className="w-2 h-2 rounded-full bg-blue-600" />}
+            </button>
+
+            {isFilterDropdownOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-3 space-y-3">
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Status Filter</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => { setStatusFilter(e.target.value); setIsFilterDropdownOpen(false); }}
+                    className="w-full text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg p-2 focus:outline-none cursor-pointer"
+                  >
+                    <option value="ALL">All Statuses</option>
+                    <option value="PRESENT">Present</option>
+                    <option value="ABSENT">Absent / LOP</option>
+                    <option value="ON_DUTY">On Duty</option>
+                    <option value="LATE">Late</option>
+                    <option value="EXCEPTION">Exception</option>
+                  </select>
+                </div>
+                {statusFilter !== 'ALL' && (
+                  <button
+                    type="button"
+                    onClick={() => { setStatusFilter('ALL'); setIsFilterDropdownOpen(false); }}
+                    className="w-full text-center text-xs font-bold text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Reset Filter
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleExportAttendanceCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors cursor-pointer"
+          >
             <Download className="w-3.5 h-3.5 text-slate-500" />Export CSV
           </button>
         </div>
