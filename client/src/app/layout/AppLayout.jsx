@@ -33,7 +33,7 @@ export function AppLayout() {
       label: 'Employees',
       path: '/employees',
       icon: Users,
-      roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_MANAGER, ROLES.EMPLOYEE],
+      roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_MANAGER],
     },
     {
       label: 'Contracts & Schedules',
@@ -100,11 +100,11 @@ export function AppLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F3EFE9] p-3 sm:p-5 flex justify-center items-stretch font-sans text-slate-800">
+    <div className="h-screen max-h-screen w-full bg-[#F3EFE9] p-3 sm:p-5 flex justify-center items-center font-sans text-slate-800 overflow-hidden">
       {/* Outer rounded card container (App Window Frame) */}
-      <div className="w-full max-w-[1600px] bg-[#FAF8F5] border border-stone-300/70 rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden min-h-[92vh]">
+      <div className="w-full max-w-[1600px] h-full max-h-full bg-[#FAF8F5] border border-stone-300/70 rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-full md:w-64 bg-[#F8F6F1] flex flex-col shrink-0 border-r border-stone-200/80 p-5 justify-between">
+        <aside className="w-full md:w-64 bg-[#F8F6F1] flex flex-col shrink-0 border-b md:border-b-0 md:border-r border-stone-200/80 p-5 justify-between overflow-y-auto h-full">
           <div>
             {/* Brand Header with 4-dot mark */}
             <div className="flex items-center gap-3 px-2 py-1">
@@ -224,7 +224,7 @@ export function AppLayout() {
         </aside>
 
         {/* Main Content Workspace Canvas */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#FAF8F5]">
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#FAF8F5]">
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
             <div className="max-w-7xl mx-auto space-y-6">
               <Outlet />
