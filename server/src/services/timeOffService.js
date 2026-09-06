@@ -104,9 +104,53 @@ export async function createAllocation(data) {
   const allocation = new TimeOffAllocation({
     ...data,
     remainingAmount,
-    status: data.status || 'APPROVED',
+    status: data.status || 'DRAFT',
   });
   await allocation.save();
+  return allocation.populate('employeeId typeId');
+}
+
+export async function approveAllocation({ allocationId, actorId }) {
+  const allocation = await TimeOffAllocation.findById(allocationId);
+  if (!allocation) {
+    const err = new Error('Allocation not found');
+    err.code = 'ALLOCATION_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
+
+  allocation.status = 'APPROVED';
+  await allocation.save();
+
+  await logAudit({
+    actorId,
+    action: 'APPROVE_ALLOCATION',
+    entityType: 'TimeOffAllocation',
+    entityId: allocation._id,
+  });
+
+  return allocation.populate('employeeId typeId');
+}
+
+export async function refuseAllocation({ allocationId, reason = '', actorId }) {
+  const allocation = await TimeOffAllocation.findById(allocationId);
+  if (!allocation) {
+    const err = new Error('Allocation not found');
+    err.code = 'ALLOCATION_NOT_FOUND';
+    err.statusCode = 404;
+    throw err;
+  }
+
+  allocation.status = 'REFUSED';
+  await allocation.save();
+
+  await logAudit({
+    actorId,
+    action: 'REFUSE_ALLOCATION',
+    entityType: 'TimeOffAllocation',
+    entityId: allocation._id,
+  });
+
   return allocation.populate('employeeId typeId');
 }
 

@@ -44,6 +44,17 @@ export async function resolveApplicableContract({ employeeId, periodStart, perio
   }).populate('departmentId salaryStructureId');
 
 
+  let empLabel = '';
+  try {
+    const EmployeeModel = mongoose.models.Employee || mongoose.model('Employee');
+    const emp = await EmployeeModel.findById(employeeId).select('name employeeCode');
+    if (emp) {
+      empLabel = `Employee ${emp.name} (${emp.employeeCode}): `;
+    }
+  } catch (e) {
+    // ignore
+  }
+
   if (overlappingContracts.length === 0) {
     return {
       contract: null,
@@ -51,7 +62,7 @@ export async function resolveApplicableContract({ employeeId, periodStart, perio
         code: 'MISSING_CONTRACT',
         severity: 'BLOCKING',
         employeeId: String(employeeId),
-        message: `No active contract found applicable for period ${pStart.toISOString().slice(0, 10)} to ${pEnd.toISOString().slice(0, 10)}.`,
+        message: `${empLabel}No active contract found applicable for period ${pStart.toISOString().slice(0, 10)} to ${pEnd.toISOString().slice(0, 10)}.`,
       },
     };
   }
@@ -63,7 +74,7 @@ export async function resolveApplicableContract({ employeeId, periodStart, perio
         code: 'AMBIGUOUS_CONTRACT',
         severity: 'BLOCKING',
         employeeId: String(employeeId),
-        message: `Multiple active contracts (${overlappingContracts.length}) overlap payroll period ${pStart.toISOString().slice(0, 10)} to ${pEnd.toISOString().slice(0, 10)}. Ambiguity must be resolved before payroll computation.`,
+        message: `${empLabel}Multiple active contracts (${overlappingContracts.length}) overlap payroll period ${pStart.toISOString().slice(0, 10)} to ${pEnd.toISOString().slice(0, 10)}. Ambiguity must be resolved before payroll computation.`,
       },
     };
   }

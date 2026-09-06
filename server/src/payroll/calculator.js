@@ -10,7 +10,7 @@ import { evaluateRule } from './ruleEngine.js';
  * @param {number} [params.leaveDays=0] - Approved leave days in period
  * @returns {{ ruleLines: Array<Object>, gross: number, deductions: number, net: number, warnings: Array<Object> }}
  */
-export function calculatePayslipLines({ contract, rules = [], workedDays = 22, leaveDays = 0 }) {
+export function calculatePayslipLines({ contract, rules = [], workedDays = 22, leaveDays = 0, unpaidDays = 0 }) {
   const warnings = [];
 
   if (!contract || !contract.wage) {
@@ -30,11 +30,12 @@ export function calculatePayslipLines({ contract, rules = [], workedDays = 22, l
     WAGE: wage,
     WORKED_DAYS: workedDays,
     LEAVE_DAYS: leaveDays,
+    UNPAID_DAYS: unpaidDays,
   };
 
   const ruleLines = [];
-  let gross = 0;
-  let deductions = 0;
+  let calculatedGross = 0;
+  let calculatedDeductions = 0;
 
   // Execute rules in sequence ascending
   const sortedRules = [...rules].sort((a, b) => a.sequence - b.sequence);
@@ -56,10 +57,10 @@ export function calculatePayslipLines({ contract, rules = [], workedDays = 22, l
         amount,
       });
 
-      if (rule.category === 'BASIC' || rule.category === 'ALW' || rule.category === 'GROSS') {
-        gross += amount;
-      } else if (rule.category === 'DED') {
-        deductions += amount;
+      if (rule.category === 'BASIC' || rule.category === 'ALW' || rule.category === 'ALLOWANCE') {
+        calculatedGross += amount;
+      } else if (rule.category === 'DED' || rule.category === 'DEDUCTION') {
+        calculatedDeductions += amount;
       }
     } catch (err) {
       warnings.push({
@@ -80,9 +81,12 @@ export function calculatePayslipLines({ contract, rules = [], workedDays = 22, l
     }
   }
 
-  gross = Number(gross.toFixed(2));
-  deductions = Number(deductions.toFixed(2));
-  const net = Number(Math.max(0, gross - deductions).toFixed(2));
+  // If a GROSS or NET rule exists in the structure, respect its explicitly evaluated formula value
+  const gross = context.GROSS !== undefined ? Number(context.GROSS.toFixed(2)) : Number(calculatedGross.toFixed(2));
+  const deductions = Number(calculatedDeductions.toFixed(2));
+  const net = context.NET !== undefined
+    ? Number(context.NET.toFixed(2))
+    : Number(Math.max(0, gross - deductions).toFixed(2));
 
   return {
     ruleLines,
@@ -90,5 +94,7 @@ export function calculatePayslipLines({ contract, rules = [], workedDays = 22, l
     deductions,
     net,
     warnings,
+    workedDays,
   };
 }
+

@@ -36,6 +36,11 @@ export async function createEmployee(data) {
     employeeType: data.employmentType || data.employeeType || 'FULL_TIME',
     scheduleId: (data.scheduleId && mongoose.isValidObjectId(data.scheduleId)) ? data.scheduleId : null,
     status: data.status || 'ACTIVE',
+    bankDetails: {
+      accountNumber: (data.bankDetails?.accountNumber || data.accountNumber || '').trim(),
+      bankName: (data.bankDetails?.bankName || data.bankName || '').trim(),
+      ifscCode: (data.bankDetails?.ifscCode || data.ifscCode || '').trim(),
+    },
   });
   await employee.save();
 
@@ -87,7 +92,24 @@ export async function updateEmployee(id, data) {
     err.statusCode = 404;
     throw err;
   }
-  const employee = await Employee.findByIdAndUpdate(id, data, { new: true, runValidators: true })
+
+  const updateFields = { ...data };
+  if (data.bankDetails) {
+    updateFields.bankDetails = {
+      accountNumber: data.bankDetails.accountNumber !== undefined ? String(data.bankDetails.accountNumber).trim() : '',
+      bankName: data.bankDetails.bankName !== undefined ? String(data.bankDetails.bankName).trim() : '',
+      ifscCode: data.bankDetails.ifscCode !== undefined ? String(data.bankDetails.ifscCode).trim() : '',
+    };
+  } else if (data.accountNumber !== undefined || data.bankName !== undefined || data.ifscCode !== undefined) {
+    const existing = await Employee.findById(id);
+    updateFields.bankDetails = {
+      accountNumber: data.accountNumber !== undefined ? String(data.accountNumber).trim() : (existing?.bankDetails?.accountNumber || ''),
+      bankName: data.bankName !== undefined ? String(data.bankName).trim() : (existing?.bankDetails?.bankName || ''),
+      ifscCode: data.ifscCode !== undefined ? String(data.ifscCode).trim() : (existing?.bankDetails?.ifscCode || ''),
+    };
+  }
+
+  const employee = await Employee.findByIdAndUpdate(id, updateFields, { new: true, runValidators: true })
     .populate('departmentId managerId scheduleId');
   if (!employee) {
     const err = new Error('Employee not found');

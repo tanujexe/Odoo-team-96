@@ -522,107 +522,51 @@ export async function deleteSalaryRule(id) {
 
 
 export async function fetchPayruns() {
-  try {
-    const response = await apiClient('/payruns');
-    return response.data;
-  } catch (err) {
-    return mockPayruns;
-  }
+  const response = await apiClient('/payruns');
+  return response.data || [];
 }
 
 export async function fetchPayrunById(id) {
-  try {
-    const response = await apiClient(`/payruns/${id}`);
-    return response.data;
-  } catch (err) {
-    return mockPayruns.find((p) => p.id === id) || mockPayruns[0];
-  }
+  const response = await apiClient(`/payruns/${id}`);
+  return response.data;
 }
 
 export async function createPayrunApi(data) {
-  try {
-    const response = await apiClient('/payruns', {
-      method: 'POST',
-      body: data,
-    });
-    return response.data;
-  } catch (err) {
-    const structure = mockSalaryStructures.find((s) => s.id === data.salaryStructureId);
-    const newRun = {
-      id: `pr-${Date.now()}`,
-      name: data.name || 'New Payrun Batch',
-      salaryStructureId: data.salaryStructureId,
-      salaryStructureName: structure?.name || 'Standard Tech Structure',
-      periodStart: data.periodStart,
-      periodEnd: data.periodEnd,
-      status: 'DRAFT',
-      employeeIds: data.employeeIds || [],
-      employeeCount: data.employeeIds?.length || 0,
-      totals: { totalGross: 0, totalDeductions: 0, totalNet: 0 },
-      warnings: [],
-      createdAt: new Date().toISOString(),
-    };
-    mockPayruns.unshift(newRun);
-    return newRun;
-  }
+  const response = await apiClient('/payruns', {
+    method: 'POST',
+    body: data,
+  });
+  return response.data;
 }
 
 export async function computePayrunApi(id) {
-  try {
-    const response = await apiClient(`/payruns/${id}/compute`, { method: 'POST' });
-    return response.data;
-  } catch (err) {
-    const run = mockPayruns.find((p) => p.id === id);
-    if (run) {
-      run.status = 'COMPUTED';
-      run.totals = { totalGross: 18275, totalDeductions: 3770, totalNet: 14505 };
-    }
-    return { payrun: run, payslips: mockPayslips, warnings: run?.warnings || [] };
-  }
+  const response = await apiClient(`/payruns/${id}/compute`, { method: 'POST' });
+  return response.data;
 }
 
 export async function validatePayrunApi(id) {
-  try {
-    const response = await apiClient(`/payruns/${id}/validate`, { method: 'POST' });
-    return response.data;
-  } catch (err) {
-    const run = mockPayruns.find((p) => p.id === id);
-    if (run) {
-      const hasBlocking = run.warnings?.some((w) => w.severity === 'BLOCKING');
-      if (hasBlocking) {
-        return Promise.reject({
-          code: 'BLOCKING_WARNINGS_EXIST',
-          message: 'Payrun cannot be validated due to active blocking warnings.',
-          warnings: run.warnings,
-        });
-      }
-      run.status = 'VALIDATED';
-    }
-    return run;
-  }
+  const response = await apiClient(`/payruns/${id}/validate`, { method: 'POST' });
+  return response.data;
 }
 
 export async function markPayrunPaidApi(id) {
-  try {
-    const response = await apiClient(`/payruns/${id}/pay`, { method: 'POST' });
-    return response.data;
-  } catch (err) {
-    const run = mockPayruns.find((p) => p.id === id);
-    if (run) {
-      run.status = 'PAID';
-      mockPayslips.forEach((ps) => {
-        if (ps.payrunId === id) ps.status = 'PAID';
-      });
-    }
-    return run;
-  }
+  const response = await apiClient(`/payruns/${id}/pay`, { method: 'POST' });
+  return response.data;
+}
+
+export async function fetchEligibleEmployees(params = {}) {
+  const query = new URLSearchParams();
+  if (params.salaryStructureId) query.set('salaryStructureId', params.salaryStructureId);
+  if (params.periodStart) query.set('periodStart', params.periodStart);
+  if (params.periodEnd) query.set('periodEnd', params.periodEnd);
+
+  const queryString = query.toString() ? `?${query.toString()}` : '';
+  const response = await apiClient(`/payruns/eligible-employees${queryString}`);
+  return response.data || [];
 }
 
 export async function fetchPayslipsByPayrun(payrunId) {
-  try {
-    const response = await apiClient(`/payslips?payrunId=${payrunId}`);
-    return response.data;
-  } catch (err) {
-    return mockPayslips.filter((p) => !payrunId || p.payrunId === payrunId);
-  }
+  const response = await apiClient(`/payslips?payrunId=${payrunId}`);
+  return response.data || [];
 }
+

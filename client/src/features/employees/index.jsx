@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { fetchEmployees, createEmployee, fetchEmployeeById } from '../../lib/api/employees';
+import { fetchEmployees, createEmployee, updateEmployee, fetchEmployeeById } from '../../lib/api/employees';
 import { isEmployeeCheckedIn } from '../../lib/api/attendance';
 import { fetchContracts } from '../../lib/api/contracts';
 import { fetchSchedules } from '../../lib/api/schedules';
@@ -29,6 +29,11 @@ import {
   ChevronRight,
   UserCheck,
   Sparkles,
+  Edit3,
+  CreditCard,
+  Building2,
+  AlertCircle,
+  CheckCircle,
 } from 'lucide-react';
 
 // Helper function to calculate next Employee ID from list of employees
@@ -83,7 +88,7 @@ export default function EmployeesFeature() {
 
   const [activeDetailTab, setActiveDetailTab] = useState('work');
 
-  // Form State
+  // Create Form State
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -95,6 +100,9 @@ export default function EmployeesFeature() {
     departmentId: 'dept-eng',
     employmentType: 'FULL_TIME',
     status: 'ACTIVE',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
     contractCode: '',
     wage: 85000,
     workingSchedule: '40 Hours / Week',
@@ -103,6 +111,19 @@ export default function EmployeesFeature() {
     contractStatus: 'ACTIVE',
     notes: 'This running contract is the source for payroll calculation in the active period.',
   });
+
+  // Edit Profile & Bank Details State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    phone: '',
+    personalEmail: '',
+    emergencyContact: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+  });
+  const [editSuccessMsg, setEditSuccessMsg] = useState('');
 
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ['employees', { search, departmentId: selectedDept, status: selectedStatus }],
@@ -174,6 +195,9 @@ export default function EmployeesFeature() {
       departmentId: mockDepartments[0]?.id || 'dept-eng',
       employmentType: 'FULL_TIME',
       status: 'ACTIVE',
+      bankName: '',
+      accountNumber: '',
+      ifscCode: '',
       contractCode: nextContractCode,
       wage: 85000,
       workingSchedule: '40 Hours / Week',
@@ -183,6 +207,57 @@ export default function EmployeesFeature() {
       notes: 'This running contract is the source for payroll calculation in the active period.',
     });
     setIsCreateModalOpen(true);
+  };
+
+  const handleOpenEditModal = (emp) => {
+    const target = emp || detailData?.employee;
+    if (!target) return;
+    setEditSuccessMsg('');
+    setEditFormData({
+      name: target.name || `${target.firstName || ''} ${target.lastName || ''}`.trim(),
+      phone: target.phone || '',
+      personalEmail: target.personalEmail || target.email || '',
+      emergencyContact: target.emergencyContact || '',
+      bankName: target.bankDetails?.bankName || '',
+      accountNumber: target.bankDetails?.accountNumber || '',
+      ifscCode: target.bankDetails?.ifscCode || '',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }) => {
+      return updateEmployee(id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['employees']);
+      queryClient.invalidateQueries(['employeeDetail', selectedEmployeeId]);
+      setEditSuccessMsg('Details updated successfully!');
+      setTimeout(() => {
+        setEditSuccessMsg('');
+        setIsEditModalOpen(false);
+      }, 700);
+    },
+  });
+
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    const empId = selectedEmployeeId || detailData?.employee?._id || detailData?.employee?.id;
+    if (!empId) return;
+    updateMutation.mutate({
+      id: empId,
+      data: {
+        name: editFormData.name,
+        phone: editFormData.phone,
+        personalEmail: editFormData.personalEmail,
+        emergencyContact: editFormData.emergencyContact,
+        bankDetails: {
+          bankName: editFormData.bankName,
+          accountNumber: editFormData.accountNumber,
+          ifscCode: editFormData.ifscCode,
+        },
+      },
+    });
   };
 
   const createMutation = useMutation({
@@ -206,7 +281,14 @@ export default function EmployeesFeature() {
       } catch (err) {
         console.warn('[Employees] createUserApi fallback:', err);
       }
-      return createEmployee(data);
+      return createEmployee({
+        ...data,
+        bankDetails: {
+          bankName: data.bankName,
+          accountNumber: data.accountNumber,
+          ifscCode: data.ifscCode,
+        },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['employees']);
@@ -224,6 +306,9 @@ export default function EmployeesFeature() {
         departmentId: 'dept-eng',
         employmentType: 'FULL_TIME',
         status: 'ACTIVE',
+        bankName: '',
+        accountNumber: '',
+        ifscCode: '',
         contractCode: '',
         wage: 85000,
         workingSchedule: '40 Hours / Week',
@@ -517,29 +602,41 @@ export default function EmployeesFeature() {
               </div>
 
               {/* Employee Profile Header Card */}
-              <div className="flex items-center gap-4 p-4 bg-slate-50/90 rounded-xl border border-slate-200">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white font-extrabold text-lg flex items-center justify-center shrink-0 shadow-sm">
-                  {detailData.employee?.firstName?.[0]}
-                  {detailData.employee?.lastName?.[0]}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-slate-900 truncate">
-                      {detailData.employee?.firstName} {detailData.employee?.lastName}
-                    </h3>
-                    <Badge status={detailData.employee?.status} />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-slate-50/90 rounded-xl border border-slate-200">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white font-extrabold text-lg flex items-center justify-center shrink-0 shadow-sm">
+                    {detailData.employee?.firstName?.[0]}
+                    {detailData.employee?.lastName?.[0]}
                   </div>
-                  <p className="text-xs font-medium text-slate-600 mt-0.5">
-                    {detailData.employee?.jobTitle || detailData.employee?.jobPosition || 'Staff'} • {detailData.employee?.department || 'General'}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
-                    <span>{detailData.employee?.email}</span>
-                    <span>•</span>
-                    <span>{detailData.employee?.phone || '+91 98765 43210'}</span>
-                    <span>•</span>
-                    <span className="font-mono font-bold text-emerald-700">{detailData.employee?.employeeCode}</span>
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-slate-900 truncate">
+                        {detailData.employee?.firstName} {detailData.employee?.lastName}
+                      </h3>
+                      <Badge status={detailData.employee?.status} />
+                    </div>
+                    <p className="text-xs font-medium text-slate-600 mt-0.5">
+                      {detailData.employee?.jobTitle || detailData.employee?.jobPosition || 'Staff'} • {detailData.employee?.department || 'General'}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                      <span>{detailData.employee?.email}</span>
+                      <span>•</span>
+                      <span>{detailData.employee?.phone || 'No phone set'}</span>
+                      <span>•</span>
+                      <span className="font-mono font-bold text-emerald-700">{detailData.employee?.employeeCode}</span>
+                    </p>
+                  </div>
                 </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={Edit3}
+                  onClick={() => handleOpenEditModal(detailData.employee)}
+                  className="border-slate-300 hover:bg-slate-100 text-xs font-semibold shrink-0"
+                >
+                  Edit Profile & Bank Info
+                </Button>
               </div>
 
               {/* Tabs Navigation */}
@@ -627,7 +724,7 @@ export default function EmployeesFeature() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phone Number</span>
-                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.phone || '+91 98765 43210'}</p>
+                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.phone || 'Not provided'}</p>
                   </div>
 
                   <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
@@ -637,7 +734,7 @@ export default function EmployeesFeature() {
 
                   <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Emergency Contact</span>
-                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.emergencyContact || '+1 (555) 019-9988 (Family)'}</p>
+                    <p className="text-xs font-semibold text-slate-800">{detailData.employee?.emergencyContact || 'Not provided'}</p>
                   </div>
 
                   <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
@@ -650,9 +747,52 @@ export default function EmployeesFeature() {
                     <p className="text-xs font-semibold text-slate-800">{detailData.employee?.hireDate || '2023-01-15'}</p>
                   </div>
 
-                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Bank Account</span>
-                    <p className="text-xs font-semibold text-slate-800 font-mono">**** **** 4821 (HDFC)</p>
+                  <div className="p-3 bg-slate-50/80 border border-slate-200 rounded-xl space-y-1 sm:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Bank Account & Settlement Details</span>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditModal(detailData.employee)}
+                        className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        Edit Bank Info
+                      </button>
+                    </div>
+                    {detailData.employee?.bankDetails?.accountNumber ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2 pt-2 border-t border-slate-200 text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-400 block font-medium">Bank Name</span>
+                          <span className="font-semibold text-slate-800">{detailData.employee?.bankDetails?.bankName || 'Standard Bank'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block font-medium">Account Number</span>
+                          <span className="font-mono font-bold text-slate-900">{detailData.employee?.bankDetails?.accountNumber}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block font-medium">IFSC / Routing Code</span>
+                          <span className="font-mono font-semibold text-slate-800">{detailData.employee?.bankDetails?.ifscCode || '—'}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                          <div>
+                            <p className="text-xs font-bold text-amber-800">Missing Bank Account Number</p>
+                            <p className="text-[11px] text-amber-600">Add account details so payroll runs can transfer salary without warnings.</p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEditModal(detailData.employee)}
+                          className="bg-white border-amber-300 text-amber-800 hover:bg-amber-100 text-xs font-bold"
+                        >
+                          Add Details
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -938,6 +1078,40 @@ export default function EmployeesFeature() {
             </div>
           </div>
 
+          {/* SECTION 3: BANK ACCOUNT & SETTLEMENT SETUP */}
+          <div className="space-y-3 p-4 bg-blue-50/50 border border-blue-200 rounded-xl">
+            <div className="flex items-center justify-between pb-2 border-b border-blue-200/80 text-blue-900 font-bold text-xs uppercase tracking-wider">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-blue-700" />
+                <span>Section 3: Bank Account & Payout Settlement Details</span>
+              </div>
+              <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-mono font-bold">
+                Direct Deposit
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Input
+                label="Bank Name"
+                placeholder="e.g. HDFC Bank, Chase"
+                value={formData.bankName}
+                onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
+              />
+              <Input
+                label="Account Number"
+                placeholder="e.g. 501004928172"
+                value={formData.accountNumber}
+                onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
+              />
+              <Input
+                label="IFSC / Routing Code"
+                placeholder="e.g. HDFC0001234"
+                value={formData.ifscCode}
+                onChange={(e) => setFormData({ ...formData, ifscCode: e.target.value })}
+              />
+            </div>
+          </div>
+
           <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-3">
             <Button variant="outline" size="sm" onClick={() => setIsCreateModalOpen(false)}>
               Cancel
@@ -949,6 +1123,126 @@ export default function EmployeesFeature() {
               isLoading={createMutation.isPending}
             >
               Create Employee & Contract Account
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Employee Profile & Bank Details Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Update Profile & Bank Settlement Details"
+        description="Edit personal contact info and bank account details for payroll direct deposit"
+        maxWidth="max-w-xl"
+      >
+        <form onSubmit={handleEditSubmit} className="space-y-5">
+          {editSuccessMsg && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{editSuccessMsg}</span>
+            </div>
+          )}
+
+          {/* Personal Contact Info */}
+          <div className="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-200 text-slate-900 font-bold text-xs uppercase tracking-wider">
+              <UserCheck className="w-4 h-4 text-emerald-600" />
+              <span>Personal Contact Details</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Full Name"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                required
+              />
+              <Input
+                label="Phone Number"
+                placeholder="e.g. +91 98765 43210"
+                value={editFormData.phone}
+                onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Personal Email"
+                type="email"
+                placeholder="personal@gmail.com"
+                value={editFormData.personalEmail}
+                onChange={(e) => setEditFormData({ ...editFormData, personalEmail: e.target.value })}
+              />
+              <Input
+                label="Emergency Contact"
+                placeholder="e.g. +1 555-019-9988 (Family)"
+                value={editFormData.emergencyContact}
+                onChange={(e) => setEditFormData({ ...editFormData, emergencyContact: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Bank Settlement Info */}
+          <div className="space-y-3 p-4 bg-blue-50/60 border border-blue-200 rounded-xl">
+            <div className="flex items-center justify-between pb-2 border-b border-blue-200 text-blue-900 font-bold text-xs uppercase tracking-wider">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-blue-700" />
+                <span>Bank Account for Payroll & Payouts</span>
+              </div>
+              <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-mono font-bold">
+                Settlement
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              <Input
+                label="Bank Name"
+                placeholder="e.g. HDFC Bank, Chase, State Bank of India"
+                value={editFormData.bankName}
+                onChange={(e) => setEditFormData({ ...editFormData, bankName: e.target.value })}
+                required
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="Bank Account Number"
+                  placeholder="e.g. 5010049281729"
+                  value={editFormData.accountNumber}
+                  onChange={(e) => setEditFormData({ ...editFormData, accountNumber: e.target.value })}
+                  required
+                />
+                <Input
+                  label="IFSC / Branch Routing Code"
+                  placeholder="e.g. HDFC0001234"
+                  value={editFormData.ifscCode}
+                  onChange={(e) => setEditFormData({ ...editFormData, ifscCode: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <p className="text-[11px] text-blue-700 bg-blue-100/50 p-2.5 rounded-lg border border-blue-200/60">
+              💡 <strong>Payroll Tip:</strong> Providing a valid bank account number resolves the <code>[MISSING_BANK_DETAILS]</code> informational warning in payroll batches.
+            </p>
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              isLoading={updateMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5"
+            >
+              Save Bank & Profile Details
             </Button>
           </div>
         </form>

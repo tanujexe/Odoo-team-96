@@ -92,6 +92,11 @@ export async function createEmployee(data) {
     endDate: data.endDate || null,
     notes: data.notes,
     contractStatus: data.contractStatus,
+    bankDetails: {
+      accountNumber: data.bankDetails?.accountNumber || data.accountNumber || '',
+      bankName: data.bankDetails?.bankName || data.bankName || '',
+      ifscCode: data.bankDetails?.ifscCode || data.ifscCode || '',
+    },
   };
 
   try {

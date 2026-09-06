@@ -2,6 +2,37 @@ import mongoose from 'mongoose';
 import { Contract } from '../models/Contract.js';
 import { Employee } from '../models/Employee.js';
 
+export async function checkContractOverlap(employeeId, startDate, endDate = null, excludeContractId = null) {
+  const start = new Date(startDate);
+  const end = endDate ? new Date(endDate) : null;
+
+  const query = {
+    employeeId,
+    status: 'ACTIVE',
+  };
+
+  if (excludeContractId) {
+    query._id = { $ne: excludeContractId };
+  }
+
+  if (end) {
+    query.startDate = { $lte: end };
+    query.$or = [{ endDate: null }, { endDate: { $gte: start } }];
+  } else {
+    query.$or = [{ endDate: null }, { endDate: { $gte: start } }];
+  }
+
+  const overlapping = await Contract.findOne(query);
+  if (overlapping) {
+    const err = new Error(
+      `An active contract (${overlapping.contractCode || overlapping._id}) already exists with an overlapping period for this employee.`
+    );
+    err.code = 'CONTRACT_OVERLAP_ERROR';
+    err.statusCode = 400;
+    throw err;
+  }
+}
+
 export async function createContract(data) {
   const payload = { ...data };
 
@@ -18,6 +49,10 @@ export async function createContract(data) {
       if (!payload.position && emp.jobPosition) {
         payload.position = emp.jobPosition;
       }
+    }
+
+    if (payload.status === 'ACTIVE' || !payload.status) {
+      await checkContractOverlap(payload.employeeId, payload.startDate, payload.endDate);
     }
   }
 
@@ -39,15 +74,32 @@ export async function updateContract(id, data) {
     err.statusCode = 404;
     throw err;
   }
-  const contract = await Contract.findByIdAndUpdate(id, data, { new: true, runValidators: true })
-    .populate('employeeId departmentId salaryStructureId');
 
-  if (!contract) {
+  const existing = await Contract.findById(id);
+  if (!existing) {
     const err = new Error('Contract not found');
     err.code = 'CONTRACT_NOT_FOUND';
     err.statusCode = 404;
     throw err;
   }
+
+  const employeeId = data.employeeId || existing.employeeId;
+  const startDate = data.startDate || existing.startDate;
+  const endDate = data.endDate !== undefined ? (data.endDate === '' ? null : data.endDate) : existing.endDate;
+  const status = data.status || existing.status;
+
+  if (status === 'ACTIVE') {
+    await checkContractOverlap(employeeId, startDate, endDate, id);
+  }
+
+  const updatePayload = { ...data };
+  if (updatePayload.endDate === '') {
+    updatePayload.endDate = null;
+  }
+
+  const contract = await Contract.findByIdAndUpdate(id, updatePayload, { new: true, runValidators: true })
+    .populate('employeeId departmentId salaryStructureId');
+
   return contract;
 }
 
