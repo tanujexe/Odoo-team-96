@@ -3,6 +3,20 @@ import * as payrollService from '../services/payrollService.js';
 import { sendPayrunPayslips } from '../services/payslipDocumentService.js';
 
 
+export async function getEligibleEmployees(req, res, next) {
+  try {
+    const { salaryStructureId, periodStart, periodEnd } = req.query;
+    const employees = await payrollService.getEligibleEmployeesForPayrun({
+      salaryStructureId,
+      periodStart,
+      periodEnd,
+    });
+    return res.success(employees);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function listPayruns(req, res, next) {
   try {
     const result = await payrollService.getPayruns(req.query);

@@ -463,8 +463,14 @@ export default function AttendanceFeature() {
           <div>
             <p className="text-xs text-slate-500 font-medium mb-1">Present Today</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-slate-900">214</span>
-              <span className="text-xs font-bold text-emerald-600">94.7%</span>
+              <span className="text-2xl font-extrabold text-slate-900">
+                {logs.filter(l => l.status === 'PRESENT' || l.checkIn).length}
+              </span>
+              <span className="text-xs font-bold text-emerald-600">
+                {employees.length > 0
+                  ? Math.round((logs.filter(l => l.status === 'PRESENT' || l.checkIn).length / employees.length) * 100)
+                  : 100}%
+              </span>
             </div>
           </div>
           <div className="w-9 h-9 rounded-full border-2 border-emerald-200 bg-emerald-50 flex items-center justify-center shrink-0">
@@ -477,8 +483,14 @@ export default function AttendanceFeature() {
           <div>
             <p className="text-xs text-slate-500 font-medium mb-1">Absent / LOP</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-slate-900">8</span>
-              <span className="text-xs font-bold text-rose-500">3.5%</span>
+              <span className="text-2xl font-extrabold text-slate-900">
+                {logs.filter(l => l.status === 'ABSENT').length}
+              </span>
+              <span className="text-xs font-bold text-rose-500">
+                {employees.length > 0
+                  ? Math.round((logs.filter(l => l.status === 'ABSENT').length / employees.length) * 100)
+                  : 0}%
+              </span>
             </div>
           </div>
           <div className="w-9 h-9 rounded-full border-2 border-rose-200 bg-rose-50 flex items-center justify-center shrink-0">
@@ -486,24 +498,28 @@ export default function AttendanceFeature() {
           </div>
         </div>
 
-        {/* Approved Leave */}
+        {/* Total Staff */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-500 font-medium mb-1">Approved Leave</p>
-            <span className="text-2xl font-extrabold text-slate-900">4</span>
+            <p className="text-xs text-slate-500 font-medium mb-1">Total Staff</p>
+            <span className="text-2xl font-extrabold text-slate-900">{employees.length}</span>
           </div>
-          <div className="w-9 h-9 rounded-full border-2 border-amber-200 bg-amber-50 flex items-center justify-center shrink-0">
-            <Clock className="w-4 h-4 text-amber-600" />
+          <div className="w-9 h-9 rounded-full border-2 border-blue-200 bg-blue-50 flex items-center justify-center shrink-0">
+            <Clock className="w-4 h-4 text-blue-600" />
           </div>
         </div>
 
-        {/* Missing Punch */}
+        {/* Pending Checkout / Missing Punch */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs text-slate-500 font-medium mb-1">Missing Punch</p>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-2xl font-extrabold text-slate-900">2</span>
-              <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 text-[10px] font-semibold">Needs action</span>
+              <span className="text-2xl font-extrabold text-slate-900">
+                {logs.filter(l => l.checkIn && !l.checkOut).length}
+              </span>
+              {logs.filter(l => l.checkIn && !l.checkOut).length > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 text-[10px] font-semibold">Needs action</span>
+              )}
             </div>
           </div>
           <div className="w-9 h-9 rounded-full border-2 border-rose-200 bg-rose-50 flex items-center justify-center shrink-0">

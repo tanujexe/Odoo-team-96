@@ -44,7 +44,7 @@ export const router = createBrowserRouter([
       {
         path: 'employees/*',
         element: (
-          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_MANAGER]}>
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_MANAGER, ROLES.EMPLOYEE]}>
             <EmployeesFeature />
           </ProtectedRoute>
         ),

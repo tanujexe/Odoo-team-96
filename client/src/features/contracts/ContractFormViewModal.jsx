@@ -338,9 +338,9 @@ export function ContractFormViewModal({
                   </div>
                 )}
               </div>
-              </div>
             </div>
           </div>
+        </div>
 
         {/* Salary Structure / Notes Box matching Image 1 UX */}
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5 space-y-3">

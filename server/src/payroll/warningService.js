@@ -30,13 +30,33 @@ export async function checkDuplicateFinalizedPayslip({ employeeId, periodStart, 
 }
 
 export function checkEmployeeBankDetails(employee) {
-  if (!employee.bankDetails || !employee.bankDetails.accountNumber) {
+  if (!employee || !employee.bankDetails || !employee.bankDetails.accountNumber) {
     return {
       code: 'MISSING_BANK_DETAILS',
       severity: 'WARNING',
-      employeeId: String(employee._id),
-      message: `Employee ${employee.name} (${employee.employeeCode}) is missing bank account details.`,
+      employeeId: String(employee?._id || employee?.id),
+      message: `Employee ${employee?.name || ''} (${employee?.employeeCode || ''}) is missing bank account details.`,
     };
   }
   return null;
 }
+
+export function getWarningLabel(code) {
+  switch (code) {
+    case 'MISSING_BANK_DETAILS':
+      return 'A/C missing';
+    case 'DUPLICATE_PAYSLIP':
+      return 'Duplicate';
+    case 'MISSING_CONTRACT':
+      return 'No contract';
+    case 'AMBIGUOUS_CONTRACT':
+      return 'Ambiguous contract';
+    case 'MISSING_WAGE':
+      return 'Missing wage';
+    case 'RULE_CALCULATION_ERROR':
+      return 'Calc error';
+    default:
+      return code || 'Warning';
+  }
+}
+

@@ -20,7 +20,7 @@ router.post(
 
 router.patch(
   '/:id',
-  requireRole(ROLES.HR_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN),
+  enforceEmployeeSelfService,
   updateEmployee
 );
 
