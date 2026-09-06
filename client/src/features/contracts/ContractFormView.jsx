@@ -347,17 +347,24 @@ export function ContractFormView({
 
             {/* Working Schedule */}
             <div className="space-y-1">
-              <Select
-                label="Working Schedule (Database)"
-                value={formData.workingSchedule || (schedules[0]?.name || '40 Hours / Week')}
-                onChange={(e) => setFormData({ ...formData, workingSchedule: e.target.value })}
-              >
-                {schedules.map((s) => (
-                  <option key={s.id || s._id} value={s.name}>
-                    {s.name} ({s.hoursPerWeek || '40h'})
-                  </option>
-                ))}
-              </Select>
+              <label className="text-slate-600 font-semibold text-xs">Working Schedule *</label>
+              {isEditing ? (
+                <Select
+                  value={formData.workingSchedule || (schedules[0]?.name || '40 Hours / Week')}
+                  onChange={(e) => setFormData({ ...formData, workingSchedule: e.target.value })}
+                >
+                  {schedules.map((s) => (
+                    <option key={s.id || s._id} value={s.name}>
+                      {s.name} ({s.hoursPerWeek || '40h'})
+                    </option>
+                  ))}
+                </Select>
+              ) : (
+                <div className="p-3 bg-slate-50/80 border border-slate-200/60 rounded-xl flex items-center justify-between text-xs font-semibold text-slate-800">
+                  <span>{formData.workingSchedule}</span>
+                  <Clock className="w-4 h-4 text-slate-400" />
+                </div>
+              )}
             </div>
           </div>
 

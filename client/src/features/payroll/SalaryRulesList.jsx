@@ -177,7 +177,7 @@ export function SalaryRulesList({
                       {rule.name}
                     </TableCell>
                     <TableCell className="py-4 px-6 font-mono font-bold text-slate-700 text-xs">
-                      {rule.code}
+                      {rule.code ? (rule.code.startsWith('[') ? rule.code : `[${rule.code}]`) : ''}
                     </TableCell>
                     <TableCell className="py-4 px-6">
                       <Badge status={catBadge.label} variant={catBadge.variant} />
