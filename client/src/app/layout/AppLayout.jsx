@@ -77,7 +77,7 @@ export function AppLayout() {
       label: 'Reports & Analytics',
       path: '/reports',
       icon: BarChart3,
-      roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_MANAGER],
+      roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER],
     },
     {
       label: 'Administration',

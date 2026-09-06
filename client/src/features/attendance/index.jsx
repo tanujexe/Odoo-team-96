@@ -252,11 +252,6 @@ export default function AttendanceFeature() {
             <p className="text-xs text-slate-500 mt-0.5">Form view of one attendance record and daily punch telemetry</p>
           </div>
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
-            <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
-              <Bell className="w-3.5 h-3.5 text-slate-500" /><span>Alerts</span>
-              <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-[#E0533C] text-white text-[10px] font-bold leading-none">2</span>
-            </button>
-            <button type="button" className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 transition-colors"><Settings className="w-4 h-4" /></button>
             {isHrOrAdmin && (
               <button type="button" onClick={() => handleEditClick(activeRecord)} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#E0533C] hover:bg-[#cc4535] text-white text-xs font-bold transition-colors shadow-sm">
                 <Edit2 className="w-3.5 h-3.5" />Edit Record
@@ -297,10 +292,6 @@ export default function AttendanceFeature() {
               <p className="text-xs text-slate-400">{activeRecord?.jobPosition || activeRecord?.jobTitle || 'Payroll Specialist'} &bull; {activeRecord?.department || 'Finance Department'} &bull; {activeRecord?.employeeCode || 'EMP-4092'}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button type="button" className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 bg-white">View Schedule (40h/wk)</button>
-            <button type="button" className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 bg-white">Full Month Log</button>
-          </div>
         </div>
 
         {/* 8 metric cards */}
@@ -330,23 +321,7 @@ export default function AttendanceFeature() {
           ))}
         </div>
 
-        {/* Notes */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900">Notes &amp; Exception Trace</h3>
-            <span className="text-xs font-mono text-slate-400">Biometric Gate ID: GATE-02</span>
-          </div>
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 leading-relaxed space-y-1">
-            <p>System-generated from check in/out or manually corrected by an authorized user.</p>
-            <p className="text-slate-400">Raw punch telemetry matched against shift template &ldquo;General Corporate 09:00 &ndash; 18:00&rdquo;. Automated lunch interval (60 min) deduction applied.</p>
-          </div>
-        </div>
 
-        {/* Useful note */}
-        <div className="flex items-start gap-3 p-4 bg-[#FDFAF5] border border-[#F0E6D3] rounded-xl text-xs text-slate-600">
-          <div className="w-5 h-5 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0 mt-0.5"><Info className="w-3 h-3 text-amber-700" /></div>
-          <p><strong className="font-semibold text-slate-800">Useful note:</strong> worked hours and overtime should be easy to read because they may later influence payroll or reporting.</p>
-        </div>
 
         {/* Correction modal */}
         {isDetailModalOpen && activeRecord && (
@@ -413,14 +388,6 @@ export default function AttendanceFeature() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
-            <Bell className="w-3.5 h-3.5 text-slate-500" />
-            <span>Alerts</span>
-            <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-[#E0533C] text-white text-[10px] font-bold leading-none">2</span>
-          </button>
-          <button type="button" className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 transition-colors shadow-sm">
-            <Settings className="w-4 h-4" />
-          </button>
           {isHrOrAdmin && (
             <button type="button" onClick={() => setIsNewModalOpen(true)} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#E0533C] hover:bg-[#cc4535] text-white text-xs font-bold transition-colors shadow-sm">
               <Plus className="w-3.5 h-3.5" />+ Record Attendance
@@ -457,7 +424,7 @@ export default function AttendanceFeature() {
       </div>
 
       {/* ── KPI Cards ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {/* Present */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
@@ -509,23 +476,7 @@ export default function AttendanceFeature() {
           </div>
         </div>
 
-        {/* Pending Checkout / Missing Punch */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-500 font-medium mb-1">Missing Punch</p>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-2xl font-extrabold text-slate-900">
-                {logs.filter(l => l.checkIn && !l.checkOut).length}
-              </span>
-              {logs.filter(l => l.checkIn && !l.checkOut).length > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 text-[10px] font-semibold">Needs action</span>
-              )}
-            </div>
-          </div>
-          <div className="w-9 h-9 rounded-full border-2 border-rose-200 bg-rose-50 flex items-center justify-center shrink-0">
-            <span className="text-rose-500 font-extrabold text-base">!</span>
-          </div>
-        </div>
+
       </div>
 
       {/* ── Toolbar ─────────────────────────────────────────────── */}
@@ -701,13 +652,7 @@ export default function AttendanceFeature() {
         </div>
       </div>
 
-      {/* ── Useful Note ─────────────────────────────────────────── */}
-      <div className="flex items-start gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
-        <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center shrink-0 mt-0.5">
-          <Info className="w-3 h-3 text-slate-500" />
-        </div>
-        <p><strong className="font-semibold text-slate-800">Useful note:</strong> list view should help users review raw check-in / check-out data and identify missing punches quickly before payroll lock.</p>
-      </div>
+
 
       {/* ── Detail / Correction Modal ────────────────────────────── */}
       {isDetailModalOpen && activeRecord && (

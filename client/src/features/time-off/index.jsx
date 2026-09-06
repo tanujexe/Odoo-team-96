@@ -454,29 +454,45 @@ export default function TimeOffFeature() {
      VIEW 2: TIME OFF REQUEST FORM VIEW (Screenshot 1)
   ────────────────────────────────────────────────────────── */
   if (viewMode === 'request-form') {
-    const req = selectedRequest || {
-      _id: 'req-aarav-1',
-      employeeName: 'Aarav Mehta',
-      employeeCode: 'EMP-4092',
-      department: 'Finance & Payroll Specialist',
-      leaveType: 'Paid Time Off',
-      leaveTypeName: 'Paid Time Off',
-      startDate: '2026-09-12',
-      endDate: '2026-09-14',
-      days: 3,
-      duration: 3,
-      status: 'APPROVED',
-      approver: 'Sara Khan',
-      approverRole: 'Head of HR',
-      allocationUsed: 'Paid Time Off 2026',
-      reason: 'Family vacation',
-      submittedAt: '01-Sep-2026 • 10:15 AM',
-      totalAllocated: 18,
-      daysTaken: 6,
-      remainingDays: 12,
+    const rawReq = selectedRequest || requests[0] || {};
+    const empName = rawReq.employeeName
+      || (typeof rawReq.employeeId === 'object' ? rawReq.employeeId?.name : '')
+      || 'Staff Member';
+    const empCode = rawReq.employeeCode
+      || (typeof rawReq.employeeId === 'object' ? rawReq.employeeId?.employeeCode : '')
+      || 'EMP-4092';
+    const deptName = rawReq.department
+      || (typeof rawReq.employeeId === 'object' ? rawReq.employeeId?.department?.name || rawReq.employeeId?.department : '')
+      || 'Operations Specialist';
+    const typeName = rawReq.leaveTypeName
+      || (typeof rawReq.typeId === 'object' ? rawReq.typeId?.name : '')
+      || rawReq.leaveType || 'Paid Time Off';
+    const reasonText = rawReq.reason || rawReq.description || 'No reason provided';
+    const currentStatus = (rawReq.status || 'PENDING').toUpperCase();
+
+    const req = {
+      ...rawReq,
+      employeeName: empName,
+      employeeCode: empCode,
+      department: deptName,
+      leaveTypeName: typeName,
+      reason: reasonText,
+      status: currentStatus,
+      duration: rawReq.duration ?? rawReq.days ?? 1,
+      startDate: rawReq.startDate || '2026-09-10',
+      endDate: rawReq.endDate || '2026-09-10',
+      approver: rawReq.approver || 'Sara Khan',
+      approverRole: rawReq.approverRole || 'Head of HR',
+      allocationUsed: rawReq.allocationUsed || `${typeName} 2026`,
+      submittedAt: rawReq.createdAt ? fmtShortDate(rawReq.createdAt) : '01-Sep-2026 • 10:15 AM',
+      totalAllocated: rawReq.totalAllocated || 18,
+      daysTaken: rawReq.daysTaken || 6,
+      remainingDays: rawReq.remainingDays || 12,
     };
     const reqId = req._id || req.id;
-    const isPending = (req.status || '').toUpperCase() === 'PENDING';
+    const isPending = req.status === 'PENDING';
+
+    const reqStatusStyle = statusStyle(req.status);
 
     return (
       <div className="space-y-5">
@@ -519,19 +535,23 @@ export default function TimeOffFeature() {
           <div className="flex items-center gap-2.5">
             <button
               type="button"
-              onClick={() => approveMutation.mutate(reqId)}
-              disabled={approveMutation.isPending}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-colors"
+              onClick={() => reqId && approveMutation.mutate(reqId)}
+              disabled={approveMutation.isPending || req.status === 'APPROVED'}
+              className={`flex items-center gap-1.5 px-5 py-2 rounded-xl text-white text-xs font-bold shadow-sm transition-colors ${
+                req.status === 'APPROVED' ? 'bg-slate-300 cursor-not-allowed' : 'bg-[#2563EB] hover:bg-blue-700'
+              }`}
             >
-              <Check className="w-4 h-4 stroke-[3]" /> Approve
+              <Check className="w-4 h-4 stroke-[3]" /> {req.status === 'APPROVED' ? 'Approved' : 'Approve'}
             </button>
             <button
               type="button"
-              onClick={() => handleOpenRefuseModal(reqId)}
-              disabled={refuseMutation.isPending}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-sm transition-colors"
+              onClick={() => reqId && handleOpenRefuseModal(reqId)}
+              disabled={refuseMutation.isPending || req.status === 'REFUSED'}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold shadow-sm transition-colors ${
+                req.status === 'REFUSED' ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white hover:bg-slate-50 text-slate-700'
+              }`}
             >
-              <X className="w-4 h-4 text-slate-400" /> Refuse
+              <X className="w-4 h-4 text-slate-400" /> {req.status === 'REFUSED' ? 'Refused' : 'Refuse'}
             </button>
           </div>
 
@@ -552,18 +572,18 @@ export default function TimeOffFeature() {
           <div className="flex items-center justify-between border-b border-slate-100 pb-5">
             <div className="flex items-center gap-3.5">
               <div className="w-12 h-12 rounded-full bg-[#F5ECE5] text-[#8C5D3B] flex items-center justify-center font-extrabold text-base border border-amber-100">
-                {req.employeeName.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                { req.employeeName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() }
               </div>
               <div>
                 <h3 className="text-base font-extrabold text-slate-900 leading-snug">{req.employeeName}</h3>
                 <p className="text-xs text-slate-400 font-medium">
-                  {req.employeeCode || 'EMP-4092'} • {req.department || 'Finance & Payroll Specialist'}
+                  {req.employeeCode} • {req.department}
                 </p>
               </div>
             </div>
 
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Request Validated
+            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${reqStatusStyle.badge}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${reqStatusStyle.dot}`} /> Request {req.status.charAt(0) + req.status.slice(1).toLowerCase()}
             </span>
           </div>
 
@@ -581,8 +601,8 @@ export default function TimeOffFeature() {
             <div className="flex items-center justify-between gap-4">
               <span className="font-extrabold uppercase tracking-wider text-slate-400 w-32 shrink-0">DURATION</span>
               <div className="flex-1 flex items-center justify-between py-2 px-3 rounded-xl border border-slate-200 bg-white">
-                <span className="font-extrabold text-slate-900 text-sm">{req.duration || req.days || 3} Days</span>
-                <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 font-bold text-[11px]">24 Hours</span>
+                <span className="font-extrabold text-slate-900 text-sm">{req.duration} Days</span>
+                <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 font-bold text-[11px]">{req.duration * 8} Hours</span>
               </div>
             </div>
 
@@ -590,7 +610,7 @@ export default function TimeOffFeature() {
             <div className="flex items-center justify-between gap-4">
               <span className="font-extrabold uppercase tracking-wider text-slate-400 w-32 shrink-0">TIME OFF TYPE</span>
               <div className="flex-1 flex items-center justify-between py-2 px-3 rounded-xl border border-slate-200 bg-slate-50/50">
-                <span className="font-semibold text-slate-800">{req.leaveTypeName || req.leaveType || 'Paid Time Off'}</span>
+                <span className="font-semibold text-slate-800">{req.leaveTypeName}</span>
                 <span className="w-2 h-2 rounded-full bg-blue-600" />
               </div>
             </div>
@@ -599,9 +619,9 @@ export default function TimeOffFeature() {
             <div className="flex items-center justify-between gap-4">
               <span className="font-extrabold uppercase tracking-wider text-slate-400 w-32 shrink-0">STATUS</span>
               <div className="flex-1 flex items-center justify-between py-2 px-3 rounded-xl border border-slate-200 bg-white">
-                <span className="font-extrabold text-emerald-700 text-sm">Approved</span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-[10px]">
-                  • Active
+                <span className={`font-extrabold text-sm ${reqStatusStyle.text}`}>{req.status.charAt(0) + req.status.slice(1).toLowerCase()}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${reqStatusStyle.badge}`}>
+                  • {req.status === 'APPROVED' ? 'Active' : req.status === 'REFUSED' ? 'Refused' : 'Pending'}
                 </span>
               </div>
             </div>
@@ -619,8 +639,8 @@ export default function TimeOffFeature() {
             <div className="flex items-center justify-between gap-4">
               <span className="font-extrabold uppercase tracking-wider text-slate-400 w-32 shrink-0">APPROVER</span>
               <div className="flex-1 flex items-center justify-between py-2 px-3 rounded-xl border border-slate-200 bg-white">
-                <span className="font-semibold text-slate-900">{req.approver || 'Sara Khan'}</span>
-                <span className="text-[11px] text-slate-400 font-medium">{req.approverRole || 'Head of HR'}</span>
+                <span className="font-semibold text-slate-900">{req.approver}</span>
+                <span className="text-[11px] text-slate-400 font-medium">{req.approverRole}</span>
               </div>
             </div>
 
@@ -637,7 +657,7 @@ export default function TimeOffFeature() {
             <div className="flex items-center justify-between gap-4">
               <span className="font-extrabold uppercase tracking-wider text-slate-400 w-32 shrink-0">ALLOCATION USED</span>
               <div className="flex-1 py-2 px-3 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-700 font-semibold">
-                {req.allocationUsed || 'Paid Time Off 2026'}
+                {req.allocationUsed}
               </div>
             </div>
           </div>
@@ -646,9 +666,9 @@ export default function TimeOffFeature() {
           <div className="pt-2">
             <h4 className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">REASON</h4>
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/40 space-y-2">
-              <p className="text-sm font-semibold text-slate-900">{req.reason || 'Family vacation'}</p>
+              <p className="text-sm font-semibold text-slate-900">{req.reason}</p>
               <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-200/60">
-                <span>Submitted on {req.submittedAt || '01-Sep-2026 • 10:15 AM'}</span>
+                <span>Submitted on {req.submittedAt}</span>
                 <span className="flex items-center gap-1 font-semibold text-emerald-600">
                   <Check className="w-3.5 h-3.5" /> Auto-verified policy rules
                 </span>
@@ -879,7 +899,8 @@ export default function TimeOffFeature() {
               <tbody className="divide-y divide-slate-100">
                 {filteredAllocations.slice((allocPage - 1) * allocPageSize, allocPage * allocPageSize).map((al, idx) => {
                   const ac = AVATAR_COLORS[idx % AVATAR_COLORS.length];
-                  const initials = al.employeeName.split(' ').map((n) => n[0]).join('').slice(0, 2);
+                  const initials = (al.employeeName || 'Staff').split(' ').map((n) => n[0]).join('').slice(0, 2);
+                  const deptShort = (al.department || 'General').split(' ')[0];
 
                   return (
                     <tr
@@ -1148,7 +1169,7 @@ export default function TimeOffFeature() {
             <div className="flex items-center justify-between gap-4">
               <span className="font-semibold text-slate-500 w-28 shrink-0">Validity</span>
               <div className="flex-1 flex items-center justify-between py-2 px-3 rounded-xl border border-slate-200 bg-slate-50/50">
-                <span className="font-bold text-slate-800">{al.validity.split(' ')[0]} {al.validity.split(' ')[1]}</span>
+                <span className="font-bold text-slate-800">{(al.validity || '2026 Yearly').split(' ')[0]} {(al.validity || '2026 Yearly').split(' ')[1] || ''}</span>
                 <span className="text-[11px] text-slate-400 font-medium">01-Jan to 31-Dec</span>
               </div>
             </div>

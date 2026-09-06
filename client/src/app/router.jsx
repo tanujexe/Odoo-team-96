@@ -76,7 +76,7 @@ export const router = createBrowserRouter([
       {
         path: 'reports/*',
         element: (
-          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_MANAGER]}>
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER]}>
             <ReportsFeature />
           </ProtectedRoute>
         ),
