@@ -314,6 +314,33 @@ export function ContractFormViewModal({
                 )}
               </div>
 
+              {/* Working Schedule Field */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  Working Schedule (Database)
+                </label>
+                {isEditing ? (
+                  <select
+                    value={formData.workingSchedule}
+                    onChange={(e) => setFormData({ ...formData, workingSchedule: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold"
+                  >
+                    {(schedules.length > 0 ? schedules : mockWorkingSchedules).map((s) => (
+                      <option key={s.id || s._id} value={s.name}>
+                        {s.name} ({s.hoursPerWeek || '40h'})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="w-full p-3 rounded-xl border border-slate-200/60 bg-slate-50/80 text-slate-800 text-xs font-semibold flex items-center justify-between">
+                    <span>{formData.workingSchedule || '40 Hours / Week'}</span>
+                    <Clock className="w-4 h-4 text-slate-400" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
             {/* Working Schedule Field */}
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
