@@ -397,13 +397,43 @@ export default function TimeOffFeature() {
   const handleOpenRefuseModal = (reqId) => { setSelectedRequestId(reqId); setRefuseReason(''); setIsRefuseModalOpen(true); };
   const handleConfirmRefuse = (e) => { e.preventDefault(); if (!selectedRequestId) return; refuseMutation.mutate({ id: selectedRequestId, reason: refuseReason }); };
 
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+
+  /* ── Export CSV Handler ── */
+  const handleExportCSV = () => {
+    if (!filteredRequests || filteredRequests.length === 0) return;
+    const headers = ['Employee Name', 'Employee Code', 'Department', 'Leave Type', 'Start Date', 'End Date', 'Duration (Days)', 'Status', 'Reason'];
+    const rows = filteredRequests.map((r) => {
+      const empName = r.employeeName || (typeof r.employeeId === 'object' ? r.employeeId?.name : '') || 'Employee';
+      const empCode = r.employeeCode || (typeof r.employeeId === 'object' ? r.employeeId?.employeeCode : '') || '';
+      const deptName = r.department || '';
+      const typeName = r.leaveTypeName || (typeof r.typeId === 'object' ? r.typeId?.name : '') || r.leaveType || 'Time Off';
+      const dur = r.duration ?? r.days ?? 1;
+      const st = (r.status || 'PENDING').toUpperCase();
+      const rsn = (r.reason || r.description || '').replace(/"/g, '""');
+      return `"${empName}","${empCode}","${deptName}","${typeName}","${r.startDate || ''}","${r.endDate || ''}","${dur}","${st}","${rsn}"`;
+    });
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `time_off_requests_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   /* ── Filtered Requests ── */
   const filteredRequests = requests.filter((r) => {
-    const name = (r.employeeName || '').toLowerCase();
+    const name = (r.employeeName || (typeof r.employeeId === 'object' ? r.employeeId?.name : '') || '').toLowerCase();
     const dept = (r.department || '').toLowerCase();
-    const matchSearch = !searchQ || name.includes(searchQ.toLowerCase()) || dept.includes(searchQ.toLowerCase());
+    const typeName = (r.leaveTypeName || (typeof r.typeId === 'object' ? r.typeId?.name : '') || r.leaveType || '').toLowerCase();
+    const matchSearch = !searchQ || name.includes(searchQ.toLowerCase()) || dept.includes(searchQ.toLowerCase()) || typeName.includes(searchQ.toLowerCase());
     const matchDept = !deptFilter || dept.includes(deptFilter.toLowerCase());
-    return matchSearch && matchDept;
+    const matchStatus = statusFilter === 'ALL' || (r.status || 'PENDING').toUpperCase() === statusFilter;
+    const matchTeam = !myTeamOnly || (r.employeeId === currentEmpId || r.managerId === currentEmpId);
+    return matchSearch && matchDept && matchStatus && matchTeam;
   });
 
   const pendingNames = pendingRequests.slice(0, 2).map((r) => r.employeeName?.split(' ')[0]).filter(Boolean).join(' & ');
@@ -1543,13 +1573,78 @@ export default function TimeOffFeature() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm">
-              <Filter className="w-3.5 h-3.5 text-slate-500" />Filter
-            </button>
-            <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm">
+          <div className="flex items-center gap-2 relative">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold shadow-sm transition-colors ${
+                  statusFilter !== 'ALL' || deptFilter !== ''
+                    ? 'bg-blue-50 text-blue-700 border-blue-300 font-bold'
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <Filter className="w-3.5 h-3.5 text-slate-500" />
+                <span>Filter</span>
+                {(statusFilter !== 'ALL' || deptFilter !== '') && (
+                  <span className="w-2 h-2 rounded-full bg-blue-600" />
+                )}
+              </button>
+
+              {isFilterDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-3 space-y-3">
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Status</label>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="w-full text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg p-2 focus:outline-none"
+                    >
+                      <option value="ALL">All Statuses</option>
+                      <option value="PENDING">Pending</option>
+                      <option value="APPROVED">Approved</option>
+                      <option value="REFUSED">Refused</option>
+                      <option value="CANCELLED">Cancelled</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Department</label>
+                    <select
+                      value={deptFilter}
+                      onChange={(e) => setDeptFilter(e.target.value)}
+                      className="w-full text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg p-2 focus:outline-none"
+                    >
+                      <option value="">All Departments</option>
+                      <option value="engineering">Engineering</option>
+                      <option value="finance">Finance</option>
+                      <option value="hr">HR / People</option>
+                      <option value="product">Product</option>
+                      <option value="operations">Operations</option>
+                    </select>
+                  </div>
+
+                  {(statusFilter !== 'ALL' || deptFilter !== '') && (
+                    <button
+                      type="button"
+                      onClick={() => { setStatusFilter('ALL'); setDeptFilter(''); setIsFilterDropdownOpen(false); }}
+                      className="w-full text-center text-xs font-bold text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-colors"
+                    >
+                      Reset Filters
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"
+            >
               <Download className="w-3.5 h-3.5 text-slate-500" />Export
             </button>
+
             {isHrRole && (
               <button
                 type="button"
@@ -1560,23 +1655,6 @@ export default function TimeOffFeature() {
               </button>
             )}
           </div>
-        </div>
-
-        <div>
-          <select
-            aria-label="Filter by department"
-            value={deptFilter}
-            onChange={(e) => setDeptFilter(e.target.value)}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm focus:outline-none"
-          >
-            <option value="">Department: All</option>
-            <option value="engineering">Engineering</option>
-            <option value="finance">Finance</option>
-            <option value="hr">HR / People</option>
-            <option value="product">Product</option>
-            <option value="operations">Operations</option>
-            <option value="talent">Talent</option>
-          </select>
         </div>
       </div>
 
