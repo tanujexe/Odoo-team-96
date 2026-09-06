@@ -420,18 +420,6 @@ export function PayrunWizard({
         )}
       </Card>
 
-      {/* Participant Notes matching sketches */}
-      <div className="text-center">
-        {step === 1 ? (
-          <p className="text-xs text-slate-600 font-medium italic">
-            Participant note: this popup collects the payrun scope only. Continue should not create the Payrun yet.
-          </p>
-        ) : (
-          <p className="text-xs text-slate-600 font-medium italic">
-            Participant note: user selects one or more eligible employees, then clicks Create Payrun. The created Payrun should contain only the selected employees.
-          </p>
-        )}
-      </div>
     </div>
   );
 }
