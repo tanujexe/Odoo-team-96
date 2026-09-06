@@ -206,6 +206,8 @@ export default function EmployeesFeature() {
     ? finalEmployeesList.find((emp) => (emp.id || emp._id) === selectedEmployeeId) || detailData?.employee || detailData || {}
     : {};
 
+  const employeeDetail = detailData?.employee || detailData || selectedEmployee;
+
   const handleOpenCreateModal = () => {
     const nextCode = getNextEmployeeCode(employees);
     const nextContractCode = getNextContractCode(contracts);
